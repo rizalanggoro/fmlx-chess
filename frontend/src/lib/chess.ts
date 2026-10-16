@@ -65,17 +65,17 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export const fetchState = () => api<GameStateDto>('/api/Game')
-export const startGame = () => api<GameStateDto>('/api/Game/start', { method: 'POST' })
-export const resetGame = () => api<GameStateDto>('/api/Game/reset', { method: 'POST' })
-export const fetchBoard = () => api<TileDto[]>('/api/Game/board')
-export const fetchHistory = () => api<MoveHistoryEntry[]>('/api/Game/history')
+export const fetchState = () => api<GameStateDto>('/game')
+export const startGame = () => api<GameStateDto>('/game/start', { method: 'POST' })
+export const resetGame = () => api<GameStateDto>('/game/reset', { method: 'POST' })
+export const fetchBoard = () => api<TileDto[]>('/game/board')
+export const fetchHistory = () => api<MoveHistoryEntry[]>('/game/history')
 export const fetchLegalMoves = (column: number, row: number) =>
-  api<ChessMove[]>(`/api/Game/legal-moves?column=${column}&row=${row}`)
+  api<ChessMove[]>(`/game/legal-moves?column=${column}&row=${row}`)
 export const postMove = (move: ChessMove) =>
-  api<GameStateDto>('/api/Game/moves', { method: 'POST', body: JSON.stringify(move) })
+  api<GameStateDto>('/game/moves', { method: 'POST', body: JSON.stringify(move) })
 export const resign = (color: PieceColor) =>
-  api<GameStateDto>('/api/Game/resign', { method: 'POST', body: JSON.stringify({ color }) })
+  api<GameStateDto>('/game/resign', { method: 'POST', body: JSON.stringify({ color }) })
 
 export function useGameState() {
   return useQuery({ queryKey: ['game-state'], queryFn: fetchState })

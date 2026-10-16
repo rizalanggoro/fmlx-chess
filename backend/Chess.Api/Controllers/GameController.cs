@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public class GameController(GameManager games) : ControllerBase
 {
     [HttpGet]
