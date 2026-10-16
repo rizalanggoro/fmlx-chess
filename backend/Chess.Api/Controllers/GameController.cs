@@ -9,14 +9,16 @@ namespace Api.Controllers;
 public class GameController(GameManager games) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<object> GetState()
+    public async Task<ActionResult<object>> GetState()
     {
+        await Task.CompletedTask;
         return Ok(State());
     }
 
     [HttpPost("start")]
-    public ActionResult<object> Start()
+    public async Task<ActionResult<object>> Start()
     {
+        await Task.CompletedTask;
         try
         {
             games.StartGame();
@@ -29,8 +31,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("reset")]
-    public ActionResult<object> Reset()
+    public async Task<ActionResult<object>> Reset()
     {
+        await Task.CompletedTask;
         try
         {
             games.ResetGame();
@@ -43,8 +46,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpGet("board")]
-    public ActionResult<object> GetBoard()
+    public async Task<ActionResult<object>> GetBoard()
     {
+        await Task.CompletedTask;
         try
         {
             var tiles = new List<object>();
@@ -63,8 +67,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpGet("legal-moves")]
-    public ActionResult<IEnumerable<Move>> GetLegalMoves([FromQuery] int column, [FromQuery] int row)
+    public async Task<ActionResult<IEnumerable<Move>>> GetLegalMoves([FromQuery] int column, [FromQuery] int row)
     {
+        await Task.CompletedTask;
         try
         {
             var from = new Position(column, row);
@@ -79,8 +84,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("moves")]
-    public ActionResult<object> MakeMove([FromBody] Move move)
+    public async Task<ActionResult<object>> MakeMove([FromBody] Move move)
     {
+        await Task.CompletedTask;
         try
         {
             if (!games.TryMakeMove(move))
@@ -94,8 +100,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpGet("history")]
-    public ActionResult<IEnumerable<MoveHistoryEntry>> GetHistory([FromQuery] PieceColor? color)
+    public async Task<ActionResult<IEnumerable<MoveHistoryEntry>>> GetHistory([FromQuery] PieceColor? color)
     {
+        await Task.CompletedTask;
         try
         {
             return Ok(color.HasValue ? games.GetMoveHistory(color.Value) : games.MoveHistory);
@@ -107,8 +114,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("resign")]
-    public ActionResult<object> Resign([FromBody] PlayerActionRequest request)
+    public async Task<ActionResult<object>> Resign([FromBody] PlayerActionRequest request)
     {
+        await Task.CompletedTask;
         try
         {
             games.Resign(ToPlayer(request));
@@ -121,8 +129,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("draw/offer")]
-    public ActionResult<object> OfferDraw([FromBody] PlayerActionRequest request)
+    public async Task<ActionResult<object>> OfferDraw([FromBody] PlayerActionRequest request)
     {
+        await Task.CompletedTask;
         try
         {
             games.OfferDraw(ToPlayer(request));
@@ -135,8 +144,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("draw/respond")]
-    public ActionResult<object> RespondToDraw([FromBody] PlayerActionRequest request)
+    public async Task<ActionResult<object>> RespondToDraw([FromBody] PlayerActionRequest request)
     {
+        await Task.CompletedTask;
         try
         {
             games.RespondToDrawOffer(ToPlayer(request), request.Accepted);
@@ -149,8 +159,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("draw/claim-threefold")]
-    public ActionResult<object> ClaimThreefold([FromBody] PlayerActionRequest request)
+    public async Task<ActionResult<object>> ClaimThreefold([FromBody] PlayerActionRequest request)
     {
+        await Task.CompletedTask;
         try
         {
             if (!games.ClaimDrawByThreefoldRepetition(ToPlayer(request)))
@@ -164,8 +175,9 @@ public class GameController(GameManager games) : ControllerBase
     }
 
     [HttpPost("draw/claim-fifty")]
-    public ActionResult<object> ClaimFifty([FromBody] PlayerActionRequest request)
+    public async Task<ActionResult<object>> ClaimFifty([FromBody] PlayerActionRequest request)
     {
+        await Task.CompletedTask;
         try
         {
             if (!games.ClaimDrawByFiftyMoveRule(ToPlayer(request)))
