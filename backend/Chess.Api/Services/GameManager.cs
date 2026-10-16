@@ -4,7 +4,7 @@ namespace Api.Services;
 
 public class GameManager
 {
-    private IPlayer? drawOfferer;
+    private IPlayer? _drawOfferer;
     private readonly IPlayer _whitePlayer;
     private readonly IPlayer _blackPlayer;
     private readonly TimeSpan _initialTime;
@@ -14,8 +14,8 @@ public class GameManager
         [PieceColor.White] = new(),
         [PieceColor.Black] = new()
     };
-    private int halfmoveClock;
-    private List<string> positionHistory = new();
+    private int _halfmoveClock;
+    private List<string> _positionHistory = new();
 
     public IBoard GameBoard { get; private set; }
     public IPlayer CurrentPlayer { get; private set; }
@@ -61,11 +61,11 @@ public class GameManager
         _captured[PieceColor.White].Clear();
         _captured[PieceColor.Black].Clear();
         Reset();
-        drawOfferer = null;
+        _drawOfferer = null;
         State = GameState.InProgress;
         CurrentPlayer = _whitePlayer;
         ResetTimers();
-        positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
+        _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
         PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
     }
 
@@ -80,7 +80,7 @@ public class GameManager
         _captured[PieceColor.White].Clear();
         _captured[PieceColor.Black].Clear();
         Reset();
-        drawOfferer = null;
+        _drawOfferer = null;
         CurrentPlayer = _whitePlayer;
         CastlingRights = new CastlingRights(true, true, true, true);
         EnPassantTarget = null;
@@ -149,7 +149,7 @@ public class GameManager
         _moveHistory.Add(new MoveHistoryEntry(effective, moverColor));
         var opponent = moverColor == PieceColor.White ? PieceColor.Black : PieceColor.White;
         RecordCompletedMove(GameBoard, opponent, wasPawn, wasCapture);
-        drawOfferer = null;
+        _drawOfferer = null;
         PieceMoved.Invoke(this, new PieceMovedEventArgs(effective));
         if (app.CapturedPiece is not null && app.CapturedSquare.HasValue)
             PieceCaptured.Invoke(this, new PieceCapturedEventArgs(app.CapturedPiece, app.CapturedSquare.Value));
@@ -738,17 +738,17 @@ public class GameManager
     {
         if (State != GameState.InProgress)
             return;
-        drawOfferer = offerer;
+        _drawOfferer = offerer;
         DrawOffered.Invoke(this, new DrawOfferedEventArgs(offerer));
     }
 
     public void RespondToDrawOffer(IPlayer responder, bool accepted)
     {
-        if (drawOfferer is null || responder.Color == drawOfferer.Color)
+        if (_drawOfferer is null || responder.Color == _drawOfferer.Color)
             return;
         if (accepted)
             EndGame(new GameResult(GameEndReason.DrawByAgreement, null));
-        drawOfferer = null;
+        _drawOfferer = null;
     }
 
     public bool ClaimDrawByThreefoldRepetition(IPlayer player)
@@ -790,36 +790,36 @@ public class GameManager
 
     public void RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture)
     {
-        halfmoveClock = wasPawnMove || wasCapture ? 0 : halfmoveClock + 1;
-        positionHistory.Add(GeneratePositionKey(board, sideToMove));
+        _halfmoveClock = wasPawnMove || wasCapture ? 0 : _halfmoveClock + 1;
+        _positionHistory.Add(GeneratePositionKey(board, sideToMove));
     }
 
     public bool IsThreefoldRepetitionClaimAvailable()
     {
         var key = GeneratePositionKey(GameBoard, CurrentPlayer.Color);
-        return positionHistory.Count(k => k == key) >= 3;
+        return _positionHistory.Count(k => k == key) >= 3;
     }
 
     public bool IsFivefoldRepetitionAutomatic()
     {
         var key = GeneratePositionKey(GameBoard, CurrentPlayer.Color);
-        return positionHistory.Count(k => k == key) >= 5;
+        return _positionHistory.Count(k => k == key) >= 5;
     }
 
     public bool IsFiftyMoveRuleClaimAvailable()
     {
-        return halfmoveClock >= 100;
+        return _halfmoveClock >= 100;
     }
 
     public bool IsSeventyFiveMoveRuleAutomatic()
     {
-        return halfmoveClock >= 150;
+        return _halfmoveClock >= 150;
     }
 
     public void Reset()
     {
-        positionHistory.Clear();
-        halfmoveClock = 0;
+        _positionHistory.Clear();
+        _halfmoveClock = 0;
     }
 
     private void ResetTimers()

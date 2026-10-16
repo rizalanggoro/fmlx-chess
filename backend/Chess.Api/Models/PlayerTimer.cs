@@ -4,7 +4,7 @@ public class PlayerTimer : IPlayerTimer
 {
     public TimeSpan RemainingTime { get; private set; }
 
-    private System.Threading.Timer? countdownTimer;
+    private System.Threading.Timer? _countdownTimer;
 
     public event EventHandler<TimerTickEventArgs> TimerTick = delegate { };
     public event EventHandler TimeExpired = delegate { };
@@ -16,14 +16,14 @@ public class PlayerTimer : IPlayerTimer
 
     public void StartTimer()
     {
-        countdownTimer?.Dispose();
-        countdownTimer = new System.Threading.Timer(_ => Tick(), null, 1000, 1000);
+        _countdownTimer?.Dispose();
+        _countdownTimer = new System.Threading.Timer(_ => Tick(), null, 1000, 1000);
     }
 
     public void StopTimer()
     {
-        countdownTimer?.Dispose();
-        countdownTimer = null;
+        _countdownTimer?.Dispose();
+        _countdownTimer = null;
     }
 
     private void Tick()
