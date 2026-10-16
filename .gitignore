@@ -1,0 +1,33 @@
+# .NET
+bin/
+obj/
+out/
+TestResults/
+.vs/
+.idea/
+*.user
+*.suo
+
+# SQLite (lihat AGENTS.md: jangan commit DB lokal)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Frontend (generik, frontend/ masih kosong)
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local agent notes (jangan push)
+AGENTS.md

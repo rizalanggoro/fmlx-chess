@@ -1,0 +1,446 @@
+# Class Diagram — Chess
+
+Sumber: https://gist.github.com/DeltDev/61dfdb9922420cc6de548e075d7029fa
+
+```mermaid
+classDiagram
+    direction TB
+
+    %%interfaces
+
+    class IChessPiece {
+        <<interface>>
+        +PieceColor Color
+        +PieceType Type
+    }
+
+    class IBoard {
+        <<interface>>
+        +IChessTile[,] Tiles
+    }
+
+    class IChessTile {
+        <<interface>>
+        +IChessPiece? Piece
+        +Position TilePosition
+    }
+
+    class IPlayer {
+        <<interface>>
+        +string Name
+        +PieceColor Color
+    }
+
+    class IPlayerTimer {
+        <<interface>>
+        +TimeSpan RemainingTime
+        +event EventHandler~TimerTickEventArgs~ TimerTick
+        +event EventHandler TimeExpired
+        +StartTimer() void
+        +StopTimer() void
+    }
+
+    %% Object class
+
+    class ChessPiece {
+        +PieceColor Color
+        +PieceType Type
+        +ChessPiece(PieceColor color, PieceType type)
+    }
+
+    class Board {
+        +IChessTile[,] Tiles
+        +Board()
+        +Board(IBoard source)
+    }
+
+    class ChessTile {
+        +IChessPiece? Piece
+        +Position TilePosition
+        +ChessTile(Position tilePosition)
+    }
+
+    class Player {
+        +string Name
+        +PieceColor Color
+        +Player(string name, PieceColor color)
+    }
+
+
+    %% structs and records
+ 
+
+    class Position {
+        <<struct>>
+        +int Column
+        +int Row
+        +Position(int column, int row)
+    }
+
+    class Move {
+        <<record>>
+        +Position From
+        +Position To
+        +PieceType? PromotionType
+        +Move(Position from, Position to, PieceType? promotionType = null)
+    }
+
+    class MoveHistoryEntry {
+        <<record>>
+        +Move Move
+        +PieceColor PlayedBy
+        +MoveHistoryEntry(Move move, PieceColor playedBy)
+    }
+
+    class CastlingRights {
+        <<struct>>
+        +bool WhiteKingSide
+        +bool WhiteQueenSide
+        +bool BlackKingSide
+        +bool BlackQueenSide
+        +CastlingRights(bool whiteKingSide, bool whiteQueenSide, bool blackKingSide, bool blackQueenSide)
+    }
+
+    class MoveApplicationResult {
+        <<record>>
+        +IChessPiece MovingPiece
+        +IChessPiece? CapturedPiece
+        +Position? CapturedSquare
+        +MoveApplicationResult(IChessPiece movingPiece, IChessPiece? capturedPiece, Position? capturedSquare)
+    }
+
+    %% Enumerations
+
+
+    class PieceColor {
+        <<enumeration>>
+        BLACK
+        WHITE
+    }
+
+    class PieceType {
+        <<enumeration>>
+        KING
+        QUEEN
+        ROOK
+        KNIGHT
+        BISHOP
+        PAWN
+    }
+
+    class GameState {
+        <<enumeration>>
+        NOT_STARTED
+        IN_PROGRESS
+        COMPLETED
+    }
+
+    class GameEndReason {
+        <<enumeration>>
+        CHECKMATE
+        DRAW_BY_STALEMATE
+        DRAW_BY_AGREEMENT
+        DRAW_BY_50_MOVE_RULE
+        DRAW_BY_75_MOVE_RULE
+        DRAW_BY_DEAD_POSITION
+        DRAW_BY_THREEFOLD_REPETITION
+        DRAW_BY_FIVEFOLD_REPETITION
+        PLAYER_RESIGNED
+        TIME_EXPIRED
+    }
+
+
+    %% Player timer
+
+
+    class PlayerTimer {
+        +TimeSpan RemainingTime
+        -Timer countdownTimer
+        +event EventHandler~TimerTickEventArgs~ TimerTick
+        +event EventHandler TimeExpired
+        +PlayerTimer(TimeSpan initialTime)
+        +StartTimer() void
+        +StopTimer() void
+    }
+
+
+    %% Game manager: semua game logic da di sini
+
+
+    class GameManager {
+        -IPlayer drawOfferer
+
+        +IBoard GameBoard
+        +IPlayer CurrentPlayer
+        +GameState State
+        +GameResult? Result
+        +IReadOnlyList~MoveHistoryEntry~ MoveHistory
+        +PromotionSelectionHandler PromotionSelector
+        +Dictionary~PieceColor, IPlayerTimer~ PlayerTimeTracker
+        +Dictionary~PieceColor, IReadOnlyList~IChessPiece~~ CapturedPiecesTracker
+
+        +CastlingRights CastlingRights
+        +Position? EnPassantTarget
+
+        +event EventHandler~PieceMovedEventArgs~ PieceMoved
+        +event EventHandler~PieceCapturedEventArgs~ PieceCaptured
+        +event EventHandler~TurnChangedEventArgs~ TurnChanged
+        +event EventHandler~CheckEventArgs~ CheckDeclared
+        +event EventHandler~GameEndedEventArgs~ GameEnded
+        +event EventHandler~DrawOfferedEventArgs~ DrawOffered
+        +event EventHandler~TimerTickEventArgs~ TimerTick
+
+        -int halfmoveClock
+        -List~string~ positionHistory
+
+        +GameManager(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
+
+        +StartGame() void
+        +ResetGame() void
+        -EndGame(GameResult result) void
+        +TryMakeMove(Move move) bool
+
+        %% Board operations
+        +SetupInitialBoardPosition() void
+        +GetTileAt(Position pos) IChessTile
+        +GetPieceAt(Position pos) IChessPiece?
+        +IsInBounds(Position pos) bool
+        +GetPieces(PieceColor color) IReadOnlyList~IChessPiece~
+
+        %% Piece move generation
+        +GetLegalMoves(Position from) IReadOnlyList~Move~
+        -GenerateMovesForPiece(IBoard board, Position from) List~Move~
+        -GeneratePawnMoves(IBoard board, Position from) List~Move~
+        -GenerateKnightMoves(IBoard board, Position from) List~Move~
+        -GenerateSlidingMoves(IBoard board, Position from) List~Move~
+        -GenerateKingMoves(IBoard board, Position from) List~Move~
+        -GetCastlingMoves(IBoard board, Position from) List~Move~
+        -IsOnPromotionRank(Position position, PieceColor color) bool
+
+        %% Move legality and king safety
+        -IsSquareAttacked(IBoard board, Position pos, PieceColor byColor) bool
+        -IsKingInCheck(IBoard board, PieceColor color) bool
+        -WouldLeaveKingInCheck(IBoard board, Move move) bool
+        -HasAnyLegalMove(IBoard board, PieceColor color) bool
+
+        %% Board mutation
+        -ApplyMove(IBoard board, Move move) MoveApplicationResult
+        -UpdateCastlingRights(IBoard board, Move move, IChessPiece movingPiece, IChessPiece? capturedPiece) void
+        -UpdateEnPassantTarget(IBoard board, Move move, IChessPiece movingPiece) void
+        +GeneratePositionKey(IBoard board, PieceColor sideToMove) string
+
+        %% Game ending evaluation
+        -EvaluateAutomaticResult() GameResult?
+        -IsDeadPosition() bool
+
+        %% History and player actions
+        +GetMoveHistory(PieceColor color) IReadOnlyList~MoveHistoryEntry~
+        +OfferDraw(IPlayer offerer) void
+        +RespondToDrawOffer(IPlayer responder, bool accepted) void
+        +ClaimDrawByThreefoldRepetition(IPlayer player) bool
+        +ClaimDrawByFiftyMoveRule(IPlayer player) bool
+        +Resign(IPlayer player) void
+        -ChangeTurn() void
+
+        %% Draw tracking 
+        +RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture) void
+        +IsThreefoldRepetitionClaimAvailable() bool
+        +IsFivefoldRepetitionAutomatic() bool
+        +IsFiftyMoveRuleClaimAvailable() bool
+        +IsSeventyFiveMoveRuleAutomatic() bool
+        +Reset() void
+    }
+
+    %% Game result and promotion
+
+    class GameResult {
+        <<record>>
+        +GameEndReason Reason
+        +PieceColor? Winner
+        +GameResult(GameEndReason reason, PieceColor? winner)
+    }
+
+    class PromotionSelectionHandler {
+        <<delegate>>
+        +Invoke(PieceColor color) PieceType
+    }
+
+
+    %% Event args
+
+
+    class EventArgs {
+        <<system>>
+    }
+
+    class PieceMovedEventArgs {
+        +Move Move
+        +PieceMovedEventArgs(Move move)
+    }
+
+    class SquareClickedEventArgs {
+        +Position SelectedTilePosition
+        +SquareClickedEventArgs(Position selectedTilePosition)
+    }
+
+    class PieceCapturedEventArgs {
+        +IChessPiece CapturedPiece
+        +Position TilePosition
+        +PieceCapturedEventArgs(IChessPiece capturedPiece, Position tilePosition)
+    }
+
+    class TurnChangedEventArgs {
+        +IPlayer NewCurrentPlayer
+        +TurnChangedEventArgs(IPlayer newCurrentPlayer)
+    }
+
+    class CheckEventArgs {
+        +PieceColor CheckedColor
+        +CheckEventArgs(PieceColor checkedColor)
+    }
+
+    class DrawOfferedEventArgs {
+        +IPlayer Offerer
+        +DrawOfferedEventArgs(IPlayer offerer)
+    }
+
+    class TimerTickEventArgs {
+        +PieceColor Color
+        +TimeSpan TimeRemaining
+        +TimerTickEventArgs(PieceColor color, TimeSpan timeRemaining)
+    }
+
+    class GameEndedEventArgs {
+        +GameResult Result
+        +GameEndedEventArgs(GameResult result)
+    }
+
+   
+    %% Interface implementations
+
+
+    ChessPiece ..|> IChessPiece : implements
+    Board ..|> IBoard : implements
+    ChessTile ..|> IChessTile : implements
+    Player ..|> IPlayer : implements
+    PlayerTimer ..|> IPlayerTimer : implements
+
+    %% Event argument inheritance
+ 
+
+    EventArgs <|-- PieceMovedEventArgs
+    EventArgs <|-- SquareClickedEventArgs
+    EventArgs <|-- PieceCapturedEventArgs
+    EventArgs <|-- TurnChangedEventArgs
+    EventArgs <|-- CheckEventArgs
+    EventArgs <|-- DrawOfferedEventArgs
+    EventArgs <|-- TimerTickEventArgs
+    EventArgs <|-- GameEndedEventArgs
+
+    %% GameManager ownership
+
+
+    GameManager *-- "1" IBoard : owns board
+    GameManager o-- "2" IPlayer : manages players
+    GameManager *-- "2" IPlayerTimer : owns timers
+    GameManager *-- "0..*" MoveHistoryEntry : records history
+
+    GameManager --> IPlayer : current player and draw offerer
+    GameManager --> "0..1" GameResult : stores result
+    GameManager --> "0..*" IChessPiece : tracks captured pieces
+
+    %% Board and tile relationships
+
+
+    Board *-- "64" IChessTile : contains tiles
+    ChessTile o-- "0..1" IChessPiece : contains piece
+
+    Board --> CastlingRights : stores castling rights
+    Board --> Position : stores en passant target
+
+    %% Piece and player data
+
+
+    ChessPiece --> PieceColor : has color
+    ChessPiece --> PieceType : has type
+    Player --> PieceColor : has color
+
+
+    %% Move and history relationships
+
+
+    Move --> Position : from and to
+    Move --> PieceType : promotion type
+
+    MoveHistoryEntry --> Move : records move
+    MoveHistoryEntry --> PieceColor : records player color
+
+    MoveApplicationResult --> IChessPiece : moving piece
+    MoveApplicationResult --> IChessPiece : optional captured piece
+    MoveApplicationResult --> Position : optional captured square
+
+    %% GameManager rule processing
+
+
+    GameManager ..> IBoard : reads and mutates
+    GameManager ..> IChessPiece : evaluates pieces
+    GameManager ..> IChessTile : reads and updates tiles
+    GameManager ..> Move : validates and applies
+    GameManager ..> Position : evaluates coordinates
+    GameManager ..> PieceColor : evaluates turn and color
+    GameManager ..> PieceType : evaluates piece types
+    GameManager ..> CastlingRights : updates castling rights
+    GameManager ..> GameState : manages lifecycle
+    GameManager ..> GameEndReason : evaluates ending conditions
+    GameManager ..> MoveApplicationResult : produces
+    GameManager ..> PromotionSelectionHandler : invokes
+    GameManager ..> GameResult : creates and evaluates results
+
+    %% Timer relationships
+
+
+    PlayerTimer *-- Timer : owns countdown timer
+    PlayerTimer ..> TimerTickEventArgs : raises tick event
+    IPlayerTimer ..> TimerTickEventArgs : declares tick event
+    GameManager ..> IPlayerTimer : controls player timers
+
+    %% GameManager events
+
+
+    GameManager ..> PieceMovedEventArgs : raises
+    GameManager ..> PieceCapturedEventArgs : raises
+    GameManager ..> TurnChangedEventArgs : raises
+    GameManager ..> CheckEventArgs : raises
+    GameManager ..> GameEndedEventArgs : raises
+    GameManager ..> DrawOfferedEventArgs : raises
+    GameManager ..> TimerTickEventArgs : raises
+
+    %% Event argument data
+
+
+    PieceMovedEventArgs --> Move : describes move
+    PieceCapturedEventArgs --> IChessPiece : captured piece
+    PieceCapturedEventArgs --> Position : capture square
+    TurnChangedEventArgs --> IPlayer : new current player
+    CheckEventArgs --> PieceColor : checked color
+    DrawOfferedEventArgs --> IPlayer : offerer
+    TimerTickEventArgs --> PieceColor : timer owner
+    GameEndedEventArgs --> GameResult : final result
+
+ 
+    %% Results
+
+
+    GameResult --> GameEndReason : reason
+    GameResult --> PieceColor : optional winner
+
+ 
+    %% Promotion
+
+
+    PromotionSelectionHandler ..> PieceColor : receives color
+    PromotionSelectionHandler ..> PieceType : returns type
+
+    %% SquareClickedEventArgs 
+    SquareClickedEventArgs --> Position : selected square
+```
