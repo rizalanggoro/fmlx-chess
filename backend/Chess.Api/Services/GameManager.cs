@@ -1,4 +1,6 @@
-namespace Api;
+using Api.Models;
+
+namespace Api.Services;
 
 public class GameManager
 {

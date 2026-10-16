@@ -1,4 +1,4 @@
-namespace Api;
+namespace Api.Models;
 
 public readonly record struct Position(int Column, int Row);
 
