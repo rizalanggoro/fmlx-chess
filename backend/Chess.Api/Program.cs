@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Services.AddSingleton<GameManager>(_ => new GameManager(new Board(), new Player("White", PieceColor.WHITE), new Player("Black", PieceColor.BLACK), TimeSpan.FromMinutes(10)));
+builder.Services.AddSingleton<GameManager>(_ => new GameManager(new Board(), new Player("White", PieceColor.White), new Player("Black", PieceColor.Black), TimeSpan.FromMinutes(10)));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
