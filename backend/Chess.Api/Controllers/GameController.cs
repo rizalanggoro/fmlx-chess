@@ -6,15 +6,8 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class GameController : ControllerBase
+public class GameController(GameManager games) : ControllerBase
 {
-    private readonly GameManager _games;
-
-    public GameController(GameManager games)
-    {
-        _games = games;
-    }
-
     [HttpGet]
     public ActionResult<object> GetState()
     {
@@ -26,7 +19,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            _games.StartGame();
+            games.StartGame();
             return Ok(State());
         }
         catch (Exception ex)
@@ -40,7 +33,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            _games.ResetGame();
+            games.ResetGame();
             return Ok(State());
         }
         catch (Exception ex)
@@ -58,7 +51,7 @@ public class GameController : ControllerBase
             for (var c = 0; c < 8; c++)
                 for (var r = 0; r < 8; r++)
                 {
-                    var p = _games.GameBoard.Tiles[c, r].Piece;
+                    var p = games.GameBoard.Tiles[c, r].Piece;
                     tiles.Add(new { column = c, row = r, color = (PieceColor?)p?.Color, type = (PieceType?)p?.Type });
                 }
             return Ok(tiles);
@@ -75,9 +68,9 @@ public class GameController : ControllerBase
         try
         {
             var from = new Position(column, row);
-            if (!_games.IsInBounds(from))
+            if (!games.IsInBounds(from))
                 return BadRequest(new { message = "Position out of bounds" });
-            return Ok(_games.GetLegalMoves(from));
+            return Ok(games.GetLegalMoves(from));
         }
         catch (Exception ex)
         {
@@ -90,7 +83,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            if (!_games.TryMakeMove(move))
+            if (!games.TryMakeMove(move))
                 return BadRequest(new { message = "Illegal move" });
             return Ok(State());
         }
@@ -105,7 +98,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            return Ok(color.HasValue ? _games.GetMoveHistory(color.Value) : _games.MoveHistory);
+            return Ok(color.HasValue ? games.GetMoveHistory(color.Value) : games.MoveHistory);
         }
         catch (Exception ex)
         {
@@ -118,7 +111,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            _games.Resign(ToPlayer(request));
+            games.Resign(ToPlayer(request));
             return Ok(State());
         }
         catch (Exception ex)
@@ -132,7 +125,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            _games.OfferDraw(ToPlayer(request));
+            games.OfferDraw(ToPlayer(request));
             return Ok(State());
         }
         catch (Exception ex)
@@ -146,7 +139,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            _games.RespondToDrawOffer(ToPlayer(request), request.Accepted);
+            games.RespondToDrawOffer(ToPlayer(request), request.Accepted);
             return Ok(State());
         }
         catch (Exception ex)
@@ -160,7 +153,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            if (!_games.ClaimDrawByThreefoldRepetition(ToPlayer(request)))
+            if (!games.ClaimDrawByThreefoldRepetition(ToPlayer(request)))
                 return BadRequest(new { message = "Threefold repetition claim not available" });
             return Ok(State());
         }
@@ -175,7 +168,7 @@ public class GameController : ControllerBase
     {
         try
         {
-            if (!_games.ClaimDrawByFiftyMoveRule(ToPlayer(request)))
+            if (!games.ClaimDrawByFiftyMoveRule(ToPlayer(request)))
                 return BadRequest(new { message = "Fifty-move claim not available" });
             return Ok(State());
         }
@@ -189,12 +182,12 @@ public class GameController : ControllerBase
     {
         return new
         {
-            state = _games.State,
-            currentPlayer = _games.CurrentPlayer,
-            result = _games.Result,
-            castlingRights = _games.CastlingRights,
-            enPassantTarget = _games.EnPassantTarget,
-            moveCount = _games.MoveHistory.Count
+            state = games.State,
+            currentPlayer = games.CurrentPlayer,
+            result = games.Result,
+            castlingRights = games.CastlingRights,
+            enPassantTarget = games.EnPassantTarget,
+            moveCount = games.MoveHistory.Count
         };
     }
 

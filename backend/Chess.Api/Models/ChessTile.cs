@@ -1,12 +1,7 @@
 namespace Api.Models;
 
-public class ChessTile : IChessTile
+public class ChessTile(Position tilePosition) : IChessTile
 {
     public IChessPiece? Piece { get; set; }
-    public Position TilePosition { get; }
-
-    public ChessTile(Position tilePosition)
-    {
-        TilePosition = tilePosition;
-    }
+    public Position TilePosition { get; } = tilePosition;
 }

@@ -1,18 +1,13 @@
 namespace Api.Models;
 
-public class PlayerTimer : IPlayerTimer
+public class PlayerTimer(TimeSpan initialTime) : IPlayerTimer
 {
-    public TimeSpan RemainingTime { get; private set; }
+    public TimeSpan RemainingTime { get; private set; } = initialTime;
 
     private System.Threading.Timer? _countdownTimer;
 
     public event EventHandler<TimerTickEventArgs> TimerTick = delegate { };
     public event EventHandler TimeExpired = delegate { };
-
-    public PlayerTimer(TimeSpan initialTime)
-    {
-        RemainingTime = initialTime;
-    }
 
     public void StartTimer()
     {
