@@ -1,0 +1,11 @@
+using Api.Models;
+
+namespace Api.DTOs;
+
+public record GameStateDto(
+    GameState State,
+    PlayerDto CurrentPlayer,
+    GameResult? Result,
+    CastlingRights CastlingRights,
+    Position? EnPassantTarget,
+    int MoveCount);

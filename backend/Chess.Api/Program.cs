@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Api.Models;
 using Api.Services;
+using Api.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,12 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAn
 builder.Services.AddSingleton<GameManager>(_ => new GameManager(new Board(), new Player("White", PieceColor.White), new Player("Black", PieceColor.Black), TimeSpan.FromMinutes(10)));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SupportNonNullableReferenceTypes();
+    c.UseAllOfToExtendReferenceSchemas();
+    c.SchemaFilter<RequiredSchemaFilter>();
+});
 
 var app = builder.Build();
 
