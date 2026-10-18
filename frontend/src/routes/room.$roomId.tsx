@@ -1,3 +1,4 @@
+import { Brand, Eyebrow, Shell } from '@/components/room-chrome'
 import { Button } from '@/components/ui/button'
 import {
   getRoomsByRoomIdGameBoardOptions,
@@ -40,10 +41,23 @@ const REASONS: Record<GameEndReason, string> = {
   TimeExpired: 'Waktu habis',
 }
 
+const FILES = 'abcdefgh'
+const colorName = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
+const glyphOf = (color: PieceColor) => (color === 'White' ? '♔' : '♚')
+
 const same = (a: Position | null, b: Position) =>
   a !== null && a.column === b.column && a.row === b.row
 
-const alg = (p: Position) => `${'abcdefgh'[p.column]}${p.row + 1}`
+const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
+
+const inputClass =
+  'h-10 w-full rounded-lg border border-amber-950/20 bg-white/80 px-3 text-sm text-amber-950 outline-none placeholder:text-amber-800/50 focus-visible:border-amber-800/60 focus-visible:ring-[3px] focus-visible:ring-amber-800/20'
+
+const primaryClass =
+  'bg-amber-800 text-amber-50 hover:bg-amber-900 focus-visible:border-amber-900 focus-visible:ring-amber-800/30'
+
+const quietClass =
+  'border-amber-950/20 bg-white/70 text-amber-950 hover:bg-amber-100 hover:text-amber-950'
 
 function Room() {
   const { roomId } = Route.useParams()
@@ -52,6 +66,7 @@ function Room() {
   const [selected, setSelected] = useState<Position | null>(null)
   const [session, setSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
   const [joinName, setJoinName] = useState('')
+  const [copied, setCopied] = useState(false)
 
   const room = useQuery(getRoomsByRoomIdOptions({ path: { roomId } }))
   const state = useQuery(getRoomsByRoomIdGameOptions({ path: { roomId } }))
@@ -81,7 +96,7 @@ function Room() {
   const resignColor = online ? myColor : turn
   const nameOf = (color: PieceColor) =>
     color === 'White' ? room.data?.whiteName : room.data?.blackName
-  const label = (color: PieceColor) => (nameOf(color) ? `${color} (${nameOf(color)})` : color)
+  const label = (color: PieceColor) => (nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color))
 
   // Joining takes whichever seat is still free.
   const takeSeat = () =>
@@ -98,6 +113,15 @@ function Room() {
       },
     )
 
+  const copyCode = () =>
+    navigator.clipboard?.writeText(roomId).then(
+      () => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      },
+      () => {},
+    )
+
   const pieces = new Map((board.data ?? []).map((t) => [`${t.column},${t.row}`, t]))
   const targets = new Set((legal.data ?? []).map((m) => `${m.to.column},${m.to.row}`))
 
@@ -105,6 +129,15 @@ function Room() {
   const flip = myColor === 'Black'
   const rows = flip ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
   const cols = flip ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
+
+  const moves = history.data ?? []
+  const rounds = moves.reduce<(typeof moves)[]>((acc, move, i) => {
+    if (i % 2 === 0) acc.push([move])
+    else acc[acc.length - 1].push(move)
+    return acc
+  }, [])
+  const fmtMove = (h: (typeof moves)[number]) =>
+    `${alg(h.move.from)}→${alg(h.move.to)}${h.move.promotionType ? `=${h.move.promotionType[0]}` : ''}`
 
   const click = (sq: Position) => {
     if (state.data?.state !== 'InProgress' || makeMove.isPending || !myTurn) return
@@ -126,176 +159,304 @@ function Room() {
     }
   }
 
+  const toLobby = () => void navigate({ to: '/' })
+
   if (room.isError) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
-        <p className="text-lg font-semibold">Room tidak ditemukan</p>
-        <Button onClick={() => void navigate({ to: '/' })}>Kembali ke Lobby</Button>
-      </div>
+      <Shell>
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
+          <Brand />
+          <section className="w-full rounded-2xl border border-amber-950/10 bg-white/70 p-6 text-center shadow-sm">
+            <Eyebrow>Room</Eyebrow>
+            <h2 className="mt-2 font-heading text-2xl text-amber-950">Room tidak ditemukan</h2>
+            <p className="mt-2 text-sm text-amber-900/80">
+              Cek lagi kodenya, atau buat room baru dari lobby.
+            </p>
+            <Button className={`mt-5 w-full ${primaryClass}`} onClick={toLobby}>
+              Kembali ke Lobby
+            </Button>
+          </section>
+        </div>
+      </Shell>
     )
   }
 
   if (!room.data) {
-    return <div className="flex min-h-svh items-center justify-center p-4">Memuat…</div>
+    return (
+      <Shell>
+        <p className="text-center text-amber-900/80">Memuat…</p>
+      </Shell>
+    )
   }
 
   if (online && !session && !(room.data.whiteJoined && room.data.blackJoined)) {
-    const seat = room.data.whiteJoined ? 'Black' : 'White'
+    const seat: PieceColor = room.data.whiteJoined ? 'Black' : 'White'
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
-        <p className="text-lg font-semibold">Gabung ke room {roomId}</p>
-        <p className="text-sm text-muted-foreground">
-          Kamu akan main sebagai <span className="font-semibold text-foreground">{seat}</span>
-        </p>
-        <input
-          value={joinName}
-          onChange={(e) => setJoinName(e.target.value.slice(0, 24))}
-          placeholder="Nama kamu (opsional)"
-          aria-label="Nama kamu"
-          autoComplete="off"
-          className="h-9 w-64 rounded-lg border bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-        <div className="flex gap-2">
-          <Button disabled={join.isPending} onClick={takeSeat}>
-            {join.isPending ? 'Menghubungkan…' : 'Gabung'}
-          </Button>
-          <Button variant="outline" onClick={() => void navigate({ to: '/' })}>
-            Lobby
-          </Button>
+      <Shell>
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
+          <Brand />
+          <section className="w-full rounded-2xl border border-amber-950/10 bg-white/70 p-6 shadow-sm">
+            <Eyebrow>Online</Eyebrow>
+            <h2 className="mt-2 font-heading text-2xl text-amber-950">Gabung ke room</h2>
+            <p className="mt-1 font-mono text-lg font-semibold tracking-[0.2em] text-amber-950">
+              {roomId}
+            </p>
+            <p className="mt-3 text-sm text-amber-900/80">
+              Kamu akan main sebagai{' '}
+              <span className="font-semibold text-amber-950">{colorName(seat)}</span>{' '}
+              <span aria-hidden className="font-heading text-base">
+                {glyphOf(seat)}
+              </span>
+            </p>
+            <input
+              value={joinName}
+              onChange={(e) => setJoinName(e.target.value.slice(0, 24))}
+              placeholder="Nama kamu (opsional)"
+              aria-label="Nama kamu"
+              autoComplete="off"
+              className={`mt-4 ${inputClass}`}
+            />
+            <div className="mt-4 flex gap-2">
+              <Button
+                className={`flex-1 ${primaryClass}`}
+                disabled={join.isPending}
+                onClick={takeSeat}
+              >
+                {join.isPending ? 'Menghubungkan…' : 'Gabung'}
+              </Button>
+              <Button variant="outline" className={quietClass} onClick={toLobby}>
+                Lobby
+              </Button>
+            </div>
+          </section>
         </div>
-      </div>
+      </Shell>
     )
   }
 
   if (waiting) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
-        <p className="text-lg font-semibold">Menunggu lawan bergabung…</p>
-        <p className="text-sm text-muted-foreground">Bagikan kode room ini ke lawan:</p>
-        <p className="font-mono text-4xl font-bold tracking-[0.3em]">{roomId}</p>
-        {myColor && (
-          <p className="text-sm text-muted-foreground">
-            Kamu main sebagai{' '}
-            <span className="font-semibold text-foreground">{label(myColor)}</span>
-          </p>
-        )}
-        <Button variant="outline" onClick={() => void navigate({ to: '/' })}>
-          Lobby
-        </Button>
-      </div>
+      <Shell>
+        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
+          <Brand />
+          <section className="w-full rounded-2xl border border-amber-950/10 bg-white/70 p-6 text-center shadow-sm">
+            <Eyebrow>Online</Eyebrow>
+            <h2 className="mt-2 font-heading text-2xl text-amber-950">
+              Menunggu lawan bergabung…
+            </h2>
+            <p className="mt-2 text-sm text-amber-900/80">Bagikan kode room ini ke lawan.</p>
+            <p className="mt-4 font-mono text-3xl font-bold tracking-[0.25em] text-amber-950">
+              {roomId}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <Button className={primaryClass} onClick={copyCode}>
+                {copied ? 'Tersalin ✓' : 'Salin kode'}
+              </Button>
+              <Button variant="outline" className={quietClass} onClick={toLobby}>
+                Lobby
+              </Button>
+            </div>
+            {myColor && (
+              <p className="mt-4 text-sm text-amber-900/80">
+                Kamu main sebagai{' '}
+                <span className="font-semibold text-amber-950">{label(myColor)}</span>
+              </p>
+            )}
+          </section>
+        </div>
+      </Shell>
     )
   }
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-5xl flex-col items-center gap-4 p-4 md:flex-row md:items-start">
-      <div className="grid w-full max-w-xl flex-1 grid-cols-8 overflow-hidden rounded-lg border">
-        {rows.map((row) =>
-          cols.map((column) => {
-            const sq = { column, row }
-            const key = `${column},${row}`
-            const piece = pieces.get(key)
-            const dark = (column + row) % 2 === 1
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => click(sq)}
-                className={`relative flex aspect-square items-center justify-center text-4xl ${
-                  dark ? 'bg-amber-700' : 'bg-amber-100'
-                } ${same(selected, sq) ? 'ring-4 ring-inset ring-sky-500' : ''}`}
-              >
-                {piece?.color && piece.type && (
-                  <span
-                    className={
-                      piece.color === 'White'
-                        ? 'text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.9)]'
-                        : 'text-neutral-900'
-                    }
-                  >
-                    {GLYPHS[piece.type][piece.color]}
-                  </span>
-                )}
-                {targets.has(key) && !piece?.type && (
-                  <span className="absolute h-3 w-3 rounded-full bg-sky-500/70" />
-                )}
-                {targets.has(key) && piece?.type && (
-                  <span className="absolute inset-0 rounded-full ring-4 ring-inset ring-sky-500/70" />
-                )}
-              </button>
-            )
-          }),
-        )}
-      </div>
+    <Shell>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <Brand />
+      </header>
 
-      <div className="flex w-full flex-col gap-4 md:w-72">
-        <div className="rounded-lg border p-4">
-          {online && (
-            <p className="mb-1 text-sm text-muted-foreground">
-              Kamu:{' '}
-              <span className="font-semibold text-foreground">
-                {myColor ? label(myColor) : 'Penonton'}
-              </span>{' '}
-              · Kode room: <span className="font-mono font-semibold text-foreground">{roomId}</span>
-            </p>
-          )}
-          {state.data &&
-            (over && state.data.result ? (
-              <p className="font-semibold">
+      <main className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <section className="mx-auto w-full max-w-2xl rounded-2xl border border-amber-950/20 bg-amber-900 p-3 shadow-sm sm:p-4">
+          <div className="@container grid grid-cols-8 overflow-hidden rounded-[3px] border border-amber-950/40">
+            {rows.map((row) =>
+              cols.map((column) => {
+                const sq = { column, row }
+                const key = `${column},${row}`
+                const piece = pieces.get(key)
+                const dark = (column + row) % 2 === 1
+                const coord = dark ? 'text-amber-100/60' : 'text-amber-900/50'
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => click(sq)}
+                    aria-label={`${alg(sq)}${piece?.type ? ` ${piece.type}` : ''}`}
+                    className={`relative flex aspect-square items-center justify-center ${
+                      dark ? 'bg-amber-700' : 'bg-amber-100'
+                    } ${same(selected, sq) ? 'ring-4 ring-inset ring-sky-500' : ''}`}
+                  >
+                    {column === cols[0] && (
+                      <span
+                        className={`absolute top-0.5 left-0.5 text-[10px] font-semibold ${coord}`}
+                      >
+                        {row + 1}
+                      </span>
+                    )}
+                    {row === rows[7] && (
+                      <span
+                        className={`absolute right-0.5 bottom-0.5 text-[10px] font-semibold ${coord}`}
+                      >
+                        {FILES[column]}
+                      </span>
+                    )}
+                    {piece?.color && piece.type && (
+                      <span
+                        className={`text-[8.5cqw] leading-none ${
+                          piece.color === 'White'
+                            ? 'text-amber-50 drop-shadow-[0_1px_1px_rgba(80,50,10,0.9)]'
+                            : 'text-amber-950'
+                        }`}
+                      >
+                        {GLYPHS[piece.type][piece.color]}
+                      </span>
+                    )}
+                    {targets.has(key) && !piece?.type && (
+                      <span className="absolute h-3 w-3 rounded-full bg-sky-500/70" />
+                    )}
+                    {targets.has(key) && piece?.type && (
+                      <span className="absolute inset-0 rounded-full ring-4 ring-inset ring-sky-500/70" />
+                    )}
+                  </button>
+                )
+              }),
+            )}
+          </div>
+        </section>
+
+        <aside className="flex flex-col gap-4">
+          <section className="rounded-2xl border border-amber-950/10 bg-white/70 p-5 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <Eyebrow>{online ? 'Online' : 'Hotseat'}</Eyebrow>
+              {online && (
+                <p className="font-mono text-sm font-semibold tracking-[0.2em] text-amber-950">
+                  {roomId}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {(['White', 'Black'] as const).map((color) => {
+                const active = !over && turn === color
+                return (
+                  <div
+                    key={color}
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${
+                      active ? 'border-amber-800/30 bg-amber-100' : 'border-transparent'
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className="font-heading text-2xl leading-none text-amber-950"
+                    >
+                      {glyphOf(color)}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-amber-950">
+                        {nameOf(color) ?? colorName(color)}
+                      </p>
+                      <p className="text-xs text-amber-800/70">
+                        {colorName(color)}
+                        {myColor === color && ' · kamu'}
+                      </p>
+                    </div>
+                    {active && (
+                      <span className="rounded-full bg-amber-800 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-50 uppercase">
+                        Giliran
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {over && state.data?.result && (
+              <p className="mt-4 rounded-xl bg-amber-900 px-3 py-2 text-sm font-semibold text-amber-50">
                 {state.data.result.winner
                   ? `${label(state.data.result.winner)} menang — ${REASONS[state.data.result.reason]}`
-                  : REASONS[state.data.result.reason]}
+                  : `Seri — ${REASONS[state.data.result.reason]}`}
               </p>
+            )}
+
+            <p className="mt-3 text-xs text-amber-800/70">
+              Langkah: {state.data?.moveCount ?? 0}
+              {online && !myColor && ' · kamu penonton'}
+            </p>
+          </section>
+
+          <div className="flex flex-wrap gap-2">
+            {canAct && (
+              <Button
+                disabled={start.isPending}
+                className={primaryClass}
+                onClick={() => start.mutate({ path: { roomId } })}
+              >
+                Game baru
+              </Button>
+            )}
+            <Button variant="outline" className={quietClass} onClick={toLobby}>
+              Lobby
+            </Button>
+            {!over && canAct && resignColor && (
+              <Button
+                variant="destructive"
+                disabled={resign.isPending}
+                onClick={() =>
+                  resign.mutate({
+                    path: { roomId },
+                    body: { color: resignColor },
+                    query: token ? { token } : undefined,
+                  })
+                }
+              >
+                {colorName(resignColor)} menyerah
+              </Button>
+            )}
+          </div>
+
+          <section className="rounded-2xl border border-amber-950/10 bg-white/70 p-5 shadow-sm">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-heading text-xl text-amber-950">Riwayat</h2>
+              <p className="text-xs text-amber-800/70">{moves.length} langkah</p>
+            </div>
+
+            {moves.length === 0 ? (
+              <p className="mt-3 text-sm text-amber-800/70">Belum ada langkah.</p>
             ) : (
-              <p>
-                Giliran: <span className="font-semibold">{turn ? label(turn) : null}</span>
-              </p>
-            ))}
-          <p className="text-sm text-muted-foreground">Langkah: {state.data?.moveCount ?? 0}</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {canAct && (
-            <Button
-              size="sm"
-              disabled={start.isPending}
-              onClick={() => start.mutate({ path: { roomId } })}
-            >
-              Game baru
-            </Button>
-          )}
-          <Button size="sm" variant="outline" onClick={() => void navigate({ to: '/' })}>
-            Lobby
-          </Button>
-          {!over && canAct && resignColor && (
-            <Button
-              size="sm"
-              variant="destructive"
-              disabled={resign.isPending}
-              onClick={() =>
-                resign.mutate({
-                  path: { roomId },
-                  body: { color: resignColor },
-                  query: token ? { token } : undefined,
-                })
-              }
-            >
-              {resignColor} menyerah
-            </Button>
-          )}
-        </div>
-
-        <div className="rounded-lg border p-4">
-          <p className="mb-2 font-semibold">Riwayat</p>
-          <ol className="max-h-64 space-y-1 overflow-y-auto text-sm">
-            {(history.data ?? []).map((h, i) => (
-              <li key={i}>
-                {i + 1}. {h.playedBy[0]} {alg(h.move.from)}→{alg(h.move.to)}
-                {h.move.promotionType ? `=${h.move.promotionType[0]}` : ''}
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div>
-    </div>
+              <>
+                <div className="mt-3 grid grid-cols-[1.75rem_1fr_1fr] gap-2 border-b border-amber-950/10 pb-1 text-xs text-amber-800/70">
+                  <span />
+                  <span>Putih</span>
+                  <span>Hitam</span>
+                </div>
+                <ol className="mt-1 flex max-h-72 flex-col overflow-y-auto font-mono text-sm text-amber-950">
+                  {rounds.map((round, i) => (
+                    <li
+                      key={i}
+                      className={`grid grid-cols-[1.75rem_1fr_1fr] gap-2 rounded-md px-1 py-0.5 ${
+                        i % 2 === 1 ? 'bg-amber-950/[0.04]' : ''
+                      }`}
+                    >
+                      <span className="text-amber-800/60">{i + 1}.</span>
+                      {round.map((h, j) => (
+                        <span key={j}>{fmtMove(h)}</span>
+                      ))}
+                    </li>
+                  ))}
+                </ol>
+              </>
+            )}
+          </section>
+        </aside>
+      </main>
+    </Shell>
   )
 }
