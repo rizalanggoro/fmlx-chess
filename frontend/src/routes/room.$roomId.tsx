@@ -101,6 +101,11 @@ function Room() {
   const pieces = new Map((board.data ?? []).map((t) => [`${t.column},${t.row}`, t]))
   const targets = new Set((legal.data ?? []).map((m) => `${m.to.column},${m.to.row}`))
 
+  // Black sees the board from Black's side.
+  const flip = myColor === 'Black'
+  const rows = flip ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
+  const cols = flip ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
+
   const click = (sq: Position) => {
     if (state.data?.state !== 'InProgress' || makeMove.isPending || !myTurn) return
     const key = `${sq.column},${sq.row}`
@@ -184,8 +189,8 @@ function Room() {
   return (
     <div className="mx-auto flex min-h-svh max-w-5xl flex-col items-center gap-4 p-4 md:flex-row md:items-start">
       <div className="grid w-full max-w-xl flex-1 grid-cols-8 overflow-hidden rounded-lg border">
-        {[7, 6, 5, 4, 3, 2, 1, 0].map((row) =>
-          [0, 1, 2, 3, 4, 5, 6, 7].map((column) => {
+        {rows.map((row) =>
+          cols.map((column) => {
             const sq = { column, row }
             const key = `${column},${row}`
             const piece = pieces.get(key)
