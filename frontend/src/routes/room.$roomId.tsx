@@ -1,20 +1,22 @@
 import { Button } from '@/components/ui/button'
 import {
-  getGameBoardOptions,
-  getGameHistoryOptions,
-  getGameLegalMovesOptions,
-  getGameOptions,
-  postGameMovesMutation,
-  postGameResetMutation,
-  postGameResignMutation,
-  postGameStartMutation,
+  getRoomsByRoomIdGameBoardOptions,
+  getRoomsByRoomIdGameHistoryOptions,
+  getRoomsByRoomIdGameLegalMovesOptions,
+  getRoomsByRoomIdGameOptions,
+  getRoomsByRoomIdOptions,
+  postRoomsByRoomIdGameMovesMutation,
+  postRoomsByRoomIdGameResignMutation,
+  postRoomsByRoomIdGameStartMutation,
+  postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
 import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
+import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/roomSession'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
-export const Route = createFileRoute('/game')({ component: Game })
+export const Route = createFileRoute('/room/$roomId')({ component: Room })
 
 const GLYPHS: Record<PieceType, Record<PieceColor, string>> = {
   King: { White: '♔', Black: '♚' },
@@ -43,41 +45,72 @@ const same = (a: Position | null, b: Position) =>
 
 const alg = (p: Position) => `${'abcdefgh'[p.column]}${p.row + 1}`
 
-function Game() {
+function Room() {
+  const { roomId } = Route.useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [selected, setSelected] = useState<Position | null>(null)
-  const state = useQuery(getGameOptions())
-  const board = useQuery(getGameBoardOptions())
-  const history = useQuery(getGameHistoryOptions())
+  const [session, setSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
+
+  const room = useQuery(getRoomsByRoomIdOptions({ path: { roomId } }))
+  const state = useQuery(getRoomsByRoomIdGameOptions({ path: { roomId } }))
+  const board = useQuery(getRoomsByRoomIdGameBoardOptions({ path: { roomId } }))
+  const history = useQuery(getRoomsByRoomIdGameHistoryOptions({ path: { roomId } }))
   const legal = useQuery({
-    ...getGameLegalMovesOptions({ query: { column: selected?.column, row: selected?.row } }),
+    ...getRoomsByRoomIdGameLegalMovesOptions({
+      path: { roomId },
+      query: { column: selected?.column, row: selected?.row },
+    }),
     enabled: selected !== null,
   })
-  const makeMove = useMutation(postGameMovesMutation())
-  const start = useMutation(postGameStartMutation())
-  const reset = useMutation(postGameResetMutation())
-  const resign = useMutation(postGameResignMutation())
-  const started = useRef(false)
 
-  // Direct open /game without starting first → auto-start once.
+  const makeMove = useMutation(postRoomsByRoomIdGameMovesMutation())
+  const start = useMutation(postRoomsByRoomIdGameStartMutation())
+  const resign = useMutation(postRoomsByRoomIdGameResignMutation())
+  const join = useMutation(postRoomsByRoomIdJoinMutation())
+  const autoJoined = useRef(false)
+
+  const online = room.data?.mode === 'Online'
+  const waiting = online && !(room.data?.whiteJoined && room.data?.blackJoined)
+  const myColor = session?.color
+  const token = session?.token
+  const turn = state.data?.currentPlayer.color
+  const over = state.data?.state === 'Completed'
+  const myTurn = !online || turn === myColor
+  const canAct = !online || myColor !== undefined
+  const resignColor = online ? myColor : turn
+
+  // Opening an online room link takes the free seat (Black).
   useEffect(() => {
-    if (state.data?.state === 'NotStarted' && !started.current && !start.isPending) {
-      started.current = true
-      start.mutate({})
-    }
-  }, [state.data?.state, start])
+    if (!online || session || !room.data || room.data.blackJoined || autoJoined.current || join.isPending)
+      return
+    autoJoined.current = true
+    join.mutate(
+      { path: { roomId } },
+      {
+        onSuccess: (res) => {
+          if (!res.token || !res.color) return
+          const s: RoomSession = { token: res.token, color: res.color }
+          saveRoomSession(roomId, s)
+          setSession(s)
+        },
+        onError: () => void qc.invalidateQueries(),
+      },
+    )
+  }, [online, session, room.data, roomId, join, qc])
 
   const pieces = new Map((board.data ?? []).map((t) => [`${t.column},${t.row}`, t]))
   const targets = new Set((legal.data ?? []).map((m) => `${m.to.column},${m.to.row}`))
-  const turn = state.data?.currentPlayer.color
-  const over = state.data?.state === 'Completed'
 
   const click = (sq: Position) => {
-    if (state.data?.state !== 'InProgress' || makeMove.isPending) return
+    if (state.data?.state !== 'InProgress' || makeMove.isPending || !myTurn) return
     const key = `${sq.column},${sq.row}`
     if (selected && targets.has(key)) {
-      makeMove.mutate({ body: { from: selected, to: sq, promotionType: null } })
+      makeMove.mutate({
+        path: { roomId },
+        body: { from: selected, to: sq, promotionType: null },
+        query: token ? { token } : undefined,
+      })
       setSelected(null)
       return
     }
@@ -89,10 +122,30 @@ function Game() {
     }
   }
 
-  const leave = async () => {
-    await reset.mutateAsync({})
-    await qc.invalidateQueries()
-    await navigate({ to: '/' })
+  if (room.isError) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
+        <p className="text-lg font-semibold">Room tidak ditemukan</p>
+        <Button onClick={() => void navigate({ to: '/' })}>Kembali ke Lobby</Button>
+      </div>
+    )
+  }
+
+  if (!room.data) {
+    return <div className="flex min-h-svh items-center justify-center p-4">Memuat…</div>
+  }
+
+  if (waiting) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
+        <p className="text-lg font-semibold">Menunggu lawan bergabung…</p>
+        <p className="text-sm text-muted-foreground">Bagikan kode room ini ke lawan:</p>
+        <p className="font-mono text-4xl font-bold tracking-[0.3em]">{roomId}</p>
+        <Button variant="outline" onClick={() => void navigate({ to: '/' })}>
+          Lobby
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -138,6 +191,12 @@ function Game() {
 
       <div className="flex w-full flex-col gap-4 md:w-72">
         <div className="rounded-lg border p-4">
+          {online && (
+            <p className="mb-1 text-sm text-muted-foreground">
+              Kamu: <span className="font-semibold text-foreground">{myColor ?? 'Penonton'}</span> ·
+              Kode room: <span className="font-mono font-semibold text-foreground">{roomId}</span>
+            </p>
+          )}
           {state.data &&
             (over && state.data.result ? (
               <p className="font-semibold">
@@ -154,20 +213,32 @@ function Game() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={start.isPending} onClick={() => start.mutate({})}>
-            Game baru
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => void leave()}>
+          {canAct && (
+            <Button
+              size="sm"
+              disabled={start.isPending}
+              onClick={() => start.mutate({ path: { roomId } })}
+            >
+              Game baru
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => void navigate({ to: '/' })}>
             Lobby
           </Button>
-          {!over && turn && (
+          {!over && canAct && resignColor && (
             <Button
               size="sm"
               variant="destructive"
               disabled={resign.isPending}
-              onClick={() => resign.mutate({ body: { color: turn } })}
+              onClick={() =>
+                resign.mutate({
+                  path: { roomId },
+                  body: { color: resignColor },
+                  query: token ? { token } : undefined,
+                })
+              }
             >
-              {turn} menyerah
+              {resignColor} menyerah
             </Button>
           )}
         </div>

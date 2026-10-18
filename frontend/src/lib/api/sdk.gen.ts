@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetGameBoardData, GetGameBoardResponses, GetGameData, GetGameHistoryData, GetGameHistoryResponses, GetGameLegalMovesData, GetGameLegalMovesResponses, GetGameResponses, PostGameDrawClaimFiftyData, PostGameDrawClaimFiftyResponses, PostGameDrawClaimThreefoldData, PostGameDrawClaimThreefoldResponses, PostGameDrawOfferData, PostGameDrawOfferResponses, PostGameDrawRespondData, PostGameDrawRespondResponses, PostGameMovesData, PostGameMovesResponses, PostGameResetData, PostGameResetResponses, PostGameResignData, PostGameResignResponses, PostGameStartData, PostGameStartResponses } from './types.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,18 +18,74 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
-export const getGame = <ThrowOnError extends boolean = false>(options?: Options<GetGameData, ThrowOnError>): RequestResult<GetGameResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetGameResponses, unknown, ThrowOnError>({ url: '/Game', ...options });
+export const getRoomsByRoomIdGame = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game', ...options });
 
-export const postGameStart = <ThrowOnError extends boolean = false>(options?: Options<PostGameStartData, ThrowOnError>): RequestResult<PostGameStartResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameStartResponses, unknown, ThrowOnError>({ url: '/Game/start', ...options });
+export const postRoomsByRoomIdGameStart = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameStartData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameStartResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameStartResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/start', ...options });
 
-export const postGameReset = <ThrowOnError extends boolean = false>(options?: Options<PostGameResetData, ThrowOnError>): RequestResult<PostGameResetResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameResetResponses, unknown, ThrowOnError>({ url: '/Game/reset', ...options });
+export const postRoomsByRoomIdGameReset = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameResetData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameResetResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameResetResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/reset', ...options });
 
-export const getGameBoard = <ThrowOnError extends boolean = false>(options?: Options<GetGameBoardData, ThrowOnError>): RequestResult<GetGameBoardResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetGameBoardResponses, unknown, ThrowOnError>({ url: '/Game/board', ...options });
+export const getRoomsByRoomIdGameBoard = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameBoardData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/board', ...options });
 
-export const getGameLegalMoves = <ThrowOnError extends boolean = false>(options?: Options<GetGameLegalMovesData, ThrowOnError>): RequestResult<GetGameLegalMovesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetGameLegalMovesResponses, unknown, ThrowOnError>({ url: '/Game/legal-moves', ...options });
+export const getRoomsByRoomIdGameLegalMoves = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameLegalMovesData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameLegalMovesResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameLegalMovesResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/legal-moves', ...options });
 
-export const postGameMoves = <ThrowOnError extends boolean = false>(options?: Options<PostGameMovesData, ThrowOnError>): RequestResult<PostGameMovesResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameMovesResponses, unknown, ThrowOnError>({
-    url: '/Game/moves',
+export const postRoomsByRoomIdGameMoves = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameMovesData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameMovesResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameMovesResponses, unknown, ThrowOnError>({
+    url: '/rooms/{roomId}/game/moves',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const getRoomsByRoomIdGameHistory = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameHistoryData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameHistoryResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameHistoryResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/history', ...options });
+
+export const postRoomsByRoomIdGameResign = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameResignData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameResignResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameResignResponses, unknown, ThrowOnError>({
+    url: '/rooms/{roomId}/game/resign',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const postRoomsByRoomIdGameDrawOffer = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameDrawOfferData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameDrawOfferResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameDrawOfferResponses, unknown, ThrowOnError>({
+    url: '/rooms/{roomId}/game/draw/offer',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const postRoomsByRoomIdGameDrawRespond = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameDrawRespondData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameDrawRespondResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameDrawRespondResponses, unknown, ThrowOnError>({
+    url: '/rooms/{roomId}/game/draw/respond',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const postRoomsByRoomIdGameDrawClaimThreefold = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameDrawClaimThreefoldData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameDrawClaimThreefoldResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameDrawClaimThreefoldResponses, unknown, ThrowOnError>({
+    url: '/rooms/{roomId}/game/draw/claim-threefold',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const postRoomsByRoomIdGameDrawClaimFifty = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameDrawClaimFiftyData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameDrawClaimFiftyResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameDrawClaimFiftyResponses, unknown, ThrowOnError>({
+    url: '/rooms/{roomId}/game/draw/claim-fifty',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const postRooms = <ThrowOnError extends boolean = false>(options?: Options<PostRoomsData, ThrowOnError>): RequestResult<PostRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostRoomsResponses, unknown, ThrowOnError>({
+    url: '/rooms',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -37,49 +93,6 @@ export const postGameMoves = <ThrowOnError extends boolean = false>(options?: Op
     }
 });
 
-export const getGameHistory = <ThrowOnError extends boolean = false>(options?: Options<GetGameHistoryData, ThrowOnError>): RequestResult<GetGameHistoryResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetGameHistoryResponses, unknown, ThrowOnError>({ url: '/Game/history', ...options });
+export const postRoomsByRoomIdJoin = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdJoinData, ThrowOnError>): RequestResult<PostRoomsByRoomIdJoinResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdJoinResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/join', ...options });
 
-export const postGameResign = <ThrowOnError extends boolean = false>(options?: Options<PostGameResignData, ThrowOnError>): RequestResult<PostGameResignResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameResignResponses, unknown, ThrowOnError>({
-    url: '/Game/resign',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
-
-export const postGameDrawOffer = <ThrowOnError extends boolean = false>(options?: Options<PostGameDrawOfferData, ThrowOnError>): RequestResult<PostGameDrawOfferResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameDrawOfferResponses, unknown, ThrowOnError>({
-    url: '/Game/draw/offer',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
-
-export const postGameDrawRespond = <ThrowOnError extends boolean = false>(options?: Options<PostGameDrawRespondData, ThrowOnError>): RequestResult<PostGameDrawRespondResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameDrawRespondResponses, unknown, ThrowOnError>({
-    url: '/Game/draw/respond',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
-
-export const postGameDrawClaimThreefold = <ThrowOnError extends boolean = false>(options?: Options<PostGameDrawClaimThreefoldData, ThrowOnError>): RequestResult<PostGameDrawClaimThreefoldResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameDrawClaimThreefoldResponses, unknown, ThrowOnError>({
-    url: '/Game/draw/claim-threefold',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
-
-export const postGameDrawClaimFifty = <ThrowOnError extends boolean = false>(options?: Options<PostGameDrawClaimFiftyData, ThrowOnError>): RequestResult<PostGameDrawClaimFiftyResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostGameDrawClaimFiftyResponses, unknown, ThrowOnError>({
-    url: '/Game/draw/claim-fifty',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
+export const getRoomsByRoomId = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdData, ThrowOnError>): RequestResult<GetRoomsByRoomIdResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}', ...options });

@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Api.Models;
+using Api.Hubs;
 using Api.Services;
 using Api.Swagger;
 
@@ -9,7 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers().AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
-builder.Services.AddSingleton<GameManager>(_ => new GameManager(new Board(), new Player("White", PieceColor.White), new Player("Black", PieceColor.Black), TimeSpan.FromMinutes(10)));
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<RoomRegistry>();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -35,5 +36,6 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<GameHub>("/hubs/game");
 
 app.Run();

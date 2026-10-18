@@ -11,6 +11,10 @@ export type CastlingRights = {
     blackQueenSide: boolean;
 };
 
+export type CreateRoomRequest = {
+    mode: RoomMode;
+};
+
 export type GameEndReason = 'Checkmate' | 'DrawByStalemate' | 'DrawByAgreement' | 'DrawBy50MoveRule' | 'DrawBy75MoveRule' | 'DrawByDeadPosition' | 'DrawByThreefoldRepetition' | 'DrawByFivefoldRepetition' | 'PlayerResigned' | 'TimeExpired';
 
 export type GameResult = {
@@ -60,6 +64,22 @@ export type Position = {
     row: number;
 };
 
+export type RoomMode = 'Hotseat' | 'Online';
+
+export type RoomSessionDto = {
+    id: string;
+    mode: RoomMode;
+    color?: PieceColor | null;
+    token?: string | null;
+};
+
+export type RoomStatusDto = {
+    id: string;
+    mode: RoomMode;
+    whiteJoined: boolean;
+    blackJoined: boolean;
+};
+
 export type TileDto = {
     column: number;
     row: number;
@@ -67,199 +87,287 @@ export type TileDto = {
     type?: PieceType | null;
 };
 
-export type GetGameData = {
+export type GetRoomsByRoomIdGameData = {
     body?: never;
-    path?: never;
+    path: {
+        roomId: string;
+    };
     query?: never;
-    url: '/Game';
+    url: '/rooms/{roomId}/game';
 };
 
-export type GetGameResponses = {
+export type GetRoomsByRoomIdGameResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type GetGameResponse = GetGameResponses[keyof GetGameResponses];
+export type GetRoomsByRoomIdGameResponse = GetRoomsByRoomIdGameResponses[keyof GetRoomsByRoomIdGameResponses];
 
-export type PostGameStartData = {
+export type PostRoomsByRoomIdGameStartData = {
     body?: never;
-    path?: never;
+    path: {
+        roomId: string;
+    };
     query?: never;
-    url: '/Game/start';
+    url: '/rooms/{roomId}/game/start';
 };
 
-export type PostGameStartResponses = {
+export type PostRoomsByRoomIdGameStartResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameStartResponse = PostGameStartResponses[keyof PostGameStartResponses];
+export type PostRoomsByRoomIdGameStartResponse = PostRoomsByRoomIdGameStartResponses[keyof PostRoomsByRoomIdGameStartResponses];
 
-export type PostGameResetData = {
+export type PostRoomsByRoomIdGameResetData = {
     body?: never;
-    path?: never;
+    path: {
+        roomId: string;
+    };
     query?: never;
-    url: '/Game/reset';
+    url: '/rooms/{roomId}/game/reset';
 };
 
-export type PostGameResetResponses = {
+export type PostRoomsByRoomIdGameResetResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameResetResponse = PostGameResetResponses[keyof PostGameResetResponses];
+export type PostRoomsByRoomIdGameResetResponse = PostRoomsByRoomIdGameResetResponses[keyof PostRoomsByRoomIdGameResetResponses];
 
-export type GetGameBoardData = {
+export type GetRoomsByRoomIdGameBoardData = {
     body?: never;
-    path?: never;
+    path: {
+        roomId: string;
+    };
     query?: never;
-    url: '/Game/board';
+    url: '/rooms/{roomId}/game/board';
 };
 
-export type GetGameBoardResponses = {
+export type GetRoomsByRoomIdGameBoardResponses = {
     /**
      * OK
      */
     200: Array<TileDto>;
 };
 
-export type GetGameBoardResponse = GetGameBoardResponses[keyof GetGameBoardResponses];
+export type GetRoomsByRoomIdGameBoardResponse = GetRoomsByRoomIdGameBoardResponses[keyof GetRoomsByRoomIdGameBoardResponses];
 
-export type GetGameLegalMovesData = {
+export type GetRoomsByRoomIdGameLegalMovesData = {
     body?: never;
-    path?: never;
+    path: {
+        roomId: string;
+    };
     query?: {
         column?: number;
         row?: number;
     };
-    url: '/Game/legal-moves';
+    url: '/rooms/{roomId}/game/legal-moves';
 };
 
-export type GetGameLegalMovesResponses = {
+export type GetRoomsByRoomIdGameLegalMovesResponses = {
     /**
      * OK
      */
     200: Array<Move>;
 };
 
-export type GetGameLegalMovesResponse = GetGameLegalMovesResponses[keyof GetGameLegalMovesResponses];
+export type GetRoomsByRoomIdGameLegalMovesResponse = GetRoomsByRoomIdGameLegalMovesResponses[keyof GetRoomsByRoomIdGameLegalMovesResponses];
 
-export type PostGameMovesData = {
+export type PostRoomsByRoomIdGameMovesData = {
     body?: Move;
-    path?: never;
-    query?: never;
-    url: '/Game/moves';
+    path: {
+        roomId: string;
+    };
+    query?: {
+        token?: string;
+    };
+    url: '/rooms/{roomId}/game/moves';
 };
 
-export type PostGameMovesResponses = {
+export type PostRoomsByRoomIdGameMovesResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameMovesResponse = PostGameMovesResponses[keyof PostGameMovesResponses];
+export type PostRoomsByRoomIdGameMovesResponse = PostRoomsByRoomIdGameMovesResponses[keyof PostRoomsByRoomIdGameMovesResponses];
 
-export type GetGameHistoryData = {
+export type GetRoomsByRoomIdGameHistoryData = {
     body?: never;
-    path?: never;
+    path: {
+        roomId: string;
+    };
     query?: {
         color?: PieceColor;
     };
-    url: '/Game/history';
+    url: '/rooms/{roomId}/game/history';
 };
 
-export type GetGameHistoryResponses = {
+export type GetRoomsByRoomIdGameHistoryResponses = {
     /**
      * OK
      */
     200: Array<MoveHistoryEntry>;
 };
 
-export type GetGameHistoryResponse = GetGameHistoryResponses[keyof GetGameHistoryResponses];
+export type GetRoomsByRoomIdGameHistoryResponse = GetRoomsByRoomIdGameHistoryResponses[keyof GetRoomsByRoomIdGameHistoryResponses];
 
-export type PostGameResignData = {
+export type PostRoomsByRoomIdGameResignData = {
     body?: PlayerActionRequest;
-    path?: never;
-    query?: never;
-    url: '/Game/resign';
+    path: {
+        roomId: string;
+    };
+    query?: {
+        token?: string;
+    };
+    url: '/rooms/{roomId}/game/resign';
 };
 
-export type PostGameResignResponses = {
+export type PostRoomsByRoomIdGameResignResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameResignResponse = PostGameResignResponses[keyof PostGameResignResponses];
+export type PostRoomsByRoomIdGameResignResponse = PostRoomsByRoomIdGameResignResponses[keyof PostRoomsByRoomIdGameResignResponses];
 
-export type PostGameDrawOfferData = {
+export type PostRoomsByRoomIdGameDrawOfferData = {
     body?: PlayerActionRequest;
-    path?: never;
-    query?: never;
-    url: '/Game/draw/offer';
+    path: {
+        roomId: string;
+    };
+    query?: {
+        token?: string;
+    };
+    url: '/rooms/{roomId}/game/draw/offer';
 };
 
-export type PostGameDrawOfferResponses = {
+export type PostRoomsByRoomIdGameDrawOfferResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameDrawOfferResponse = PostGameDrawOfferResponses[keyof PostGameDrawOfferResponses];
+export type PostRoomsByRoomIdGameDrawOfferResponse = PostRoomsByRoomIdGameDrawOfferResponses[keyof PostRoomsByRoomIdGameDrawOfferResponses];
 
-export type PostGameDrawRespondData = {
+export type PostRoomsByRoomIdGameDrawRespondData = {
     body?: PlayerActionRequest;
-    path?: never;
-    query?: never;
-    url: '/Game/draw/respond';
+    path: {
+        roomId: string;
+    };
+    query?: {
+        token?: string;
+    };
+    url: '/rooms/{roomId}/game/draw/respond';
 };
 
-export type PostGameDrawRespondResponses = {
+export type PostRoomsByRoomIdGameDrawRespondResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameDrawRespondResponse = PostGameDrawRespondResponses[keyof PostGameDrawRespondResponses];
+export type PostRoomsByRoomIdGameDrawRespondResponse = PostRoomsByRoomIdGameDrawRespondResponses[keyof PostRoomsByRoomIdGameDrawRespondResponses];
 
-export type PostGameDrawClaimThreefoldData = {
+export type PostRoomsByRoomIdGameDrawClaimThreefoldData = {
     body?: PlayerActionRequest;
-    path?: never;
-    query?: never;
-    url: '/Game/draw/claim-threefold';
+    path: {
+        roomId: string;
+    };
+    query?: {
+        token?: string;
+    };
+    url: '/rooms/{roomId}/game/draw/claim-threefold';
 };
 
-export type PostGameDrawClaimThreefoldResponses = {
+export type PostRoomsByRoomIdGameDrawClaimThreefoldResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameDrawClaimThreefoldResponse = PostGameDrawClaimThreefoldResponses[keyof PostGameDrawClaimThreefoldResponses];
+export type PostRoomsByRoomIdGameDrawClaimThreefoldResponse = PostRoomsByRoomIdGameDrawClaimThreefoldResponses[keyof PostRoomsByRoomIdGameDrawClaimThreefoldResponses];
 
-export type PostGameDrawClaimFiftyData = {
+export type PostRoomsByRoomIdGameDrawClaimFiftyData = {
     body?: PlayerActionRequest;
-    path?: never;
-    query?: never;
-    url: '/Game/draw/claim-fifty';
+    path: {
+        roomId: string;
+    };
+    query?: {
+        token?: string;
+    };
+    url: '/rooms/{roomId}/game/draw/claim-fifty';
 };
 
-export type PostGameDrawClaimFiftyResponses = {
+export type PostRoomsByRoomIdGameDrawClaimFiftyResponses = {
     /**
      * OK
      */
     200: GameStateDto;
 };
 
-export type PostGameDrawClaimFiftyResponse = PostGameDrawClaimFiftyResponses[keyof PostGameDrawClaimFiftyResponses];
+export type PostRoomsByRoomIdGameDrawClaimFiftyResponse = PostRoomsByRoomIdGameDrawClaimFiftyResponses[keyof PostRoomsByRoomIdGameDrawClaimFiftyResponses];
+
+export type PostRoomsData = {
+    body?: CreateRoomRequest;
+    path?: never;
+    query?: never;
+    url: '/rooms';
+};
+
+export type PostRoomsResponses = {
+    /**
+     * OK
+     */
+    200: RoomSessionDto;
+};
+
+export type PostRoomsResponse = PostRoomsResponses[keyof PostRoomsResponses];
+
+export type PostRoomsByRoomIdJoinData = {
+    body?: never;
+    path: {
+        roomId: string;
+    };
+    query?: never;
+    url: '/rooms/{roomId}/join';
+};
+
+export type PostRoomsByRoomIdJoinResponses = {
+    /**
+     * OK
+     */
+    200: RoomSessionDto;
+};
+
+export type PostRoomsByRoomIdJoinResponse = PostRoomsByRoomIdJoinResponses[keyof PostRoomsByRoomIdJoinResponses];
+
+export type GetRoomsByRoomIdData = {
+    body?: never;
+    path: {
+        roomId: string;
+    };
+    query?: never;
+    url: '/rooms/{roomId}';
+};
+
+export type GetRoomsByRoomIdResponses = {
+    /**
+     * OK
+     */
+    200: RoomStatusDto;
+};
+
+export type GetRoomsByRoomIdResponse = GetRoomsByRoomIdResponses[keyof GetRoomsByRoomIdResponses];
