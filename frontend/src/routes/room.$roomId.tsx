@@ -269,13 +269,13 @@ function Room() {
   }
 
   return (
-    <Shell>
+    <Shell fill>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <Brand />
       </header>
 
       <main className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <section className="mx-auto w-full max-w-2xl rounded-2xl border border-amber-950/20 bg-amber-900 p-3 shadow-sm sm:p-4">
+        <section className="mx-auto w-full max-w-2xl rounded-2xl border border-amber-950/20 bg-amber-900 p-3 shadow-sm sm:p-4 lg:w-[min(100%,calc(100svh_-_12rem))] lg:max-w-none">
           <div className="@container grid grid-cols-8 overflow-hidden rounded-[3px] border border-amber-950/40">
             {rows.map((row) =>
               cols.map((column) => {
