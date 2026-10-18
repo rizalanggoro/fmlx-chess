@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button'
-import { useStartGame } from '@/lib/chess'
+import { postGameStartMutation } from '@/lib/api'
+import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({ component: Lobby })
 
 function Lobby() {
   const navigate = useNavigate()
-  const start = useStartGame()
+  const start = useMutation(postGameStartMutation())
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-8 p-4">
@@ -16,7 +17,7 @@ function Lobby() {
           size="lg"
           disabled={start.isPending}
           onClick={() =>
-            start.mutate(undefined, { onSuccess: () => void navigate({ to: '/game' }) })
+            start.mutate({}, { onSuccess: () => void navigate({ to: '/game' }) })
           }
         >
           Main Hotseat

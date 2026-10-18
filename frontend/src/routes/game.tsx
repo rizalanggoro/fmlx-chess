@@ -1,16 +1,16 @@
 import { Button } from '@/components/ui/button'
 import {
-  useBoard,
-  useGameState,
-  useHistory,
-  useLegalMoves,
-  useMakeMove,
-  useResetGame,
-  useResign,
-  useStartGame,
-} from '@/lib/chess'
-import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/chess'
-import { useQueryClient } from '@tanstack/react-query'
+  getGameBoardOptions,
+  getGameHistoryOptions,
+  getGameLegalMovesOptions,
+  getGameOptions,
+  postGameMovesMutation,
+  postGameResetMutation,
+  postGameResignMutation,
+  postGameStartMutation,
+} from '@/lib/api'
+import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
@@ -47,21 +47,24 @@ function Game() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [selected, setSelected] = useState<Position | null>(null)
-  const state = useGameState()
-  const board = useBoard()
-  const history = useHistory()
-  const legal = useLegalMoves(selected)
-  const makeMove = useMakeMove()
-  const start = useStartGame()
-  const reset = useResetGame()
-  const resign = useResign()
+  const state = useQuery(getGameOptions())
+  const board = useQuery(getGameBoardOptions())
+  const history = useQuery(getGameHistoryOptions())
+  const legal = useQuery({
+    ...getGameLegalMovesOptions({ query: { column: selected?.column, row: selected?.row } }),
+    enabled: selected !== null,
+  })
+  const makeMove = useMutation(postGameMovesMutation())
+  const start = useMutation(postGameStartMutation())
+  const reset = useMutation(postGameResetMutation())
+  const resign = useMutation(postGameResignMutation())
   const started = useRef(false)
 
   // Direct open /game without starting first → auto-start once.
   useEffect(() => {
     if (state.data?.state === 'NotStarted' && !started.current && !start.isPending) {
       started.current = true
-      start.mutate(undefined)
+      start.mutate({})
     }
   }, [state.data?.state, start])
 
@@ -74,7 +77,7 @@ function Game() {
     if (state.data?.state !== 'InProgress' || makeMove.isPending) return
     const key = `${sq.column},${sq.row}`
     if (selected && targets.has(key)) {
-      makeMove.mutate({ from: selected, to: sq, promotionType: null })
+      makeMove.mutate({ body: { from: selected, to: sq, promotionType: null } })
       setSelected(null)
       return
     }
@@ -87,7 +90,7 @@ function Game() {
   }
 
   const leave = async () => {
-    await reset.mutateAsync(undefined)
+    await reset.mutateAsync({})
     await qc.invalidateQueries()
     await navigate({ to: '/' })
   }
@@ -151,7 +154,7 @@ function Game() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={start.isPending} onClick={() => start.mutate(undefined)}>
+          <Button size="sm" disabled={start.isPending} onClick={() => start.mutate({})}>
             Game baru
           </Button>
           <Button size="sm" variant="outline" onClick={() => void leave()}>
@@ -162,7 +165,7 @@ function Game() {
               size="sm"
               variant="destructive"
               disabled={resign.isPending}
-              onClick={() => resign.mutate(turn)}
+              onClick={() => resign.mutate({ body: { color: turn } })}
             >
               {turn} menyerah
             </Button>

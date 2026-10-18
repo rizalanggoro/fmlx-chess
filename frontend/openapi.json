@@ -1,0 +1,899 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Chess.Api",
+    "version": "1.0"
+  },
+  "paths": {
+    "/Game": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/start": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/reset": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/board": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TileDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TileDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TileDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/legal-moves": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "parameters": [
+          {
+            "name": "column",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "row",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Move"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Move"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Move"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/moves": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Move"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Move"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Move"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/history": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "parameters": [
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/PieceColor"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MoveHistoryEntry"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MoveHistoryEntry"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MoveHistoryEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/resign": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/draw/offer": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/draw/respond": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/draw/claim-threefold": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Game/draw/claim-fifty": {
+      "post": {
+        "tags": [
+          "Game"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/PlayerActionRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CastlingRights": {
+        "required": [
+          "blackKingSide",
+          "blackQueenSide",
+          "whiteKingSide",
+          "whiteQueenSide"
+        ],
+        "type": "object",
+        "properties": {
+          "whiteKingSide": {
+            "type": "boolean"
+          },
+          "whiteQueenSide": {
+            "type": "boolean"
+          },
+          "blackKingSide": {
+            "type": "boolean"
+          },
+          "blackQueenSide": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GameEndReason": {
+        "enum": [
+          "Checkmate",
+          "DrawByStalemate",
+          "DrawByAgreement",
+          "DrawBy50MoveRule",
+          "DrawBy75MoveRule",
+          "DrawByDeadPosition",
+          "DrawByThreefoldRepetition",
+          "DrawByFivefoldRepetition",
+          "PlayerResigned",
+          "TimeExpired"
+        ],
+        "type": "string"
+      },
+      "GameResult": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameEndReason"
+              }
+            ]
+          },
+          "winner": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GameState": {
+        "enum": [
+          "NotStarted",
+          "InProgress",
+          "Completed"
+        ],
+        "type": "string"
+      },
+      "GameStateDto": {
+        "required": [
+          "castlingRights",
+          "currentPlayer",
+          "moveCount",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameState"
+              }
+            ]
+          },
+          "currentPlayer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlayerDto"
+              }
+            ]
+          },
+          "result": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameResult"
+              }
+            ],
+            "nullable": true
+          },
+          "castlingRights": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CastlingRights"
+              }
+            ]
+          },
+          "enPassantTarget": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ],
+            "nullable": true
+          },
+          "moveCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Move": {
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ]
+          },
+          "to": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ]
+          },
+          "promotionType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceType"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "MoveHistoryEntry": {
+        "required": [
+          "move",
+          "playedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "move": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Move"
+              }
+            ]
+          },
+          "playedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "PieceColor": {
+        "enum": [
+          "Black",
+          "White"
+        ],
+        "type": "string"
+      },
+      "PieceType": {
+        "enum": [
+          "King",
+          "Queen",
+          "Rook",
+          "Knight",
+          "Bishop",
+          "Pawn"
+        ],
+        "type": "string"
+      },
+      "PlayerActionRequest": {
+        "required": [
+          "color"
+        ],
+        "type": "object",
+        "properties": {
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "accepted": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlayerDto": {
+        "required": [
+          "color",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "Position": {
+        "required": [
+          "column",
+          "row"
+        ],
+        "type": "object",
+        "properties": {
+          "column": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "row": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TileDto": {
+        "required": [
+          "column",
+          "row"
+        ],
+        "type": "object",
+        "properties": {
+          "column": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "row": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ],
+            "nullable": true
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceType"
+              }
+            ],
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

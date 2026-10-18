@@ -1,11 +1,21 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { client } from './lib/api'
 import './index.css'
 import { routeTree } from './routeTree.gen'
 
-const queryClient = new QueryClient()
+client.setConfig({ baseUrl: import.meta.env.VITE_API_URL ?? 'http://localhost:5004' })
+
+const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: () => {
+      void queryClient.invalidateQueries()
+    },
+  }),
+})
+
 const router = createRouter({ routeTree })
 
 declare module '@tanstack/react-router' {
