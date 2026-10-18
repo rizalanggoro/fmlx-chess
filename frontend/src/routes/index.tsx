@@ -1,6 +1,17 @@
 import { BoardBand } from '@/components/board-band'
 import { Button } from '@/components/ui/button'
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import {
   postRoomsByRoomIdJoinMutation,
   postRoomsMutation,
   type PieceColor,
@@ -41,146 +52,158 @@ function Lobby() {
     create.isPending && creating === mode ? 'Menyiapkan…' : idle
 
   return (
-    <div className="relative flex min-h-svh flex-col justify-center overflow-clip bg-amber-50 px-5 py-12 sm:px-8 md:px-10 md:py-16">
+    <div className="relative flex min-h-svh flex-col justify-center overflow-clip bg-background px-5 py-12 sm:px-8 md:px-10 md:py-16">
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-10 -bottom-12 hidden font-heading text-[22rem] leading-none text-amber-900/5 select-none lg:block"
+        className="pointer-events-none absolute -right-10 -bottom-12 hidden font-heading text-[22rem] leading-none text-foreground/5 select-none lg:block"
       >
         ♞
       </span>
 
       <div className="relative mx-auto flex w-full max-w-3xl flex-col gap-10">
         <header className="flex flex-col items-start gap-4">
-          <h1 className="font-heading text-5xl leading-none tracking-tight text-amber-950 sm:text-6xl md:text-7xl">
-            fmlx<span className="text-amber-700">-</span>chess
+          <h1 className="font-heading text-5xl leading-none tracking-tight text-foreground sm:text-6xl md:text-7xl">
+            fmlx<span className="text-primary">-</span>chess
           </h1>
-          <p className="max-w-md text-amber-900/80">Papan catur untuk dua pemain.</p>
+          <p className="max-w-md text-muted-foreground">Papan catur untuk dua pemain.</p>
           <BoardBand />
         </header>
 
         <main className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          <section className="relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-amber-950/20 bg-amber-900 p-6 text-amber-50 shadow-sm">
+          <Card className="relative bg-primary! text-primary-foreground! ring-0">
             <span
               aria-hidden
-              className="pointer-events-none absolute right-2 bottom-20 font-heading text-8xl leading-none text-amber-50/10 select-none"
+              className="pointer-events-none absolute right-2 bottom-20 font-heading text-8xl leading-none text-primary-foreground/10 select-none"
             >
               ♔
             </span>
-            <p className="text-xs font-semibold tracking-[0.25em] text-amber-200/80 uppercase">
-              Hotseat
-            </p>
-            <h2 className="font-heading text-2xl">Dua pemain, satu perangkat</h2>
-            <p className="text-sm text-amber-100/80">
-              Jalan bergantian di papan yang sama — langsung mulai, tanpa room.
-            </p>
-            <Button
-              size="lg"
-              className="mt-auto w-full bg-amber-50 text-amber-950 hover:bg-amber-100 focus-visible:border-amber-100 focus-visible:ring-amber-50/40"
-              disabled={create.isPending}
-              onClick={() => create.mutate({ body: { mode: 'Hotseat' } }, { onSuccess: enter })}
-            >
-              <span aria-hidden className="font-heading text-base leading-none">
-                ♞
-              </span>
-              {createLabel('Hotseat', 'Main Hotseat')}
-            </Button>
-          </section>
-
-          <section className="flex flex-col gap-4 rounded-2xl border border-amber-950/10 bg-white/70 p-6 shadow-sm">
-            <p className="text-xs font-semibold tracking-[0.25em] text-amber-800/80 uppercase">
-              Online
-            </p>
-            <h2 className="font-heading text-2xl text-amber-950">Main dari dua perangkat</h2>
-            <p className="text-sm text-amber-900/80">
-              Buat room, kirim kodenya ke lawan, lalu papan tersinkron otomatis.
-            </p>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value.slice(0, 24))}
-              placeholder="Nama kamu (opsional)"
-              aria-label="Nama kamu"
-              autoComplete="off"
-              className="h-9 w-full rounded-lg border border-amber-950/20 bg-white/80 px-3 text-sm text-amber-950 outline-none placeholder:text-amber-800/50 focus-visible:border-amber-800/60 focus-visible:ring-[3px] focus-visible:ring-amber-800/20"
-            />
-            <div role="group" aria-label="Main sebagai" className="grid grid-cols-2 gap-2">
-              {(['White', 'Black'] as const).map((c) => (
-                <Button
-                  key={c}
-                  variant="outline"
-                  aria-pressed={color === c}
-                  onClick={() => setColor(c)}
-                  className={
-                    color === c
-                      ? 'border-amber-950/20 bg-amber-800 text-amber-50 hover:bg-amber-900 hover:text-amber-50'
-                      : 'border-amber-950/20 bg-white/70 text-amber-950 hover:bg-amber-100 hover:text-amber-950'
-                  }
-                >
-                  <span aria-hidden className="font-heading text-base leading-none">
-                    {c === 'White' ? '♔' : '♚'}
-                  </span>
-                  {c === 'White' ? 'Putih' : 'Hitam'}
-                </Button>
-              ))}
-            </div>
-            <Button
-              size="lg"
-              className="w-full bg-amber-800 text-amber-50 hover:bg-amber-900 focus-visible:border-amber-900 focus-visible:ring-amber-800/30"
-              disabled={create.isPending}
-              onClick={() =>
-                create.mutate(
-                  { body: { mode: 'Online', color, name: name.trim() || null } },
-                  { onSuccess: enter },
-                )
-              }
-            >
-              {createLabel('Online', 'Buat Room')}
-            </Button>
-
-            <div className="flex items-center gap-3 text-xs text-amber-800/80">
-              <span aria-hidden className="h-px flex-1 bg-amber-950/15" />
-              atau gabung pakai kode
-              <span aria-hidden className="h-px flex-1 bg-amber-950/15" />
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                value={code}
-                onChange={(e) =>
-                  setCode(
-                    e.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z0-9]/g, '')
-                      .slice(0, 6),
-                  )
-                }
-                placeholder="Kode room"
-                aria-label="Kode room"
-                autoComplete="off"
-                spellCheck={false}
-                className="h-9 min-w-0 flex-1 rounded-lg border border-amber-950/20 bg-white/80 px-3 font-mono text-sm tracking-[0.2em] text-amber-950 uppercase outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-amber-800/50 focus-visible:border-amber-800/60 focus-visible:ring-[3px] focus-visible:ring-amber-800/20"
-              />
+            <CardHeader>
+              <CardDescription className="text-xs font-semibold tracking-[0.25em] text-primary-foreground/80 uppercase">
+                Hotseat
+              </CardDescription>
+              <CardTitle className="font-heading text-2xl">Dua pemain, satu perangkat</CardTitle>
+              <CardDescription className="text-primary-foreground/80">
+                Jalan bergantian di papan yang sama — langsung mulai, tanpa room.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="mt-auto">
               <Button
+                variant="secondary"
+                size="lg"
+                className="w-full"
+                disabled={create.isPending}
+                onClick={() => create.mutate({ body: { mode: 'Hotseat' } }, { onSuccess: enter })}
+              >
+                <span aria-hidden className="font-heading text-base leading-none">
+                  ♞
+                </span>
+                {createLabel('Hotseat', 'Main Hotseat')}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardDescription className="text-xs font-semibold tracking-[0.25em] uppercase">
+                Online
+              </CardDescription>
+              <CardTitle className="font-heading text-2xl">Main dari dua perangkat</CardTitle>
+              <CardDescription>
+                Buat room, kirim kodenya ke lawan, lalu papan tersinkron otomatis.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value.slice(0, 24))}
+                placeholder="Nama kamu (opsional)"
+                aria-label="Nama kamu"
+                autoComplete="off"
+              />
+
+              <ToggleGroup
+                value={[color]}
+                onValueChange={(next) => {
+                  const picked = next[0]
+                  if (picked) setColor(picked as PieceColor)
+                }}
                 variant="outline"
-                className="border-amber-950/20 bg-white/70 text-amber-950 hover:bg-amber-100 hover:text-amber-950"
-                disabled={code.length < 6 || join.isPending}
+                aria-label="Main sebagai"
+                className="w-full"
+              >
+                {(['White', 'Black'] as const).map((c) => (
+                  <ToggleGroupItem
+                    key={c}
+                    value={c}
+                    className="flex-1 aria-pressed:bg-primary! aria-pressed:text-primary-foreground! aria-pressed:hover:bg-primary!"
+                  >
+                    <span aria-hidden className="font-heading text-base leading-none">
+                      {c === 'White' ? '♔' : '♚'}
+                    </span>
+                    {c === 'White' ? 'Putih' : 'Hitam'}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={create.isPending}
                 onClick={() =>
-                  join.mutate(
-                    { path: { roomId: code }, query: { name: name.trim() || undefined } },
+                  create.mutate(
+                    { body: { mode: 'Online', color, name: name.trim() || null } },
                     { onSuccess: enter },
                   )
                 }
               >
-                {join.isPending ? 'Menghubungkan…' : 'Gabung'}
+                {createLabel('Online', 'Buat Room')}
               </Button>
-            </div>
-            {join.isError && <p className="text-sm text-red-700">{joinError(join.error)}</p>}
-          </section>
+
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <Separator className="flex-1" />
+                atau gabung pakai kode
+                <Separator className="flex-1" />
+              </div>
+
+              <div className="flex gap-2">
+                <Input
+                  value={code}
+                  onChange={(e) =>
+                    setCode(
+                      e.target.value
+                        .toUpperCase()
+                        .replace(/[^A-Z0-9]/g, '')
+                        .slice(0, 6),
+                    )
+                  }
+                  placeholder="Kode room"
+                  aria-label="Kode room"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="min-w-0 flex-1 font-mono tracking-[0.2em] uppercase placeholder:font-sans placeholder:tracking-normal"
+                />
+                <Button
+                  variant="outline"
+                  disabled={code.length < 6 || join.isPending}
+                  onClick={() =>
+                    join.mutate(
+                      { path: { roomId: code }, query: { name: name.trim() || undefined } },
+                      { onSuccess: enter },
+                    )
+                  }
+                >
+                  {join.isPending ? 'Menghubungkan…' : 'Gabung'}
+                </Button>
+              </div>
+              {join.isError && <p className="text-sm text-destructive">{joinError(join.error)}</p>}
+            </CardContent>
+          </Card>
         </main>
 
-        <footer className="flex flex-col gap-2 text-xs text-amber-800/80">
+        <footer className="flex flex-col gap-2 text-xs text-muted-foreground">
           <p>Tanpa akun · 10 menit per pemain · room hilang kalau server restart.</p>
           {create.isError && (
-            <p className="text-sm text-red-700">Gagal membuat room. Pastikan backend jalan.</p>
+            <p className="text-sm text-destructive">Gagal membuat room. Pastikan backend jalan.</p>
           )}
         </footer>
       </div>

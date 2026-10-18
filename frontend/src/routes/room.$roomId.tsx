@@ -1,5 +1,24 @@
-import { Brand, Eyebrow, Shell } from '@/components/room-chrome'
+import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import {
   getRoomsByRoomIdGameBoardOptions,
   getRoomsByRoomIdGameHistoryOptions,
@@ -50,15 +69,6 @@ const same = (a: Position | null, b: Position) =>
 
 const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
 
-const inputClass =
-  'h-10 w-full rounded-lg border border-amber-950/20 bg-white/80 px-3 text-sm text-amber-950 outline-none placeholder:text-amber-800/50 focus-visible:border-amber-800/60 focus-visible:ring-[3px] focus-visible:ring-amber-800/20'
-
-const primaryClass =
-  'bg-amber-800 text-amber-50 hover:bg-amber-900 focus-visible:border-amber-900 focus-visible:ring-amber-800/30'
-
-const quietClass =
-  'border-amber-950/20 bg-white/70 text-amber-950 hover:bg-amber-100 hover:text-amber-950'
-
 function Room() {
   const { roomId } = Route.useParams()
   const navigate = useNavigate()
@@ -96,7 +106,8 @@ function Room() {
   const resignColor = online ? myColor : turn
   const nameOf = (color: PieceColor) =>
     color === 'White' ? room.data?.whiteName : room.data?.blackName
-  const label = (color: PieceColor) => (nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color))
+  const label = (color: PieceColor) =>
+    nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color)
 
   // Joining takes whichever seat is still free.
   const takeSeat = () =>
@@ -163,28 +174,27 @@ function Room() {
 
   if (room.isError) {
     return (
-      <Shell>
-        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
-          <Brand />
-          <section className="w-full rounded-2xl border border-amber-950/10 bg-white/70 p-6 text-center shadow-sm">
+      <StateScreen>
+        <Card className="w-full text-center">
+          <CardHeader>
             <Eyebrow>Room</Eyebrow>
-            <h2 className="mt-2 font-heading text-2xl text-amber-950">Room tidak ditemukan</h2>
-            <p className="mt-2 text-sm text-amber-900/80">
-              Cek lagi kodenya, atau buat room baru dari lobby.
-            </p>
-            <Button className={`mt-5 w-full ${primaryClass}`} onClick={toLobby}>
+            <CardTitle className="text-2xl">Room tidak ditemukan</CardTitle>
+            <CardDescription>Cek lagi kodenya, atau buat room baru dari lobby.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full" onClick={toLobby}>
               Kembali ke Lobby
             </Button>
-          </section>
-        </div>
-      </Shell>
+          </CardContent>
+        </Card>
+      </StateScreen>
     )
   }
 
   if (!room.data) {
     return (
       <Shell>
-        <p className="text-center text-amber-900/80">Memuat…</p>
+        <p className="text-center text-muted-foreground">Memuat…</p>
       </Shell>
     )
   }
@@ -192,79 +202,75 @@ function Room() {
   if (online && !session && !(room.data.whiteJoined && room.data.blackJoined)) {
     const seat: PieceColor = room.data.whiteJoined ? 'Black' : 'White'
     return (
-      <Shell>
-        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
-          <Brand />
-          <section className="w-full rounded-2xl border border-amber-950/10 bg-white/70 p-6 shadow-sm">
+      <StateScreen>
+        <Card className="w-full">
+          <CardHeader>
             <Eyebrow>Online</Eyebrow>
-            <h2 className="mt-2 font-heading text-2xl text-amber-950">Gabung ke room</h2>
-            <p className="mt-1 font-mono text-lg font-semibold tracking-[0.2em] text-amber-950">
-              {roomId}
-            </p>
-            <p className="mt-3 text-sm text-amber-900/80">
+            <CardTitle className="text-2xl">Gabung ke room</CardTitle>
+            <CardDescription>
+              Kode room{' '}
+              <span className="font-mono text-base font-semibold tracking-[0.2em] text-foreground">
+                {roomId}
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="text-sm text-muted-foreground">
               Kamu akan main sebagai{' '}
-              <span className="font-semibold text-amber-950">{colorName(seat)}</span>{' '}
+              <span className="font-semibold text-foreground">{colorName(seat)}</span>{' '}
               <span aria-hidden className="font-heading text-base">
                 {glyphOf(seat)}
               </span>
             </p>
-            <input
+            <Input
               value={joinName}
               onChange={(e) => setJoinName(e.target.value.slice(0, 24))}
               placeholder="Nama kamu (opsional)"
               aria-label="Nama kamu"
               autoComplete="off"
-              className={`mt-4 ${inputClass}`}
             />
-            <div className="mt-4 flex gap-2">
-              <Button
-                className={`flex-1 ${primaryClass}`}
-                disabled={join.isPending}
-                onClick={takeSeat}
-              >
+            <div className="flex gap-2">
+              <Button className="flex-1" disabled={join.isPending} onClick={takeSeat}>
                 {join.isPending ? 'Menghubungkan…' : 'Gabung'}
               </Button>
-              <Button variant="outline" className={quietClass} onClick={toLobby}>
+              <Button variant="outline" onClick={toLobby}>
                 Lobby
               </Button>
             </div>
-          </section>
-        </div>
-      </Shell>
+          </CardContent>
+        </Card>
+      </StateScreen>
     )
   }
 
   if (waiting) {
     return (
-      <Shell>
-        <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6">
-          <Brand />
-          <section className="w-full rounded-2xl border border-amber-950/10 bg-white/70 p-6 text-center shadow-sm">
+      <StateScreen>
+        <Card className="w-full text-center">
+          <CardHeader>
             <Eyebrow>Online</Eyebrow>
-            <h2 className="mt-2 font-heading text-2xl text-amber-950">
-              Menunggu lawan bergabung…
-            </h2>
-            <p className="mt-2 text-sm text-amber-900/80">Bagikan kode room ini ke lawan.</p>
-            <p className="mt-4 font-mono text-3xl font-bold tracking-[0.25em] text-amber-950">
+            <CardTitle className="text-2xl">Menunggu lawan bergabung…</CardTitle>
+            <CardDescription>Bagikan kode room ini ke lawan.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <p className="font-mono text-3xl font-bold tracking-[0.25em] text-foreground">
               {roomId}
             </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              <Button className={primaryClass} onClick={copyCode}>
-                {copied ? 'Tersalin ✓' : 'Salin kode'}
-              </Button>
-              <Button variant="outline" className={quietClass} onClick={toLobby}>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={copyCode}>{copied ? 'Tersalin ✓' : 'Salin kode'}</Button>
+              <Button variant="outline" onClick={toLobby}>
                 Lobby
               </Button>
             </div>
             {myColor && (
-              <p className="mt-4 text-sm text-amber-900/80">
+              <p className="text-sm text-muted-foreground">
                 Kamu main sebagai{' '}
-                <span className="font-semibold text-amber-950">{label(myColor)}</span>
+                <span className="font-semibold text-foreground">{label(myColor)}</span>
               </p>
             )}
-          </section>
-        </div>
-      </Shell>
+          </CardContent>
+        </Card>
+      </StateScreen>
     )
   }
 
@@ -333,76 +339,73 @@ function Room() {
         </section>
 
         <aside className="flex flex-col gap-4">
-          <section className="rounded-2xl border border-amber-950/10 bg-white/70 p-5 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
+          <Card size="sm">
+            <CardHeader>
               <Eyebrow>{online ? 'Online' : 'Hotseat'}</Eyebrow>
               {online && (
-                <p className="font-mono text-sm font-semibold tracking-[0.2em] text-amber-950">
-                  {roomId}
-                </p>
+                <CardAction>
+                  <span className="font-mono text-sm font-semibold tracking-[0.2em] text-foreground">
+                    {roomId}
+                  </span>
+                </CardAction>
               )}
-            </div>
+            </CardHeader>
 
-            <div className="mt-4 flex flex-col gap-2">
+            <CardContent className="flex flex-col gap-2">
               {(['White', 'Black'] as const).map((color) => {
                 const active = !over && turn === color
                 return (
                   <div
                     key={color}
                     className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${
-                      active ? 'border-amber-800/30 bg-amber-100' : 'border-transparent'
+                      active ? 'border-primary/30 bg-primary/10' : 'border-transparent'
                     }`}
                   >
                     <span
                       aria-hidden
-                      className="font-heading text-2xl leading-none text-amber-950"
+                      className="font-heading text-2xl leading-none text-foreground"
                     >
                       {glyphOf(color)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-amber-950">
+                      <p className="truncate text-sm font-semibold text-foreground">
                         {nameOf(color) ?? colorName(color)}
                       </p>
-                      <p className="text-xs text-amber-800/70">
+                      <p className="text-xs text-muted-foreground">
                         {colorName(color)}
                         {myColor === color && ' · kamu'}
                       </p>
                     </div>
-                    {active && (
-                      <span className="rounded-full bg-amber-800 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-amber-50 uppercase">
-                        Giliran
-                      </span>
-                    )}
+                    {active && <Badge>Giliran</Badge>}
                   </div>
                 )
               })}
-            </div>
 
-            {over && state.data?.result && (
-              <p className="mt-4 rounded-xl bg-amber-900 px-3 py-2 text-sm font-semibold text-amber-50">
-                {state.data.result.winner
-                  ? `${label(state.data.result.winner)} menang — ${REASONS[state.data.result.reason]}`
-                  : `Seri — ${REASONS[state.data.result.reason]}`}
+              {over && state.data?.result && (
+                <p className="mt-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
+                  {state.data.result.winner
+                    ? `${label(state.data.result.winner)} menang — ${REASONS[state.data.result.reason]}`
+                    : `Seri — ${REASONS[state.data.result.reason]}`}
+                </p>
+              )}
+
+              <p className="mt-1 text-xs text-muted-foreground">
+                Langkah: {state.data?.moveCount ?? 0}
+                {online && !myColor && ' · kamu penonton'}
               </p>
-            )}
-
-            <p className="mt-3 text-xs text-amber-800/70">
-              Langkah: {state.data?.moveCount ?? 0}
-              {online && !myColor && ' · kamu penonton'}
-            </p>
-          </section>
+            </CardContent>
+          </Card>
 
           <div className="flex flex-wrap gap-2">
             {canAct && (
               <Button
                 disabled={start.isPending}
-                className={primaryClass}
                 onClick={() => start.mutate({ path: { roomId } })}
               >
                 Game baru
               </Button>
             )}
-            <Button variant="outline" className={quietClass} onClick={toLobby}>
+            <Button variant="outline" onClick={toLobby}>
               Lobby
             </Button>
             {!over && canAct && resignColor && (
@@ -422,39 +425,45 @@ function Room() {
             )}
           </div>
 
-          <section className="rounded-2xl border border-amber-950/10 bg-white/70 p-5 shadow-sm">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-heading text-xl text-amber-950">Riwayat</h2>
-              <p className="text-xs text-amber-800/70">{moves.length} langkah</p>
-            </div>
-
-            {moves.length === 0 ? (
-              <p className="mt-3 text-sm text-amber-800/70">Belum ada langkah.</p>
-            ) : (
-              <>
-                <div className="mt-3 grid grid-cols-[1.75rem_1fr_1fr] gap-2 border-b border-amber-950/10 pb-1 text-xs text-amber-800/70">
-                  <span />
-                  <span>Putih</span>
-                  <span>Hitam</span>
-                </div>
-                <ol className="mt-1 flex max-h-72 flex-col overflow-y-auto font-mono text-sm text-amber-950">
-                  {rounds.map((round, i) => (
-                    <li
-                      key={i}
-                      className={`grid grid-cols-[1.75rem_1fr_1fr] gap-2 rounded-md px-1 py-0.5 ${
-                        i % 2 === 1 ? 'bg-amber-950/[0.04]' : ''
-                      }`}
-                    >
-                      <span className="text-amber-800/60">{i + 1}.</span>
-                      {round.map((h, j) => (
-                        <span key={j}>{fmtMove(h)}</span>
+          <Card size="sm">
+            <CardHeader>
+              <CardTitle className="font-heading text-xl">Riwayat</CardTitle>
+              <CardAction>
+                <p className="text-xs text-muted-foreground">{moves.length} langkah</p>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              {moves.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Belum ada langkah.</p>
+              ) : (
+                <ScrollArea className="max-h-64">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="h-8! w-8 px-1 text-xs" />
+                        <TableHead className="h-8! px-1 text-xs">Putih</TableHead>
+                        <TableHead className="h-8! px-1 text-xs">Hitam</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody className="font-mono">
+                      {rounds.map((round, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="p-1! text-muted-foreground">
+                            {i + 1}.
+                          </TableCell>
+                          {round.map((h, j) => (
+                            <TableCell key={j} className="p-1!">
+                              {fmtMove(h)}
+                            </TableCell>
+                          ))}
+                        </TableRow>
                       ))}
-                    </li>
-                  ))}
-                </ol>
-              </>
-            )}
-          </section>
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
         </aside>
       </main>
     </Shell>
