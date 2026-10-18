@@ -438,34 +438,3 @@ classDiagram
 
     %% SquareClickedEventArgs 
     SquareClickedEventArgs --> Position : selected square
-
-    %% Rooms (online mode, in-memory)
-
-    class RoomMode {
-        <<enumeration>>
-        Hotseat
-        Online
-    }
-
-    class GameRoom {
-        +string Id
-        +RoomMode Mode
-        +GameManager Manager
-        +string? WhiteToken
-        +string? BlackToken
-        +bool WhiteJoined
-        +bool BlackJoined
-        +ClaimWhite() string
-        +ClaimBlack() string?
-        +ColorFor(string? token) PieceColor?
-    }
-
-    class RoomRegistry {
-        +Create(RoomMode mode) GameRoom
-        +Find(string id) GameRoom?
-        +Notify() void
-    }
-
-    RoomRegistry *-- "0..*" GameRoom : holds rooms in memory
-    GameRoom *-- GameManager : owns one game
-    GameRoom --> RoomMode : type
