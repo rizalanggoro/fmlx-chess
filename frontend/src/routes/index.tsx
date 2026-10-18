@@ -52,12 +52,11 @@ function Lobby() {
     create.isPending && creating === mode ? 'Menyiapkan…' : idle
 
   return (
-    <div className="relative flex min-h-svh flex-col justify-center overflow-clip bg-background px-5 py-12 sm:px-8 md:px-10 md:py-16">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -right-10 -bottom-12 hidden font-heading text-[22rem] leading-none text-foreground/5 select-none lg:block"
-      >
-        ♞
+    <div className="relative flex min-h-svh flex-col justify-center bg-background px-5 py-12 sm:px-8 md:px-10 md:py-16">
+      <span aria-hidden className="pointer-events-none absolute inset-0 overflow-clip">
+        <span className="absolute -right-10 -bottom-12 hidden font-heading text-[22rem] leading-none text-foreground/5 select-none lg:block">
+          ♞
+        </span>
       </span>
 
       <div className="relative mx-auto flex w-full max-w-3xl flex-col gap-10">
