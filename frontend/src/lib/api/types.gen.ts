@@ -13,6 +13,8 @@ export type CastlingRights = {
 
 export type CreateRoomRequest = {
     mode: RoomMode;
+    color?: PieceColor | null;
+    name?: string | null;
 };
 
 export type GameEndReason = 'Checkmate' | 'DrawByStalemate' | 'DrawByAgreement' | 'DrawBy50MoveRule' | 'DrawBy75MoveRule' | 'DrawByDeadPosition' | 'DrawByThreefoldRepetition' | 'DrawByFivefoldRepetition' | 'PlayerResigned' | 'TimeExpired';
@@ -78,6 +80,8 @@ export type RoomStatusDto = {
     mode: RoomMode;
     whiteJoined: boolean;
     blackJoined: boolean;
+    whiteName?: string | null;
+    blackName?: string | null;
 };
 
 export type TileDto = {
@@ -341,7 +345,9 @@ export type PostRoomsByRoomIdJoinData = {
     path: {
         roomId: string;
     };
-    query?: never;
+    query?: {
+        name?: string;
+    };
     url: '/rooms/{roomId}/join';
 };
 

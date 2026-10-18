@@ -1,5 +1,10 @@
 import { Button } from '@/components/ui/button'
-import { postRoomsByRoomIdJoinMutation, postRoomsMutation, type RoomSessionDto } from '@/lib/api'
+import {
+  postRoomsByRoomIdJoinMutation,
+  postRoomsMutation,
+  type PieceColor,
+  type RoomSessionDto,
+} from '@/lib/api'
 import { saveRoomSession } from '@/lib/roomSession'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -40,6 +45,8 @@ function BoardBand() {
 function Lobby() {
   const navigate = useNavigate()
   const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [color, setColor] = useState<PieceColor>('White')
   const create = useMutation(postRoomsMutation())
   const join = useMutation(postRoomsByRoomIdJoinMutation())
 
@@ -106,11 +113,44 @@ function Lobby() {
             <p className="text-sm text-amber-900/80">
               Buat room, kirim kodenya ke lawan, lalu papan tersinkron otomatis.
             </p>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 24))}
+              placeholder="Nama kamu (opsional)"
+              aria-label="Nama kamu"
+              autoComplete="off"
+              className="h-9 w-full rounded-lg border border-amber-950/20 bg-white/80 px-3 text-sm text-amber-950 outline-none placeholder:text-amber-800/50 focus-visible:border-amber-800/60 focus-visible:ring-[3px] focus-visible:ring-amber-800/20"
+            />
+            <div role="group" aria-label="Main sebagai" className="grid grid-cols-2 gap-2">
+              {(['White', 'Black'] as const).map((c) => (
+                <Button
+                  key={c}
+                  variant="outline"
+                  aria-pressed={color === c}
+                  onClick={() => setColor(c)}
+                  className={
+                    color === c
+                      ? 'border-amber-950/20 bg-amber-800 text-amber-50 hover:bg-amber-900 hover:text-amber-50'
+                      : 'border-amber-950/20 bg-white/70 text-amber-950 hover:bg-amber-100 hover:text-amber-950'
+                  }
+                >
+                  <span aria-hidden className="font-heading text-base leading-none">
+                    {c === 'White' ? '♔' : '♚'}
+                  </span>
+                  {c === 'White' ? 'Putih' : 'Hitam'}
+                </Button>
+              ))}
+            </div>
             <Button
               size="lg"
               className="w-full bg-amber-800 text-amber-50 hover:bg-amber-900 focus-visible:border-amber-900 focus-visible:ring-amber-800/30"
               disabled={create.isPending}
-              onClick={() => create.mutate({ body: { mode: 'Online' } }, { onSuccess: enter })}
+              onClick={() =>
+                create.mutate(
+                  { body: { mode: 'Online', color, name: name.trim() || null } },
+                  { onSuccess: enter },
+                )
+              }
             >
               {createLabel('Online', 'Buat Room')}
             </Button>
@@ -142,7 +182,12 @@ function Lobby() {
                 variant="outline"
                 className="border-amber-950/20 bg-white/70 text-amber-950 hover:bg-amber-100 hover:text-amber-950"
                 disabled={code.length < 6 || join.isPending}
-                onClick={() => join.mutate({ path: { roomId: code } }, { onSuccess: enter })}
+                onClick={() =>
+                  join.mutate(
+                    { path: { roomId: code }, query: { name: name.trim() || undefined } },
+                    { onSuccess: enter },
+                  )
+                }
               >
                 {join.isPending ? 'Menghubungkan…' : 'Gabung'}
               </Button>

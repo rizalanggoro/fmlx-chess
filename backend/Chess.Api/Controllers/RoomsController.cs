@@ -16,9 +16,13 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
         {
             var room = rooms.Create(request.Mode);
             if (room.Mode == RoomMode.Hotseat)
+            {
                 room.Manager.StartGame();
-            var token = room.Mode == RoomMode.Online ? room.ClaimWhite() : null;
-            return Ok(new RoomSessionDto(room.Id, room.Mode, token is null ? null : PieceColor.White, token));
+                return Ok(new RoomSessionDto(room.Id, room.Mode, null, null));
+            }
+            var color = request.Color ?? PieceColor.White;
+            var token = room.Claim(color, NormalizeName(request.Name))!;
+            return Ok(new RoomSessionDto(room.Id, room.Mode, color, token));
         }
         catch (Exception ex)
         {
@@ -27,7 +31,7 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("{roomId}/join")]
-    public ActionResult<RoomSessionDto> Join(string roomId)
+    public ActionResult<RoomSessionDto> Join(string roomId, [FromQuery] string? name)
     {
         try
         {
@@ -35,13 +39,12 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
                 return NotFound(new ApiErrorDto("Room not found"));
             if (room.Mode != RoomMode.Online)
                 return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
-            var token = room.ClaimBlack();
-            if (token is null)
+            if (room.ClaimFree(NormalizeName(name)) is not { } seat)
                 return Conflict(new ApiErrorDto("Room is full"));
             if (room.Manager.State == GameState.NotStarted)
                 room.Manager.StartGame();
             rooms.Notify();
-            return Ok(new RoomSessionDto(room.Id, room.Mode, PieceColor.Black, token));
+            return Ok(new RoomSessionDto(room.Id, room.Mode, seat.Color, seat.Token));
         }
         catch (Exception ex)
         {
@@ -54,6 +57,14 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
     {
         if (rooms.Find(roomId) is not { } room)
             return NotFound(new ApiErrorDto("Room not found"));
-        return Ok(new RoomStatusDto(room.Id, room.Mode, room.WhiteJoined, room.BlackJoined));
+        return Ok(new RoomStatusDto(room.Id, room.Mode, room.WhiteJoined, room.BlackJoined, room.WhiteName, room.BlackName));
+    }
+
+    private static string? NormalizeName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+        var trimmed = name.Trim();
+        return trimmed.Length > 24 ? trimmed[..24] : trimmed;
     }
 }

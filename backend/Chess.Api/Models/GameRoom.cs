@@ -9,6 +9,8 @@ public class GameRoom
     public GameManager Manager { get; }
     public string? WhiteToken { get; private set; }
     public string? BlackToken { get; private set; }
+    public string? WhiteName { get; private set; }
+    public string? BlackName { get; private set; }
 
     public GameRoom(string id, RoomMode mode, GameManager manager)
     {
@@ -21,14 +23,29 @@ public class GameRoom
 
     public bool BlackJoined => Mode == RoomMode.Hotseat || BlackToken is not null;
 
-    public string ClaimWhite()
+    public string? Claim(PieceColor color, string? name = null)
     {
-        return WhiteToken ??= NewToken();
+        if (color == PieceColor.White)
+        {
+            if (WhiteToken is not null)
+                return null;
+            WhiteName = name;
+            return WhiteToken = NewToken();
+        }
+
+        if (BlackToken is not null)
+            return null;
+        BlackName = name;
+        return BlackToken = NewToken();
     }
 
-    public string? ClaimBlack()
+    public (PieceColor Color, string Token)? ClaimFree(string? name = null)
     {
-        return BlackToken is null ? BlackToken = NewToken() : null;
+        if (WhiteToken is null)
+            return (PieceColor.White, Claim(PieceColor.White, name)!);
+        if (BlackToken is null)
+            return (PieceColor.Black, Claim(PieceColor.Black, name)!);
+        return null;
     }
 
     public PieceColor? ColorFor(string? token)

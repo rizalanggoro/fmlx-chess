@@ -14,7 +14,7 @@ import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/roomSession'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/room/$roomId')({ component: Room })
 
@@ -51,6 +51,7 @@ function Room() {
   const qc = useQueryClient()
   const [selected, setSelected] = useState<Position | null>(null)
   const [session, setSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
+  const [joinName, setJoinName] = useState('')
 
   const room = useQuery(getRoomsByRoomIdOptions({ path: { roomId } }))
   const state = useQuery(getRoomsByRoomIdGameOptions({ path: { roomId } }))
@@ -68,7 +69,6 @@ function Room() {
   const start = useMutation(postRoomsByRoomIdGameStartMutation())
   const resign = useMutation(postRoomsByRoomIdGameResignMutation())
   const join = useMutation(postRoomsByRoomIdJoinMutation())
-  const autoJoined = useRef(false)
 
   const online = room.data?.mode === 'Online'
   const waiting = online && !(room.data?.whiteJoined && room.data?.blackJoined)
@@ -79,14 +79,14 @@ function Room() {
   const myTurn = !online || turn === myColor
   const canAct = !online || myColor !== undefined
   const resignColor = online ? myColor : turn
+  const nameOf = (color: PieceColor) =>
+    color === 'White' ? room.data?.whiteName : room.data?.blackName
+  const label = (color: PieceColor) => (nameOf(color) ? `${color} (${nameOf(color)})` : color)
 
-  // Opening an online room link takes the free seat (Black).
-  useEffect(() => {
-    if (!online || session || !room.data || room.data.blackJoined || autoJoined.current || join.isPending)
-      return
-    autoJoined.current = true
+  // Joining takes whichever seat is still free.
+  const takeSeat = () =>
     join.mutate(
-      { path: { roomId } },
+      { path: { roomId }, query: { name: joinName.trim() || undefined } },
       {
         onSuccess: (res) => {
           if (!res.token || !res.color) return
@@ -97,7 +97,6 @@ function Room() {
         onError: () => void qc.invalidateQueries(),
       },
     )
-  }, [online, session, room.data, roomId, join, qc])
 
   const pieces = new Map((board.data ?? []).map((t) => [`${t.column},${t.row}`, t]))
   const targets = new Set((legal.data ?? []).map((m) => `${m.to.column},${m.to.row}`))
@@ -135,12 +134,46 @@ function Room() {
     return <div className="flex min-h-svh items-center justify-center p-4">Memuat…</div>
   }
 
+  if (online && !session && !(room.data.whiteJoined && room.data.blackJoined)) {
+    const seat = room.data.whiteJoined ? 'Black' : 'White'
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
+        <p className="text-lg font-semibold">Gabung ke room {roomId}</p>
+        <p className="text-sm text-muted-foreground">
+          Kamu akan main sebagai <span className="font-semibold text-foreground">{seat}</span>
+        </p>
+        <input
+          value={joinName}
+          onChange={(e) => setJoinName(e.target.value.slice(0, 24))}
+          placeholder="Nama kamu (opsional)"
+          aria-label="Nama kamu"
+          autoComplete="off"
+          className="h-9 w-64 rounded-lg border bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+        <div className="flex gap-2">
+          <Button disabled={join.isPending} onClick={takeSeat}>
+            {join.isPending ? 'Menghubungkan…' : 'Gabung'}
+          </Button>
+          <Button variant="outline" onClick={() => void navigate({ to: '/' })}>
+            Lobby
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (waiting) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
         <p className="text-lg font-semibold">Menunggu lawan bergabung…</p>
         <p className="text-sm text-muted-foreground">Bagikan kode room ini ke lawan:</p>
         <p className="font-mono text-4xl font-bold tracking-[0.3em]">{roomId}</p>
+        {myColor && (
+          <p className="text-sm text-muted-foreground">
+            Kamu main sebagai{' '}
+            <span className="font-semibold text-foreground">{label(myColor)}</span>
+          </p>
+        )}
         <Button variant="outline" onClick={() => void navigate({ to: '/' })}>
           Lobby
         </Button>
@@ -193,20 +226,23 @@ function Room() {
         <div className="rounded-lg border p-4">
           {online && (
             <p className="mb-1 text-sm text-muted-foreground">
-              Kamu: <span className="font-semibold text-foreground">{myColor ?? 'Penonton'}</span> ·
-              Kode room: <span className="font-mono font-semibold text-foreground">{roomId}</span>
+              Kamu:{' '}
+              <span className="font-semibold text-foreground">
+                {myColor ? label(myColor) : 'Penonton'}
+              </span>{' '}
+              · Kode room: <span className="font-mono font-semibold text-foreground">{roomId}</span>
             </p>
           )}
           {state.data &&
             (over && state.data.result ? (
               <p className="font-semibold">
                 {state.data.result.winner
-                  ? `${state.data.result.winner} menang — ${REASONS[state.data.result.reason]}`
+                  ? `${label(state.data.result.winner)} menang — ${REASONS[state.data.result.reason]}`
                   : REASONS[state.data.result.reason]}
               </p>
             ) : (
               <p>
-                Giliran: <span className="font-semibold">{turn}</span>
+                Giliran: <span className="font-semibold">{turn ? label(turn) : null}</span>
               </p>
             ))}
           <p className="text-sm text-muted-foreground">Langkah: {state.data?.moveCount ?? 0}</p>

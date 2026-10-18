@@ -3,4 +3,4 @@ using Api.Models;
 
 namespace Api.DTOs;
 
-public record CreateRoomRequest([property: JsonRequired] RoomMode Mode);
+public record CreateRoomRequest([property: JsonRequired] RoomMode Mode, PieceColor? Color = null, string? Name = null);

@@ -828,6 +828,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -932,6 +939,18 @@
                 "$ref": "#/components/schemas/RoomMode"
               }
             ]
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ],
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -1235,6 +1254,14 @@
           },
           "blackJoined": {
             "type": "boolean"
+          },
+          "whiteName": {
+            "type": "string",
+            "nullable": true
+          },
+          "blackName": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
