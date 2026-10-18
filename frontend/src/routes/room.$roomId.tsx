@@ -1,4 +1,15 @@
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,7 +45,7 @@ import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/roomSession'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, type ComponentProps } from 'react'
 
 export const Route = createFileRoute('/room/$roomId')({ component: Room })
 
@@ -68,6 +79,59 @@ const same = (a: Position | null, b: Position) =>
   a !== null && a.column === b.column && a.row === b.row
 
 const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
+
+// Alert dialogs in this shadcn flavor do not close themselves, so the open state is ours.
+function Confirm({
+  label,
+  className,
+  variant,
+  disabled,
+  title,
+  description,
+  confirmLabel,
+  confirmVariant,
+  onConfirm,
+}: {
+  label: string
+  className?: string
+  variant?: ComponentProps<typeof Button>['variant']
+  disabled?: boolean
+  title: string
+  description: string
+  confirmLabel: string
+  confirmVariant?: ComponentProps<typeof Button>['variant']
+  onConfirm: () => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger
+        render={<Button className={className} variant={variant} disabled={disabled} />}
+      >
+        {label}
+      </AlertDialogTrigger>
+      <AlertDialogContent size="sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Batal</AlertDialogCancel>
+          <AlertDialogAction
+            variant={confirmVariant}
+            onClick={() => {
+              setOpen(false)
+              onConfirm()
+            }}
+          >
+            {confirmLabel}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  )
+}
 
 function Room() {
   const { roomId } = Route.useParams()
@@ -396,32 +460,47 @@ function Room() {
             </CardContent>
           </Card>
 
-          <div className="flex flex-wrap gap-2">
-            {canAct && (
-              <Button
-                disabled={start.isPending}
-                onClick={() => start.mutate({ path: { roomId } })}
-              >
-                Game baru
-              </Button>
-            )}
-            <Button variant="outline" onClick={toLobby}>
-              Lobby
-            </Button>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              {canAct && (
+                <Confirm
+                  className="flex-1"
+                  label="Game baru"
+                  disabled={start.isPending}
+                  title="Mulai game baru?"
+                  description="Papan dan riwayat langkah akan direset dari awal."
+                  confirmLabel="Ya, mulai baru"
+                  onConfirm={() => start.mutate({ path: { roomId } })}
+                />
+              )}
+              <Confirm
+                className="flex-1"
+                label="Lobby"
+                variant="outline"
+                title="Keluar ke lobby?"
+                description="Room ini tetap hidup — kamu bisa masuk lagi pakai kode room."
+                confirmLabel="Keluar ke lobby"
+                onConfirm={toLobby}
+              />
+            </div>
             {!over && canAct && resignColor && (
-              <Button
+              <Confirm
+                className="w-full"
+                label={`${colorName(resignColor)} menyerah`}
                 variant="destructive"
                 disabled={resign.isPending}
-                onClick={() =>
+                title="Menyerah?"
+                description={`${colorName(resignColor)} akan dinyatakan kalah dan game selesai.`}
+                confirmLabel="Ya, menyerah"
+                confirmVariant="destructive"
+                onConfirm={() =>
                   resign.mutate({
                     path: { roomId },
                     body: { color: resignColor },
                     query: token ? { token } : undefined,
                   })
                 }
-              >
-                {colorName(resignColor)} menyerah
-              </Button>
+              />
             )}
           </div>
 
