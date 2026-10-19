@@ -3,4 +3,8 @@ using Api.Models;
 
 namespace Api.DTOs;
 
-public record RoomSessionDto(string Id, RoomMode Mode, PieceColor? Color, string? Token);
+public record RoomSessionDto(
+    string Id,
+    RoomMode Mode,
+    PieceColor? Color,
+    string? Token);

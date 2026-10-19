@@ -13,7 +13,10 @@ public class GameRoom
     public string? WhiteName { get; private set; }
     public string? BlackName { get; private set; }
 
-    public GameRoom(string id, RoomMode mode, GameManager manager)
+    public GameRoom(
+        string id,
+        RoomMode mode,
+        GameManager manager)
     {
         Id = id;
         Mode = mode;

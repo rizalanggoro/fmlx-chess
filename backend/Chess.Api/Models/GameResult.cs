@@ -2,4 +2,6 @@ using Api.Enums;
 
 namespace Api.Models;
 
-public record GameResult(GameEndReason Reason, PieceColor? Winner);
+public record GameResult(
+    GameEndReason Reason,
+    PieceColor? Winner);

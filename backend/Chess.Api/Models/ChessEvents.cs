@@ -27,7 +27,9 @@ public class PieceCapturedEventArgs : EventArgs
     public IChessPiece CapturedPiece { get; }
     public Position TilePosition { get; }
 
-    public PieceCapturedEventArgs(IChessPiece capturedPiece, Position tilePosition)
+    public PieceCapturedEventArgs(
+        IChessPiece capturedPiece,
+        Position tilePosition)
     {
         CapturedPiece = capturedPiece;
         TilePosition = tilePosition;
@@ -69,7 +71,9 @@ public class TimerTickEventArgs : EventArgs
     public PieceColor Color { get; }
     public TimeSpan TimeRemaining { get; }
 
-    public TimerTickEventArgs(PieceColor color, TimeSpan timeRemaining)
+    public TimerTickEventArgs(
+        PieceColor color,
+        TimeSpan timeRemaining)
     {
         Color = color;
         TimeRemaining = timeRemaining;

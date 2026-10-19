@@ -1,3 +1,6 @@
 namespace Api.Models;
 
-public record MoveApplicationResult(IChessPiece MovingPiece, IChessPiece? CapturedPiece, Position? CapturedSquare);
+public record MoveApplicationResult(
+    IChessPiece MovingPiece,
+    IChessPiece? CapturedPiece,
+    Position? CapturedSquare);
