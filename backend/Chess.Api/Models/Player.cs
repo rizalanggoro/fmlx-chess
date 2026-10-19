@@ -1,3 +1,5 @@
+using Api.Enums;
+
 namespace Api.Models;
 
 public class Player(string name, PieceColor color) : IPlayer

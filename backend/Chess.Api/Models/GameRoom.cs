@@ -1,3 +1,4 @@
+using Api.Enums;
 using Api.Services;
 
 namespace Api.Models;

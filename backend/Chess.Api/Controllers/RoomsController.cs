@@ -1,3 +1,4 @@
+using Api.Enums;
 using Api.DTOs;
 using Api.Models;
 using Api.Services;

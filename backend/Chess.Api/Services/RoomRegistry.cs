@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Api.Enums;
 using Api.Hubs;
 using Api.Models;
 using Microsoft.AspNetCore.SignalR;

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Api.Enums;
 
 namespace Api.Models;
 

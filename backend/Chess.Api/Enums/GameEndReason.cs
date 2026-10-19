@@ -1,27 +1,4 @@
-namespace Api.Models;
-
-public enum PieceColor
-{
-    Black,
-    White
-}
-
-public enum PieceType
-{
-    King,
-    Queen,
-    Rook,
-    Knight,
-    Bishop,
-    Pawn
-}
-
-public enum GameState
-{
-    NotStarted,
-    InProgress,
-    Completed
-}
+namespace Api.Enums;
 
 public enum GameEndReason
 {

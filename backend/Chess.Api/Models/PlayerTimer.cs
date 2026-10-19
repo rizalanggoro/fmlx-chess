@@ -1,3 +1,5 @@
+using Api.Enums;
+
 namespace Api.Models;
 
 public class PlayerTimer(TimeSpan initialTime) : IPlayerTimer
