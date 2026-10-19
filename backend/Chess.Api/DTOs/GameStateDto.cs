@@ -8,4 +8,6 @@ public record GameStateDto(
     GameResult? Result,
     CastlingRights CastlingRights,
     Position? EnPassantTarget,
-    int MoveCount);
+    int MoveCount,
+    int WhiteRemainingSeconds,
+    int BlackRemainingSeconds);

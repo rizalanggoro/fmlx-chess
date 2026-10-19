@@ -45,7 +45,7 @@ import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/roomSession'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, type ComponentProps } from 'react'
+import { useEffect, useState, type ComponentProps } from 'react'
 
 export const Route = createFileRoute('/room/$roomId')({ component: Room })
 
@@ -168,6 +168,26 @@ function Room() {
   const myTurn = !online || turn === myColor
   const canAct = !online || myColor !== undefined
   const resignColor = online ? myColor : turn
+
+  // Jam jalan lokal di antara refetch: state dari server membawa sisa detik, tiap langkah/GameChanged
+  // memicu refetch sehingga jamnya tersinkron lagi.
+  const [, tickClock] = useState(0)
+  useEffect(() => {
+    if (state.data?.state !== 'InProgress') return
+    const id = setInterval(() => tickClock((n) => n + 1), 1000)
+    return () => clearInterval(id)
+  }, [state.data?.state])
+
+  const secondsLeft = (color: PieceColor) => {
+    const base = (
+      color === 'White' ? state.data?.whiteRemainingSeconds : state.data?.blackRemainingSeconds
+    ) ?? 0
+    const running = state.data?.state === 'InProgress' && turn === color
+    const elapsed = running ? (Date.now() - state.dataUpdatedAt) / 1000 : 0
+    return Math.max(0, Math.ceil(base - elapsed))
+  }
+  const clock = (seconds: number) =>
+    `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
   const nameOf = (color: PieceColor) =>
     color === 'White' ? room.data?.whiteName : room.data?.blackName
   const label = (color: PieceColor) =>
@@ -441,6 +461,13 @@ function Room() {
                       </p>
                     </div>
                     {active && <Badge>Giliran</Badge>}
+                    <span
+                      className={`font-mono text-sm tabular-nums ${
+                        active ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {clock(secondsLeft(color))}
+                    </span>
                   </div>
                 )
               })}

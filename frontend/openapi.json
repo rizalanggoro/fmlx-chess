@@ -1004,10 +1004,12 @@
       },
       "GameStateDto": {
         "required": [
+          "blackRemainingSeconds",
           "castlingRights",
           "currentPlayer",
           "moveCount",
-          "state"
+          "state",
+          "whiteRemainingSeconds"
         ],
         "type": "object",
         "properties": {
@@ -1049,6 +1051,14 @@
             "nullable": true
           },
           "moveCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "whiteRemainingSeconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "blackRemainingSeconds": {
             "type": "integer",
             "format": "int32"
           }

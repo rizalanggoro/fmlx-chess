@@ -232,7 +232,14 @@ public class GameController(RoomRegistry rooms) : ControllerBase
             manager.Result,
             manager.CastlingRights,
             manager.EnPassantTarget,
-            manager.MoveHistory.Count);
+            manager.MoveHistory.Count,
+            RemainingSeconds(manager, PieceColor.White),
+            RemainingSeconds(manager, PieceColor.Black));
+    }
+
+    private static int RemainingSeconds(GameManager manager, PieceColor color)
+    {
+        return (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
     }
 
     private IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request, string? token)

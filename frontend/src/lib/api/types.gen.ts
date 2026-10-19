@@ -33,6 +33,8 @@ export type GameStateDto = {
     castlingRights: CastlingRights;
     enPassantTarget?: Position | null;
     moveCount: number;
+    whiteRemainingSeconds: number;
+    blackRemainingSeconds: number;
 };
 
 export type Move = {
