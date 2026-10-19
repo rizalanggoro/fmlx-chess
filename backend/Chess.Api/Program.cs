@@ -23,10 +23,11 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-// ponytail: open CORS, tighten when auth exists
+// ponytail: open CORS (semua environment, FE di subdomain terpisah), tighten when auth exists
+app.UseCors();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseCors();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
