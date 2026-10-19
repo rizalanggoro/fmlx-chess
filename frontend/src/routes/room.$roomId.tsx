@@ -171,10 +171,10 @@ function Room() {
 
   // Jam jalan lokal di antara refetch: state dari server membawa sisa detik, tiap langkah/GameChanged
   // memicu refetch sehingga jamnya tersinkron lagi.
-  const [, tickClock] = useState(0)
+  const [now, setNow] = useState(0)
   useEffect(() => {
     if (state.data?.state !== 'InProgress') return
-    const id = setInterval(() => tickClock((n) => n + 1), 1000)
+    const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [state.data?.state])
 
@@ -183,7 +183,8 @@ function Room() {
       color === 'White' ? state.data?.whiteRemainingSeconds : state.data?.blackRemainingSeconds
     ) ?? 0
     const running = state.data?.state === 'InProgress' && turn === color
-    const elapsed = running ? (Date.now() - state.dataUpdatedAt) / 1000 : 0
+    // now = 0 sampai tick pertama: tampilkan angka server apa adanya (tanpa flash 10:01).
+    const elapsed = running ? Math.max(0, (now - state.dataUpdatedAt) / 1000) : 0
     return Math.max(0, Math.ceil(base - elapsed))
   }
   const clock = (seconds: number) =>

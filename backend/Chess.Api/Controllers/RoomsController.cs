@@ -23,12 +23,24 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
             }
             var color = request.Color ?? PieceColor.White;
             var token = room.Claim(color, NormalizeName(request.Name))!;
+            rooms.Notify();
             return Ok(new RoomSessionDto(room.Id, room.Mode, color, token));
         }
         catch (Exception ex)
         {
             return StatusCode(500, new ApiErrorDto("An error occurred while creating the room", ex.Message));
         }
+    }
+
+    [HttpGet]
+    public ActionResult<IEnumerable<RoomStatusDto>> List()
+    {
+        // ponytail: all open rooms in one array; add paging when a lobby actually gets crowded
+        var open = rooms.All
+            .Where(room => room.Mode == RoomMode.Online && room.WhiteJoined != room.BlackJoined)
+            .OrderBy(room => room.Id)
+            .Select(ToDto);
+        return Ok(open);
     }
 
     [HttpPost("{roomId}/join")]
@@ -58,7 +70,18 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
     {
         if (rooms.Find(roomId) is not { } room)
             return NotFound(new ApiErrorDto("Room not found"));
-        return Ok(new RoomStatusDto(room.Id, room.Mode, room.WhiteJoined, room.BlackJoined, room.WhiteName, room.BlackName));
+        return Ok(ToDto(room));
+    }
+
+    private static RoomStatusDto ToDto(GameRoom room)
+    {
+        return new RoomStatusDto(
+            room.Id,
+            room.Mode,
+            room.WhiteJoined,
+            room.BlackJoined,
+            room.WhiteName,
+            room.BlackName);
     }
 
     private static string? NormalizeName(string? name)

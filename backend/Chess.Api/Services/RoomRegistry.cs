@@ -31,6 +31,8 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
         return _rooms.TryGetValue(id, out var room) ? room : null;
     }
 
+    public IEnumerable<GameRoom> All => _rooms.Values;
+
     public void Notify()
     {
         _ = SendSafeAsync();

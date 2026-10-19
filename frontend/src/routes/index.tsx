@@ -12,13 +12,14 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
+  getRoomsOptions,
   postRoomsByRoomIdJoinMutation,
   postRoomsMutation,
   type PieceColor,
   type RoomSessionDto,
 } from '@/lib/api'
 import { saveRoomSession } from '@/lib/roomSession'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
@@ -41,6 +42,8 @@ function Lobby() {
   const [color, setColor] = useState<PieceColor>('White')
   const create = useMutation(postRoomsMutation())
   const join = useMutation(postRoomsByRoomIdJoinMutation())
+  const open = useQuery(getRoomsOptions())
+  const openRooms = open.data ?? []
 
   const enter = (res: RoomSessionDto) => {
     if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
@@ -160,9 +163,17 @@ function Lobby() {
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <Separator className="flex-1" />
-                atau gabung pakai kode
+                atau gabung
                 <Separator className="flex-1" />
               </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => void navigate({ to: '/rooms' })}
+              >
+                Pilih room terbuka{openRooms.length > 0 && ` (${openRooms.length})`}
+              </Button>
 
               <div className="flex gap-2">
                 <Input

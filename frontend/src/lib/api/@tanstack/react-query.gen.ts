@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { getRoomsByRoomId, getRoomsByRoomIdGame, getRoomsByRoomIdGameBoard, getRoomsByRoomIdGameHistory, getRoomsByRoomIdGameLegalMoves, type Options, postRooms, postRoomsByRoomIdGameDrawClaimFifty, postRoomsByRoomIdGameDrawClaimThreefold, postRoomsByRoomIdGameDrawOffer, postRoomsByRoomIdGameDrawRespond, postRoomsByRoomIdGameMoves, postRoomsByRoomIdGameReset, postRoomsByRoomIdGameResign, postRoomsByRoomIdGameStart, postRoomsByRoomIdJoin } from '../sdk.gen';
-import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponse, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponse, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponse, GetRoomsByRoomIdGameResponse, GetRoomsByRoomIdResponse, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponse, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponse, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponse, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponse, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponse, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponse, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponse, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponse, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponse, PostRoomsData, PostRoomsResponse } from '../types.gen';
+import { getRooms, getRoomsByRoomId, getRoomsByRoomIdGame, getRoomsByRoomIdGameBoard, getRoomsByRoomIdGameHistory, getRoomsByRoomIdGameLegalMoves, type Options, postRooms, postRoomsByRoomIdGameDrawClaimFifty, postRoomsByRoomIdGameDrawClaimThreefold, postRoomsByRoomIdGameDrawOffer, postRoomsByRoomIdGameDrawRespond, postRoomsByRoomIdGameMoves, postRoomsByRoomIdGameReset, postRoomsByRoomIdGameResign, postRoomsByRoomIdGameStart, postRoomsByRoomIdJoin } from '../sdk.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponse, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponse, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponse, GetRoomsByRoomIdGameResponse, GetRoomsByRoomIdResponse, GetRoomsData, GetRoomsResponse, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponse, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponse, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponse, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponse, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponse, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponse, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponse, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponse, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponse, PostRoomsData, PostRoomsResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -210,6 +210,21 @@ export const postRoomsByRoomIdGameDrawClaimFiftyMutation = (options?: Partial<Op
     };
     return mutationOptions;
 };
+
+export const getRoomsQueryKey = (options?: Options<GetRoomsData>) => createQueryKey('getRooms', options);
+
+export const getRoomsOptions = (options?: Options<GetRoomsData>) => queryOptions<GetRoomsResponse, DefaultError, GetRoomsResponse, ReturnType<typeof getRoomsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRooms({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsQueryKey(options)
+});
 
 export const postRoomsMutation = (options?: Partial<Options<PostRoomsData>>): UseMutationOptions<PostRoomsResponse, DefaultError, Options<PostRoomsData>> => {
     const mutationOptions: UseMutationOptions<PostRoomsResponse, DefaultError, Options<PostRoomsData>> = {

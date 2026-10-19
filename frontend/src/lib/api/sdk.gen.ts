@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, GetRoomsData, GetRoomsResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -83,6 +83,8 @@ export const postRoomsByRoomIdGameDrawClaimFifty = <ThrowOnError extends boolean
         ...options.headers
     }
 });
+
+export const getRooms = <ThrowOnError extends boolean = false>(options?: Options<GetRoomsData, ThrowOnError>): RequestResult<GetRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetRoomsResponses, unknown, ThrowOnError>({ url: '/rooms', ...options });
 
 export const postRooms = <ThrowOnError extends boolean = false>(options?: Options<PostRoomsData, ThrowOnError>): RequestResult<PostRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostRoomsResponses, unknown, ThrowOnError>({
     url: '/rooms',

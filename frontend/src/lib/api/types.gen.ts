@@ -326,6 +326,22 @@ export type PostRoomsByRoomIdGameDrawClaimFiftyResponses = {
 
 export type PostRoomsByRoomIdGameDrawClaimFiftyResponse = PostRoomsByRoomIdGameDrawClaimFiftyResponses[keyof PostRoomsByRoomIdGameDrawClaimFiftyResponses];
 
+export type GetRoomsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/rooms';
+};
+
+export type GetRoomsResponses = {
+    /**
+     * OK
+     */
+    200: Array<RoomStatusDto>;
+};
+
+export type GetRoomsResponse = GetRoomsResponses[keyof GetRoomsResponses];
+
 export type PostRoomsData = {
     body?: CreateRoomRequest;
     path?: never;
