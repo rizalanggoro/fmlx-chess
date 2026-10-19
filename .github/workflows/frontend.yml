@@ -21,7 +21,8 @@ jobs:
 
       - uses: docker/build-push-action@v7
         with:
-          context: frontend
+          context: .
+          file: frontend/Dockerfile
           # <user>/fmlx-chess:frontend
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/fmlx-chess:frontend
           build-args: |

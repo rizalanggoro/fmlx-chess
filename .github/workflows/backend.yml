@@ -21,7 +21,8 @@ jobs:
 
       - uses: docker/build-push-action@v7
         with:
-          context: backend
+          context: .
+          file: backend/Dockerfile
           # <user>/fmlx-chess:backend
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/fmlx-chess:backend
           push: true
