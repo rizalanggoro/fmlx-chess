@@ -2,6 +2,7 @@ using Api.Enums;
 using Api.DTOs;
 using Api.Models;
 using Api.Services;
+using Api.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;

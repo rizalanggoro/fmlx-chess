@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Api.Enums;
+using Api.ValueObjects;
 
 namespace Api.Models;
 

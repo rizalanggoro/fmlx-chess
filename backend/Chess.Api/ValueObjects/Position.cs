@@ -1,7 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace Api.Models;
+namespace Api.ValueObjects;
 
 public readonly record struct Position(
     [property: JsonRequired] int Column,
-    [property: JsonRequired] int Row);
+    [property: JsonRequired] int Row
+);

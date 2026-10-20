@@ -1,3 +1,5 @@
+using Api.ValueObjects;
+
 namespace Api.Models;
 
 public class Board : IBoard
