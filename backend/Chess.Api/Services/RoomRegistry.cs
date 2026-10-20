@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using Api.DTOs;
 using Api.Enums;
+using Api.Events;
 using Api.Hubs;
 using Api.Models;
 using Microsoft.AspNetCore.SignalR;
@@ -45,23 +47,35 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
 
     private void Hook(GameRoom room)
     {
-        room.Manager.PieceMoved += (_, _) => NotifyRoom(room.Id);
-        room.Manager.PieceCaptured += (_, _) => NotifyRoom(room.Id);
-        room.Manager.TurnChanged += (_, _) => NotifyRoom(room.Id);
-        room.Manager.CheckDeclared += (_, _) => NotifyRoom(room.Id);
-        room.Manager.GameEnded += (_, _) => NotifyRoom(room.Id);
-        room.Manager.DrawOffered += (_, _) => NotifyRoom(room.Id);
+        room.Manager.PieceMovedEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.PieceCapturedEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.TurnChangedEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.CheckDeclaredEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.GameEndedEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.DrawOfferedEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.TimerTickedEventHandler += (_, e) => NotifyTimerTick(room.Id, e);
     }
 
-    private async Task SendSafeAsync(string group)
+    private void NotifyTimerTick(string roomId, TimerTickEventArgs e)
+    {
+        _ = SendSafeAsync(
+            GameGroups.Room(roomId),
+            "TimerTick",
+            new TimerTickDto(roomId, e.Color, (int)e.TimeRemaining.TotalSeconds));
+    }
+
+    private async Task SendSafeAsync(string group, string method = "GameChanged", object? payload = null)
     {
         try
         {
-            await hub.Clients.Group(group).SendAsync("GameChanged");
+            if (payload is null)
+                await hub.Clients.Group(group).SendAsync(method);
+            else
+                await hub.Clients.Group(group).SendAsync(method, payload);
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to broadcast game change");
+            logger.LogWarning(ex, "Failed to broadcast {Method} to {Group}", method, group);
         }
     }
 }

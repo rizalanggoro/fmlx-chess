@@ -1,3 +1,4 @@
+using System.Text;
 using Api.Enums;
 using Api.Events;
 using Api.Models;
@@ -7,41 +8,20 @@ namespace Api.Services;
 
 public class GameManager
 {
-    private IPlayer? _drawOfferer;
-    private readonly IPlayer _whitePlayer;
     private readonly IPlayer _blackPlayer;
-    private readonly TimeSpan _initialTime;
-    private readonly List<MoveHistoryEntry> _moveHistory = new();
+
     private readonly Dictionary<PieceColor, List<IChessPiece>> _captured = new()
     {
-        [PieceColor.White] = new(),
-        [PieceColor.Black] = new()
+        [PieceColor.White] = [],
+        [PieceColor.Black] = []
     };
-    private int _halfmoveClock;
-    private List<string> _positionHistory = new();
 
-    public IBoard GameBoard { get; private set; }
-    public IPlayer CurrentPlayer { get; private set; }
-    public GameState State { get; private set; }
-    public GameResult? Result { get; private set; }
-    public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
-    public PromotionSelectionHandler PromotionSelector { get; set; }
-    public Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; } = new();
-    public Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker => new()
-    {
-        [PieceColor.White] = _captured[PieceColor.White],
-        [PieceColor.Black] = _captured[PieceColor.Black]
-    };
-    public CastlingRights CastlingRights { get; private set; }
-    public Position? EnPassantTarget { get; private set; }
-
-    public event EventHandler<PieceMovedEventArgs> PieceMoved = delegate { };
-    public event EventHandler<PieceCapturedEventArgs> PieceCaptured = delegate { };
-    public event EventHandler<TurnChangedEventArgs> TurnChanged = delegate { };
-    public event EventHandler<CheckEventArgs> CheckDeclared = delegate { };
-    public event EventHandler<GameEndedEventArgs> GameEnded = delegate { };
-    public event EventHandler<DrawOfferedEventArgs> DrawOffered = delegate { };
-    public event EventHandler<TimerTickEventArgs> TimerTick = delegate { };
+    private readonly TimeSpan _initialTime;
+    private readonly List<MoveHistoryEntry> _moveHistory = [];
+    private readonly List<string> _positionHistory = [];
+    private readonly IPlayer _whitePlayer;
+    private IPlayer? _drawOfferer;
+    private int _halfMoveClock;
 
     public GameManager(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
     {
@@ -55,6 +35,31 @@ public class GameManager
         CastlingRights = new CastlingRights(true, true, true, true);
         ResetTimers();
     }
+
+    public IBoard GameBoard { get; }
+    public IPlayer CurrentPlayer { get; private set; }
+    public GameState State { get; private set; }
+    public GameResult? Result { get; private set; }
+    public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
+    public PromotionSelectionHandler PromotionSelector { get; set; }
+    public Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; } = new();
+
+    public Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker => new()
+    {
+        [PieceColor.White] = _captured[PieceColor.White],
+        [PieceColor.Black] = _captured[PieceColor.Black]
+    };
+
+    public CastlingRights CastlingRights { get; private set; }
+    public Position? EnPassantTarget { get; private set; }
+
+    public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
+    public event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
+    public event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
+    public event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;
+    public event EventHandler<GameEndedEventArgs>? GameEndedEventHandler;
+    public event EventHandler<DrawOfferedEventArgs>? DrawOfferedEventHandler;
+    public event EventHandler<TimerTickEventArgs>? TimerTickedEventHandler;
 
     public void StartGame()
     {
@@ -98,7 +103,8 @@ public class GameManager
         Result = result;
         foreach (var t in PlayerTimeTracker.Values)
             t.StopTimer();
-        GameEnded.Invoke(this, new GameEndedEventArgs(result));
+
+        GameEndedEventHandler?.Invoke(this, new GameEndedEventArgs(result));
     }
 
     public bool TryMakeMove(Move move)
@@ -131,18 +137,22 @@ public class GameManager
                     chosen = m;
                     break;
                 }
+
                 chosen ??= m;
             }
         }
+
         if (chosen is null)
             return false;
         var effective = chosen;
-        if (effective.PromotionType is null && piece.Type == PieceType.Pawn && IsOnPromotionRank(effective.To, piece.Color))
+        if (effective.PromotionType is null && piece.Type == PieceType.Pawn &&
+            IsOnPromotionRank(effective.To, piece.Color))
             effective = effective with { PromotionType = PromotionSelector(piece.Color) };
-        bool wasPawn = piece.Type == PieceType.Pawn;
+        var wasPawn = piece.Type == PieceType.Pawn;
         var targetPiece = GetPieceAt(effective.To);
-        bool isEnPassant = wasPawn && EnPassantTarget.HasValue && effective.To.Equals(EnPassantTarget.Value) && targetPiece is null;
-        bool wasCapture = targetPiece is not null || isEnPassant;
+        var isEnPassant = wasPawn && EnPassantTarget.HasValue && effective.To.Equals(EnPassantTarget.Value) &&
+                          targetPiece is null;
+        var wasCapture = targetPiece is not null || isEnPassant;
         var app = ApplyMove(GameBoard, effective);
         UpdateCastlingRights(GameBoard, effective, piece, app.CapturedPiece);
         UpdateEnPassantTarget(GameBoard, effective, piece);
@@ -153,17 +163,19 @@ public class GameManager
         var opponent = moverColor == PieceColor.White ? PieceColor.Black : PieceColor.White;
         RecordCompletedMove(GameBoard, opponent, wasPawn, wasCapture);
         _drawOfferer = null;
-        PieceMoved.Invoke(this, new PieceMovedEventArgs(effective));
+        PieceMovedEventHandler?.Invoke(this, new PieceMovedEventArgs(effective));
         if (app.CapturedPiece is not null && app.CapturedSquare.HasValue)
-            PieceCaptured.Invoke(this, new PieceCapturedEventArgs(app.CapturedPiece, app.CapturedSquare.Value));
+            PieceCapturedEventHandler?.Invoke(this,
+                new PieceCapturedEventArgs(app.CapturedPiece, app.CapturedSquare.Value));
         if (IsKingInCheck(GameBoard, opponent))
-            CheckDeclared.Invoke(this, new CheckEventArgs(opponent));
+            CheckDeclaredEventHandler?.Invoke(this, new CheckEventArgs(opponent));
         var auto = EvaluateAutomaticResult();
         if (auto is not null)
         {
             EndGame(auto);
             return true;
         }
+
         ChangeTurn();
         return true;
     }
@@ -171,9 +183,13 @@ public class GameManager
     public void SetupInitialBoardPosition()
     {
         for (var c = 0; c < 8; c++)
-            for (var r = 0; r < 8; r++)
-                GameBoard.Tiles[c, r].Piece = null;
-        var back = new[] { PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King, PieceType.Bishop, PieceType.Knight, PieceType.Rook };
+        for (var r = 0; r < 8; r++)
+            GameBoard.Tiles[c, r].Piece = null;
+        var back = new[]
+        {
+            PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King, PieceType.Bishop,
+            PieceType.Knight, PieceType.Rook
+        };
         for (var c = 0; c < 8; c++)
         {
             GameBoard.Tiles[c, 0].Piece = new ChessPiece(PieceColor.White, back[c]);
@@ -181,6 +197,7 @@ public class GameManager
             GameBoard.Tiles[c, 6].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
             GameBoard.Tiles[c, 7].Piece = new ChessPiece(PieceColor.Black, back[c]);
         }
+
         CastlingRights = new CastlingRights(true, true, true, true);
         EnPassantTarget = null;
     }
@@ -206,12 +223,13 @@ public class GameManager
     {
         var list = new List<IChessPiece>();
         for (var c = 0; c < 8; c++)
-            for (var r = 0; r < 8; r++)
-            {
-                var p = GameBoard.Tiles[c, r].Piece;
-                if (p is not null && p.Color == color)
-                    list.Add(p);
-            }
+        for (var r = 0; r < 8; r++)
+        {
+            var p = GameBoard.Tiles[c, r].Piece;
+            if (p is not null && p.Color == color)
+                list.Add(p);
+        }
+
         return list;
     }
 
@@ -252,8 +270,8 @@ public class GameManager
         var piece = board.Tiles[from.Column, from.Row].Piece;
         if (piece is null)
             return moves;
-        int dir = piece.Color == PieceColor.White ? 1 : -1;
-        int startRow = piece.Color == PieceColor.White ? 1 : 6;
+        var dir = piece.Color == PieceColor.White ? 1 : -1;
+        var startRow = piece.Color == PieceColor.White ? 1 : 6;
         var one = new Position(from.Column, from.Row + dir);
         if (IsInBounds(one) && board.Tiles[one.Column, one.Row].Piece is null)
         {
@@ -262,6 +280,7 @@ public class GameManager
             if (from.Row == startRow && IsInBounds(two) && board.Tiles[two.Column, two.Row].Piece is null)
                 moves.Add(new Move(from, two));
         }
+
         foreach (var dc in new[] { -1, 1 })
         {
             var to = new Position(from.Column + dc, from.Row + dir);
@@ -273,6 +292,7 @@ public class GameManager
             else if (target is null && EnPassantTarget.HasValue && to.Equals(EnPassantTarget.Value))
                 moves.Add(new Move(from, to));
         }
+
         return moves;
     }
 
@@ -307,6 +327,7 @@ public class GameManager
             if (target is null || target.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
+
         return moves;
     }
 
@@ -324,6 +345,7 @@ public class GameManager
             dirs.Add((-1, 1));
             dirs.Add((-1, -1));
         }
+
         if (piece.Type == PieceType.Rook || piece.Type == PieceType.Queen)
         {
             dirs.Add((1, 0));
@@ -331,6 +353,7 @@ public class GameManager
             dirs.Add((0, 1));
             dirs.Add((0, -1));
         }
+
         foreach (var (dc, dr) in dirs)
         {
             var c = from.Column + dc;
@@ -348,10 +371,12 @@ public class GameManager
                         moves.Add(new Move(from, new Position(c, r)));
                     break;
                 }
+
                 c += dc;
                 r += dr;
             }
         }
+
         return moves;
     }
 
@@ -362,17 +387,18 @@ public class GameManager
         if (piece is null)
             return moves;
         for (var dc = -1; dc <= 1; dc++)
-            for (var dr = -1; dr <= 1; dr++)
-            {
-                if (dc == 0 && dr == 0)
-                    continue;
-                var to = new Position(from.Column + dc, from.Row + dr);
-                if (!IsInBounds(to))
-                    continue;
-                var target = board.Tiles[to.Column, to.Row].Piece;
-                if (target is null || target.Color != piece.Color)
-                    moves.Add(new Move(from, to));
-            }
+        for (var dr = -1; dr <= 1; dr++)
+        {
+            if (dc == 0 && dr == 0)
+                continue;
+            var to = new Position(from.Column + dc, from.Row + dr);
+            if (!IsInBounds(to))
+                continue;
+            var target = board.Tiles[to.Column, to.Row].Piece;
+            if (target is null || target.Color != piece.Color)
+                moves.Add(new Move(from, to));
+        }
+
         return moves;
     }
 
@@ -407,6 +433,7 @@ public class GameManager
                 && !IsSquareAttacked(board, new Position(2, 0), enemy))
                 moves.Add(new Move(from, new Position(2, 0)));
         }
+
         if (piece.Color == PieceColor.Black && from.Equals(new Position(4, 7)))
         {
             if (CastlingRights.BlackKingSide
@@ -429,6 +456,7 @@ public class GameManager
                 && !IsSquareAttacked(board, new Position(2, 7), enemy))
                 moves.Add(new Move(from, new Position(2, 7)));
         }
+
         return moves;
     }
 
@@ -439,7 +467,7 @@ public class GameManager
 
     private bool IsSquareAttacked(IBoard board, Position pos, PieceColor byColor)
     {
-        int pawnRow = byColor == PieceColor.White ? pos.Row - 1 : pos.Row + 1;
+        var pawnRow = byColor == PieceColor.White ? pos.Row - 1 : pos.Row + 1;
         foreach (var dc in new[] { -1, 1 })
         {
             var p = new Position(pos.Column + dc, pawnRow);
@@ -450,6 +478,7 @@ public class GameManager
                     return true;
             }
         }
+
         var knightOffsets = new[] { (1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2) };
         foreach (var (dc, dr) in knightOffsets)
         {
@@ -460,18 +489,20 @@ public class GameManager
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Knight)
                 return true;
         }
+
         for (var dc = -1; dc <= 1; dc++)
-            for (var dr = -1; dr <= 1; dr++)
-            {
-                if (dc == 0 && dr == 0)
-                    continue;
-                var p = new Position(pos.Column + dc, pos.Row + dr);
-                if (!IsInBounds(p))
-                    continue;
-                var piece = board.Tiles[p.Column, p.Row].Piece;
-                if (piece is not null && piece.Color == byColor && piece.Type == PieceType.King)
-                    return true;
-            }
+        for (var dr = -1; dr <= 1; dr++)
+        {
+            if (dc == 0 && dr == 0)
+                continue;
+            var p = new Position(pos.Column + dc, pos.Row + dr);
+            if (!IsInBounds(p))
+                continue;
+            var piece = board.Tiles[p.Column, p.Row].Piece;
+            if (piece is not null && piece.Color == byColor && piece.Type == PieceType.King)
+                return true;
+        }
+
         var diag = new[] { (1, 1), (1, -1), (-1, 1), (-1, -1) };
         foreach (var (dc, dr) in diag)
         {
@@ -486,10 +517,12 @@ public class GameManager
                         return true;
                     break;
                 }
+
                 c += dc;
                 r += dr;
             }
         }
+
         var straight = new[] { (1, 0), (-1, 0), (0, 1), (0, -1) };
         foreach (var (dc, dr) in straight)
         {
@@ -504,25 +537,28 @@ public class GameManager
                         return true;
                     break;
                 }
+
                 c += dc;
                 r += dr;
             }
         }
+
         return false;
     }
 
     private bool IsKingInCheck(IBoard board, PieceColor color)
     {
         for (var c = 0; c < 8; c++)
-            for (var r = 0; r < 8; r++)
+        for (var r = 0; r < 8; r++)
+        {
+            var piece = board.Tiles[c, r].Piece;
+            if (piece is not null && piece.Color == color && piece.Type == PieceType.King)
             {
-                var piece = board.Tiles[c, r].Piece;
-                if (piece is not null && piece.Color == color && piece.Type == PieceType.King)
-                {
-                    var enemy = color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-                    return IsSquareAttacked(board, new Position(c, r), enemy);
-                }
+                var enemy = color == PieceColor.White ? PieceColor.Black : PieceColor.White;
+                return IsSquareAttacked(board, new Position(c, r), enemy);
             }
+        }
+
         return false;
     }
 
@@ -539,17 +575,18 @@ public class GameManager
     private bool HasAnyLegalMove(IBoard board, PieceColor color)
     {
         for (var c = 0; c < 8; c++)
-            for (var r = 0; r < 8; r++)
-            {
-                var piece = board.Tiles[c, r].Piece;
-                if (piece is null || piece.Color != color)
-                    continue;
-                var from = new Position(c, r);
-                var pseudo = GenerateMovesForPiece(board, from);
-                foreach (var m in pseudo)
-                    if (!WouldLeaveKingInCheck(board, m))
-                        return true;
-            }
+        for (var r = 0; r < 8; r++)
+        {
+            var piece = board.Tiles[c, r].Piece;
+            if (piece is null || piece.Color != color)
+                continue;
+            var from = new Position(c, r);
+            var pseudo = GenerateMovesForPiece(board, from);
+            foreach (var m in pseudo)
+                if (!WouldLeaveKingInCheck(board, m))
+                    return true;
+        }
+
         return false;
     }
 
@@ -558,15 +595,17 @@ public class GameManager
         var fromTile = board.Tiles[move.From.Column, move.From.Row];
         var toTile = board.Tiles[move.To.Column, move.To.Row];
         var moving = fromTile.Piece!;
-        IChessPiece? captured = toTile.Piece;
+        var captured = toTile.Piece;
         Position? capturedSquare = captured is not null ? move.To : null;
-        if (moving.Type == PieceType.Pawn && EnPassantTarget.HasValue && move.To.Equals(EnPassantTarget.Value) && captured is null)
+        if (moving.Type == PieceType.Pawn && EnPassantTarget.HasValue && move.To.Equals(EnPassantTarget.Value) &&
+            captured is null)
         {
             var ep = new Position(move.To.Column, move.From.Row);
             captured = board.Tiles[ep.Column, ep.Row].Piece;
             capturedSquare = ep;
             board.Tiles[ep.Column, ep.Row].Piece = null;
         }
+
         fromTile.Piece = null;
         if (moving.Type == PieceType.Pawn && IsOnPromotionRank(move.To, moving.Color))
         {
@@ -577,6 +616,7 @@ public class GameManager
         {
             toTile.Piece = moving;
         }
+
         if (moving.Type == PieceType.King && Math.Abs(move.To.Column - move.From.Column) == 2)
         {
             if (move.To.Column == 6)
@@ -592,6 +632,7 @@ public class GameManager
                 board.Tiles[3, move.From.Row].Piece = rook;
             }
         }
+
         return new MoveApplicationResult(moving, captured, capturedSquare);
     }
 
@@ -605,6 +646,7 @@ public class GameManager
             else
                 cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, false, false);
         }
+
         if (movingPiece.Type == PieceType.Rook)
         {
             if (move.From.Equals(new Position(0, 0)))
@@ -616,6 +658,7 @@ public class GameManager
             if (move.From.Equals(new Position(7, 7)))
                 cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, false, cr.BlackQueenSide);
         }
+
         if (capturedPiece is not null && capturedPiece.Type == PieceType.Rook)
         {
             if (move.To.Equals(new Position(0, 0)))
@@ -627,6 +670,7 @@ public class GameManager
             if (move.To.Equals(new Position(7, 7)))
                 cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, false, cr.BlackQueenSide);
         }
+
         CastlingRights = cr;
     }
 
@@ -640,29 +684,31 @@ public class GameManager
 
     public string GeneratePositionKey(IBoard board, PieceColor sideToMove)
     {
-        var sb = new System.Text.StringBuilder(128);
+        var sb = new StringBuilder(128);
         for (var r = 7; r >= 0; r--)
-            for (var c = 0; c < 8; c++)
+        for (var c = 0; c < 8; c++)
+        {
+            var p = board.Tiles[c, r].Piece;
+            if (p is null)
             {
-                var p = board.Tiles[c, r].Piece;
-                if (p is null)
-                {
-                    sb.Append('-');
-                    continue;
-                }
-                char ch = p.Type switch
-                {
-                    PieceType.King => 'k',
-                    PieceType.Queen => 'q',
-                    PieceType.Rook => 'r',
-                    PieceType.Bishop => 'b',
-                    PieceType.Knight => 'n',
-                    _ => 'p'
-                };
-                if (p.Color == PieceColor.White)
-                    ch = char.ToUpperInvariant(ch);
-                sb.Append(ch);
+                sb.Append('-');
+                continue;
             }
+
+            var ch = p.Type switch
+            {
+                PieceType.King => 'k',
+                PieceType.Queen => 'q',
+                PieceType.Rook => 'r',
+                PieceType.Bishop => 'b',
+                PieceType.Knight => 'n',
+                _ => 'p'
+            };
+            if (p.Color == PieceColor.White)
+                ch = char.ToUpperInvariant(ch);
+            sb.Append(ch);
+        }
+
         sb.Append(sideToMove == PieceColor.White ? 'w' : 'b');
         sb.Append(CastlingRights.WhiteKingSide ? 'K' : '-');
         sb.Append(CastlingRights.WhiteQueenSide ? 'Q' : '-');
@@ -677,6 +723,7 @@ public class GameManager
         {
             sb.Append('-');
         }
+
         return sb.ToString();
     }
 
@@ -688,8 +735,8 @@ public class GameManager
             return new GameResult(GameEndReason.DrawBy75MoveRule, null);
         var mover = CurrentPlayer.Color;
         var opponent = mover == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        bool inCheck = IsKingInCheck(GameBoard, opponent);
-        bool hasMoves = HasAnyLegalMove(GameBoard, opponent);
+        var inCheck = IsKingInCheck(GameBoard, opponent);
+        var hasMoves = HasAnyLegalMove(GameBoard, opponent);
         if (inCheck && !hasMoves)
             return new GameResult(GameEndReason.Checkmate, mover);
         if (!inCheck && !hasMoves)
@@ -701,30 +748,31 @@ public class GameManager
 
     private bool IsDeadPosition()
     {
-        int knights = 0;
-        int bishops = 0;
-        int bishopColor = -1;
-        bool mixedBishopColor = false;
+        var knights = 0;
+        var bishops = 0;
+        var bishopColor = -1;
+        var mixedBishopColor = false;
         for (var c = 0; c < 8; c++)
-            for (var r = 0; r < 8; r++)
+        for (var r = 0; r < 8; r++)
+        {
+            var p = GameBoard.Tiles[c, r].Piece;
+            if (p is null || p.Type == PieceType.King)
+                continue;
+            if (p.Type == PieceType.Pawn || p.Type == PieceType.Rook || p.Type == PieceType.Queen)
+                return false;
+            if (p.Type == PieceType.Knight)
+                knights++;
+            if (p.Type == PieceType.Bishop)
             {
-                var p = GameBoard.Tiles[c, r].Piece;
-                if (p is null || p.Type == PieceType.King)
-                    continue;
-                if (p.Type == PieceType.Pawn || p.Type == PieceType.Rook || p.Type == PieceType.Queen)
-                    return false;
-                if (p.Type == PieceType.Knight)
-                    knights++;
-                if (p.Type == PieceType.Bishop)
-                {
-                    bishops++;
-                    int sq = (c + r) % 2;
-                    if (bishopColor == -1)
-                        bishopColor = sq;
-                    else if (bishopColor != sq)
-                        mixedBishopColor = true;
-                }
+                bishops++;
+                var sq = (c + r) % 2;
+                if (bishopColor == -1)
+                    bishopColor = sq;
+                else if (bishopColor != sq)
+                    mixedBishopColor = true;
             }
+        }
+
         if (knights + bishops <= 1)
             return true;
         if (knights == 0 && !mixedBishopColor)
@@ -742,7 +790,7 @@ public class GameManager
         if (State != GameState.InProgress)
             return;
         _drawOfferer = offerer;
-        DrawOffered.Invoke(this, new DrawOfferedEventArgs(offerer));
+        DrawOfferedEventHandler?.Invoke(this, new DrawOfferedEventArgs(offerer));
     }
 
     public void RespondToDrawOffer(IPlayer responder, bool accepted)
@@ -778,8 +826,15 @@ public class GameManager
     {
         if (State != GameState.InProgress)
             return;
+
         var winner = player.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        EndGame(new GameResult(GameEndReason.PlayerResigned, winner));
+
+        EndGame(
+            new GameResult(
+                GameEndReason.PlayerResigned,
+                winner
+            )
+        );
     }
 
     private void ChangeTurn()
@@ -788,12 +843,12 @@ public class GameManager
         PlayerTimeTracker[CurrentPlayer.Color].StopTimer();
         CurrentPlayer = next;
         PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
-        TurnChanged.Invoke(this, new TurnChangedEventArgs(next));
+        TurnChangedEventHandler?.Invoke(this, new TurnChangedEventArgs(next));
     }
 
     public void RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture)
     {
-        _halfmoveClock = wasPawnMove || wasCapture ? 0 : _halfmoveClock + 1;
+        _halfMoveClock = wasPawnMove || wasCapture ? 0 : _halfMoveClock + 1;
         _positionHistory.Add(GeneratePositionKey(board, sideToMove));
     }
 
@@ -811,40 +866,63 @@ public class GameManager
 
     public bool IsFiftyMoveRuleClaimAvailable()
     {
-        return _halfmoveClock >= 100;
+        return _halfMoveClock >= 100;
     }
 
     public bool IsSeventyFiveMoveRuleAutomatic()
     {
-        return _halfmoveClock >= 150;
+        return _halfMoveClock >= 150;
     }
 
     public void Reset()
     {
         _positionHistory.Clear();
-        _halfmoveClock = 0;
+        _halfMoveClock = 0;
     }
 
     private void ResetTimers()
     {
         foreach (var t in PlayerTimeTracker.Values)
             t.StopTimer();
-        var wt = new PlayerTimer(_initialTime);
-        var bt = new PlayerTimer(_initialTime);
-        wt.TimerTick += (s, e) => TimerTick.Invoke(this, new TimerTickEventArgs(PieceColor.White, e.TimeRemaining));
-        bt.TimerTick += (s, e) => TimerTick.Invoke(this, new TimerTickEventArgs(PieceColor.Black, e.TimeRemaining));
-        wt.TimeExpired += (s, e) => OnTimeExpired(PieceColor.White);
-        bt.TimeExpired += (s, e) => OnTimeExpired(PieceColor.Black);
-        PlayerTimeTracker[PieceColor.White] = wt;
-        PlayerTimeTracker[PieceColor.Black] = bt;
+
+        var whiteTimer = new PlayerTimer(_initialTime);
+        var blackTimer = new PlayerTimer(_initialTime);
+
+        whiteTimer.TimerTick += (s, e) => TimerTickedEventHandler?.Invoke(
+            this,
+            new TimerTickEventArgs(
+                PieceColor.White,
+                e.TimeRemaining
+            )
+        );
+        blackTimer.TimerTick += (s, e) => TimerTickedEventHandler?.Invoke(
+            this,
+            new TimerTickEventArgs(
+                PieceColor.Black,
+                e.TimeRemaining
+            )
+        );
+
+        whiteTimer.TimeExpired += (s, e) => OnTimeExpired(PieceColor.White);
+        blackTimer.TimeExpired += (s, e) => OnTimeExpired(PieceColor.Black);
+
+        PlayerTimeTracker[PieceColor.White] = whiteTimer;
+        PlayerTimeTracker[PieceColor.Black] = blackTimer;
     }
 
     private void OnTimeExpired(PieceColor color)
     {
         if (State != GameState.InProgress)
             return;
+
         var winner = color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        EndGame(new GameResult(GameEndReason.TimeExpired, winner));
+
+        EndGame(
+            new GameResult(
+                GameEndReason.TimeExpired,
+                winner
+            )
+        );
     }
 
     private static PieceColor Opposite(PieceColor color)

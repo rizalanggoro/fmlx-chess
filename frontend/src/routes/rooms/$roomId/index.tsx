@@ -33,8 +33,8 @@ import {
   postRoomsByRoomIdGameStartMutation,
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
-import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
-import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
+import type { GameEndReason, GameStateDto, PieceColor, PieceType, Position } from '@/lib/api'
+import { connection, joinGroup, leaveGroup, roomGroup, type TimerTick } from '@/lib/game-hub'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -101,16 +101,32 @@ function Room() {
     }
   }, [roomId, qc])
 
+  useEffect(() => {
+    const queryKey = getRoomsByRoomIdGameOptions({ path: { roomId } }).queryKey
+    const onTick = (tick: TimerTick) => {
+      if (tick.roomId !== roomId) return
+      qc.setQueryData<GameStateDto>(queryKey, (prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          whiteRemainingSeconds:
+            tick.color === 'White' ? tick.remainingSeconds : prev.whiteRemainingSeconds,
+          blackRemainingSeconds:
+            tick.color === 'Black' ? tick.remainingSeconds : prev.blackRemainingSeconds,
+        }
+      })
+    }
+    connection.on('TimerTick', onTick)
+    return () => connection.off('TimerTick', onTick)
+  }, [roomId, qc])
+
   const {
     data: room,
     isError: roomError
   } = useQuery({
     ...getRoomsByRoomIdOptions({ path: { roomId } }),
   })
-  const {
-    data: state,
-    dataUpdatedAt
-  } = useQuery({
+  const { data: state } = useQuery({
     ...getRoomsByRoomIdGameOptions({ path: { roomId } }),
   })
   const {
@@ -167,24 +183,9 @@ function Room() {
   const canAct = !online || myColor !== undefined
   const resignColor = online ? myColor : turn
 
-  // Jam jalan lokal di antara refetch: state dari server membawa sisa detik, tiap langkah/GameChanged
-  // memicu refetch sehingga jamnya tersinkron lagi.
-  const [now, setNow] = useState(0)
-  useEffect(() => {
-    if (state?.state !== 'InProgress') return
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [state?.state])
-
-  const secondsLeft = (color: PieceColor) => {
-    const base = (
-      color === 'White' ? state?.whiteRemainingSeconds : state?.blackRemainingSeconds
-    ) ?? 0
-    const running = state?.state === 'InProgress' && turn === color
-    // now = 0 sampai tick pertama: tampilkan angka server apa adanya (tanpa flash 10:01).
-    const elapsed = running ? Math.max(0, (now - dataUpdatedAt) / 1000) : 0
-    return Math.max(0, Math.ceil(base - elapsed))
-  }
+  // Sisa detik berasal dari snapshot HTTP dan diperbarui oleh event TimerTick dari SignalR.
+  const secondsLeft = (color: PieceColor) =>
+    (color === 'White' ? state?.whiteRemainingSeconds : state?.blackRemainingSeconds) ?? 0
   const clock = (seconds: number) =>
     `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
   const nameOf = (color: PieceColor) =>

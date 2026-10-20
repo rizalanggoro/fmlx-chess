@@ -1,3 +1,4 @@
+import type { PieceColor } from '@/lib/api'
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5004'
@@ -9,6 +10,13 @@ export const connection = new HubConnectionBuilder()
 
 export const LOBBY_GROUP = 'lobby'
 export const roomGroup = (roomId: string) => `room:${roomId}`
+
+// Keep in sync with backend Api.DTOs.TimerTickDto.
+export type TimerTick = {
+  roomId: string
+  color: PieceColor
+  remainingSeconds: number
+}
 
 const groups = new Set<string>()
 let startPromise: Promise<void> | null = null
