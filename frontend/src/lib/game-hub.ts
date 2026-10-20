@@ -1,4 +1,4 @@
-import type { GameResult, PieceColor } from '@/lib/api'
+import type { GameResult, PieceColor, TileDto } from '@/lib/api'
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5004'
@@ -29,6 +29,12 @@ export type DrawOffered = {
   roomId: string
   color: PieceColor
   name: string
+}
+
+// Keep in sync with backend Api.DTOs.BoardChangedDto.
+export type BoardChanged = {
+  roomId: string
+  tiles: TileDto[]
 }
 
 const groups = new Set<string>()

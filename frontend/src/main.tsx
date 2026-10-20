@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MutationCache, QueryClient, QueryClientProvider, type Query } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { Toaster } from './components/ui/toast'
 import { client } from './lib/api'
@@ -15,12 +15,21 @@ client.setConfig({ baseUrl: apiUrl })
 const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onSuccess: () => {
-      void queryClient.invalidateQueries()
+      void invalidateGameQueries()
     },
   }),
 })
 
-connection.on('GameChanged', () => void queryClient.invalidateQueries())
+const isBoardQuery = (query: Query) => {
+  const key = query.queryKey[0]
+  return typeof key === 'object' && key !== null && '_id' in key &&
+    key._id === 'getRoomsByRoomIdGameBoard'
+}
+
+const invalidateGameQueries = () =>
+  queryClient.invalidateQueries({ predicate: (query) => !isBoardQuery(query) })
+
+connection.on('GameChanged', () => void invalidateGameQueries())
 connection.onreconnected(() => {
   void rejoinGroups().then(() => queryClient.invalidateQueries())
 })

@@ -28,6 +28,7 @@ public class GameController(RoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.StartGame();
+            rooms.NotifyBoard(roomId);
             rooms.NotifyRoom(roomId);
             return Ok(State(room));
         }
@@ -45,6 +46,7 @@ public class GameController(RoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.ResetGame();
+            rooms.NotifyBoard(roomId);
             rooms.NotifyRoom(roomId);
             return Ok(State(room));
         }

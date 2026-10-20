@@ -33,6 +33,7 @@ import {
   postRoomsByRoomIdGameStartMutation,
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
+import { useBoardChanged } from '@/hooks/use-board-changed'
 import { useDrawOfferToast } from '@/hooks/use-draw-offer-toast'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { useTimerTick } from '@/hooks/use-timer-tick'
@@ -83,6 +84,7 @@ function Room() {
   }, [roomId, qc])
 
   useGameEnded(roomId)
+  useBoardChanged(roomId)
   useDrawOfferToast(roomId, session?.color)
 
   const {

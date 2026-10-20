@@ -58,6 +58,7 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
                 return Conflict(new ApiErrorDto("Room is full"));
             if (room.Manager.State == GameState.NotStarted)
                 room.Manager.StartGame();
+            rooms.NotifyBoard(room.Id);
             rooms.NotifyRoom(room.Id);
             rooms.NotifyLobby();
             return Ok(new RoomSessionDto(room.Id, room.Mode, seatColor));
