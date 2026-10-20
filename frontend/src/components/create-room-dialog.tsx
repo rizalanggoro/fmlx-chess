@@ -53,7 +53,7 @@ export function CreateRoomDialog() {
       { body: { mode: 'Online', color: values.color, name: values.name || null } },
       {
         onSuccess: (res) => {
-          if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
+          if (res.color) saveRoomSession(res.id, { color: res.color })
           void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
         },
       },

@@ -1,7 +1,6 @@
 import type { PieceColor } from '@/lib/api'
 
 export type RoomSession = {
-  token: string
   color: PieceColor
 }
 

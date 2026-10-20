@@ -68,13 +68,12 @@ export type Position = {
     row: number;
 };
 
-export type RoomMode = 'Hotseat' | 'Online';
+export type RoomMode = 'HotSeat' | 'Online';
 
 export type RoomSessionDto = {
     id: string;
     mode: RoomMode;
     color?: PieceColor | null;
-    token?: string | null;
 };
 
 export type RoomStatusDto = {
@@ -192,7 +191,7 @@ export type PostRoomsByRoomIdGameMovesData = {
         roomId: string;
     };
     query?: {
-        token?: string;
+        color?: PieceColor;
     };
     url: '/rooms/{roomId}/game/moves';
 };
@@ -231,9 +230,7 @@ export type PostRoomsByRoomIdGameResignData = {
     path: {
         roomId: string;
     };
-    query?: {
-        token?: string;
-    };
+    query?: never;
     url: '/rooms/{roomId}/game/resign';
 };
 
@@ -251,9 +248,7 @@ export type PostRoomsByRoomIdGameDrawOfferData = {
     path: {
         roomId: string;
     };
-    query?: {
-        token?: string;
-    };
+    query?: never;
     url: '/rooms/{roomId}/game/draw/offer';
 };
 
@@ -271,9 +266,7 @@ export type PostRoomsByRoomIdGameDrawRespondData = {
     path: {
         roomId: string;
     };
-    query?: {
-        token?: string;
-    };
+    query?: never;
     url: '/rooms/{roomId}/game/draw/respond';
 };
 
@@ -291,9 +284,7 @@ export type PostRoomsByRoomIdGameDrawClaimThreefoldData = {
     path: {
         roomId: string;
     };
-    query?: {
-        token?: string;
-    };
+    query?: never;
     url: '/rooms/{roomId}/game/draw/claim-threefold';
 };
 
@@ -311,9 +302,7 @@ export type PostRoomsByRoomIdGameDrawClaimFiftyData = {
     path: {
         roomId: string;
     };
-    query?: {
-        token?: string;
-    };
+    query?: never;
     url: '/rooms/{roomId}/game/draw/claim-fifty';
 };
 

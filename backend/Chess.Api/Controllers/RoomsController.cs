@@ -19,13 +19,13 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
             if (room.Mode == RoomMode.HotSeat)
             {
                 room.Manager.StartGame();
-                return Ok(new RoomSessionDto(room.Id, room.Mode, null, null));
+                return Ok(new RoomSessionDto(room.Id, room.Mode, null));
             }
 
             var color = request.Color ?? PieceColor.White;
-            var token = room.Claim(color, NormalizeName(request.Name))!;
+            room.Claim(color, NormalizeName(request.Name));
             rooms.NotifyLobby();
-            return Ok(new RoomSessionDto(room.Id, room.Mode, color, token));
+            return Ok(new RoomSessionDto(room.Id, room.Mode, color));
         }
         catch (Exception ex)
         {
@@ -53,13 +53,13 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
                 return NotFound(new ApiErrorDto("Room not found"));
             if (room.Mode != RoomMode.Online)
                 return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
-            if (room.ClaimFree(NormalizeName(name)) is not { } seat)
+            if (room.ClaimFree(NormalizeName(name)) is not { } seatColor)
                 return Conflict(new ApiErrorDto("Room is full"));
             if (room.Manager.State == GameState.NotStarted)
                 room.Manager.StartGame();
             rooms.NotifyRoom(room.Id);
             rooms.NotifyLobby();
-            return Ok(new RoomSessionDto(room.Id, room.Mode, seat.Color, seat.Token));
+            return Ok(new RoomSessionDto(room.Id, room.Mode, seatColor));
         }
         catch (Exception ex)
         {

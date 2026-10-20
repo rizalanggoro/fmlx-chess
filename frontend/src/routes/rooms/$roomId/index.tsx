@@ -161,7 +161,6 @@ function Room() {
   const online = room?.mode === 'Online'
   const waiting = online && !(room?.whiteJoined && room?.blackJoined)
   const myColor = session?.color
-  const token = session?.token
   const turn = state?.currentPlayer.color
   const over = state?.state === 'Completed'
   const myTurn = !online || turn === myColor
@@ -199,8 +198,8 @@ function Room() {
       { path: { roomId }, query: { name: values.name || undefined } },
       {
         onSuccess: (res) => {
-          if (!res.token || !res.color) return
-          const s: RoomSession = { token: res.token, color: res.color }
+          if (!res.color) return
+          const s: RoomSession = { color: res.color }
           saveRoomSession(roomId, s)
           setSession(s)
         },
@@ -241,7 +240,7 @@ function Room() {
       makeMove({
         path: { roomId },
         body: { from: selected, to: sq, promotionType: null },
-        query: token ? { token } : undefined,
+        query: myColor ? { color: myColor } : undefined,
       })
       setSelected(null)
       return
@@ -541,7 +540,6 @@ function Room() {
                   resign({
                     path: { roomId },
                     body: { color: resignColor },
-                    query: token ? { token } : undefined,
                   })
                 }
               />

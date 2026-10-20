@@ -249,10 +249,14 @@
             }
           },
           {
-            "name": "token",
+            "name": "color",
             "in": "query",
             "schema": {
-              "type": "string"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/PieceColor"
+                }
+              ]
             }
           }
         ],
@@ -383,13 +387,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "requestBody": {
@@ -457,13 +454,6 @@
             "name": "roomId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -537,13 +527,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "requestBody": {
@@ -614,13 +597,6 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "requestBody": {
@@ -688,13 +664,6 @@
             "name": "roomId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "token",
-            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -1239,7 +1208,7 @@
       },
       "RoomMode": {
         "enum": [
-          "Hotseat",
+          "HotSeat",
           "Online"
         ],
         "type": "string"
@@ -1267,10 +1236,6 @@
                 "$ref": "#/components/schemas/PieceColor"
               }
             ],
-            "nullable": true
-          },
-          "token": {
-            "type": "string",
             "nullable": true
           }
         },

@@ -8,8 +8,8 @@ public class GameRoom
     public string Id { get; }
     public RoomMode Mode { get; }
     public GameManager Manager { get; }
-    public string? WhiteToken { get; private set; }
-    public string? BlackToken { get; private set; }
+    public bool WhiteJoined { get; private set; }
+    public bool BlackJoined { get; private set; }
     public string? WhiteName { get; private set; }
     public string? BlackName { get; private set; }
 
@@ -21,50 +21,36 @@ public class GameRoom
         Id = id;
         Mode = mode;
         Manager = manager;
+        WhiteJoined = BlackJoined = mode == RoomMode.HotSeat;
     }
 
-    public bool WhiteJoined => Mode == RoomMode.HotSeat || WhiteToken is not null;
-
-    public bool BlackJoined => Mode == RoomMode.HotSeat || BlackToken is not null;
-
-    public string? Claim(PieceColor color, string? name = null)
+    public bool Claim(PieceColor color, string? name = null)
     {
         if (color == PieceColor.White)
         {
-            if (WhiteToken is not null)
-                return null;
+            if (WhiteJoined)
+                return false;
+            WhiteJoined = true;
             WhiteName = name;
-            return WhiteToken = NewToken();
+            return true;
         }
 
-        if (BlackToken is not null)
-            return null;
+        if (BlackJoined)
+            return false;
+        BlackJoined = true;
         BlackName = name;
-        return BlackToken = NewToken();
+        return true;
     }
 
-    public (PieceColor Color, string Token)? ClaimFree(string? name = null)
+    public PieceColor? ClaimFree(string? name = null)
     {
-        if (WhiteToken is null)
-            return (PieceColor.White, Claim(PieceColor.White, name)!);
-        if (BlackToken is null)
-            return (PieceColor.Black, Claim(PieceColor.Black, name)!);
-        return null;
-    }
-
-    public PieceColor? ColorFor(string? token)
-    {
-        if (string.IsNullOrEmpty(token))
-            return null;
-        if (token == WhiteToken)
+        if (!WhiteJoined && Claim(PieceColor.White, name))
             return PieceColor.White;
-        if (token == BlackToken)
+        if (!BlackJoined && Claim(PieceColor.Black, name))
             return PieceColor.Black;
         return null;
     }
 
-    private static string NewToken()
-    {
-        return Guid.NewGuid().ToString("N");
-    }
+    public bool IsJoined(PieceColor color) =>
+        color == PieceColor.White ? WhiteJoined : BlackJoined;
 }

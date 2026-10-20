@@ -25,7 +25,7 @@ function Lobby() {
   })
 
   const enter = (res: RoomSessionDto) => {
-    if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
+    if (res.color) saveRoomSession(res.id, { color: res.color })
     void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
   }
 
@@ -69,7 +69,7 @@ function Lobby() {
                 size="lg"
                 className="w-full"
                 disabled={isCreating}
-                onClick={() => createRoom({ body: { mode: 'Hotseat' } }, { onSuccess: enter })}
+                onClick={() => createRoom({ body: { mode: 'HotSeat' } }, { onSuccess: enter })}
               >
                 <span aria-hidden className="font-heading text-base leading-none">
                   ♞

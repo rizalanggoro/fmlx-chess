@@ -94,7 +94,7 @@ public class GameController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("moves")]
-    public ActionResult<GameStateDto> MakeMove(string roomId, [FromBody] Move move, [FromQuery] string? token)
+    public ActionResult<GameStateDto> MakeMove(string roomId, [FromBody] Move move, [FromQuery] PieceColor? color)
     {
         try
         {
@@ -102,10 +102,9 @@ public class GameController(RoomRegistry rooms) : ControllerBase
                 return RoomNotFound();
             if (room.Mode == RoomMode.Online)
             {
-                var color = room.ColorFor(token);
-                if (color is null)
+                if (color is null || !room.IsJoined(color.Value))
                     return NotAPlayer();
-                if (color != room.Manager.CurrentPlayer.Color)
+                if (color.Value != room.Manager.CurrentPlayer.Color)
                     return StatusCode(403, new ApiErrorDto("Not your turn"));
             }
             if (!room.Manager.TryMakeMove(move))
@@ -134,13 +133,13 @@ public class GameController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("resign")]
-    public ActionResult<GameStateDto> Resign(string roomId, [FromBody] PlayerActionRequest request, [FromQuery] string? token)
+    public ActionResult<GameStateDto> Resign(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
         {
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
-            if (ResolvePlayer(room, request, token) is not { } player)
+            if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.Resign(player);
             return Ok(State(room));
@@ -152,13 +151,13 @@ public class GameController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("draw/offer")]
-    public ActionResult<GameStateDto> OfferDraw(string roomId, [FromBody] PlayerActionRequest request, [FromQuery] string? token)
+    public ActionResult<GameStateDto> OfferDraw(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
         {
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
-            if (ResolvePlayer(room, request, token) is not { } player)
+            if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.OfferDraw(player);
             return Ok(State(room));
@@ -170,13 +169,13 @@ public class GameController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("draw/respond")]
-    public ActionResult<GameStateDto> RespondToDraw(string roomId, [FromBody] PlayerActionRequest request, [FromQuery] string? token)
+    public ActionResult<GameStateDto> RespondToDraw(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
         {
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
-            if (ResolvePlayer(room, request, token) is not { } player)
+            if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.RespondToDrawOffer(player, request.Accepted ?? false);
             return Ok(State(room));
@@ -188,13 +187,13 @@ public class GameController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("draw/claim-threefold")]
-    public ActionResult<GameStateDto> ClaimThreefold(string roomId, [FromBody] PlayerActionRequest request, [FromQuery] string? token)
+    public ActionResult<GameStateDto> ClaimThreefold(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
         {
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
-            if (ResolvePlayer(room, request, token) is not { } player)
+            if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             if (!room.Manager.ClaimDrawByThreefoldRepetition(player))
                 return BadRequest(new ApiErrorDto("Threefold repetition claim not available"));
@@ -207,13 +206,13 @@ public class GameController(RoomRegistry rooms) : ControllerBase
     }
 
     [HttpPost("draw/claim-fifty")]
-    public ActionResult<GameStateDto> ClaimFifty(string roomId, [FromBody] PlayerActionRequest request, [FromQuery] string? token)
+    public ActionResult<GameStateDto> ClaimFifty(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
         {
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
-            if (ResolvePlayer(room, request, token) is not { } player)
+            if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             if (!room.Manager.ClaimDrawByFiftyMoveRule(player))
                 return BadRequest(new ApiErrorDto("Fifty-move claim not available"));
@@ -244,11 +243,11 @@ public class GameController(RoomRegistry rooms) : ControllerBase
         return (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
     }
 
-    private IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request, string? token)
+    private static IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request)
     {
-        if (room.Mode != RoomMode.Online)
-            return new Player(request.Name ?? request.Color.ToString(), request.Color);
-        return room.ColorFor(token) is { } color ? new Player(color.ToString(), color) : null;
+        if (room.Mode == RoomMode.Online && !room.IsJoined(request.Color))
+            return null;
+        return new Player(request.Name ?? request.Color.ToString(), request.Color);
     }
 
     private ObjectResult RoomNotFound()
