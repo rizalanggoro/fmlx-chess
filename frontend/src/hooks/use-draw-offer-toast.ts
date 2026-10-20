@@ -1,13 +1,13 @@
 import {toast} from '@/components/ui/toast'
-import type {PieceColor} from '@/lib/api'
-import {connection, type DrawOffered} from '@/lib/game-hub'
+import type {DrawOfferedDto, PieceColor} from '@/lib/api'
+import {connection} from '@/lib/game-hub'
 import {useEffect} from 'react'
 
 const colorLabel = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
 
 export function useDrawOfferToast(roomId: string, myColor?: PieceColor) {
   useEffect(() => {
-    const onDrawOffered = (event: DrawOffered) => {
+    const onDrawOffered = (event: DrawOfferedDto) => {
       if (event.roomId !== roomId) return
       if (event.color === myColor) return
 

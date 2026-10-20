@@ -4,6 +4,11 @@ export type ClientOptions = {
     baseUrl: `${string}://openapi.json` | (string & {});
 };
 
+export type BoardChangedDto = {
+    roomId: string;
+    tiles: Array<TileDto>;
+};
+
 export type CastlingRights = {
     whiteKingSide: boolean;
     whiteQueenSide: boolean;
@@ -17,7 +22,18 @@ export type CreateRoomRequest = {
     name?: string | null;
 };
 
+export type DrawOfferedDto = {
+    roomId: string;
+    color: PieceColor;
+    name: string;
+};
+
 export type GameEndReason = 'Checkmate' | 'DrawByStalemate' | 'DrawByAgreement' | 'DrawBy50MoveRule' | 'DrawBy75MoveRule' | 'DrawByDeadPosition' | 'DrawByThreefoldRepetition' | 'DrawByFivefoldRepetition' | 'PlayerResigned' | 'TimeExpired';
+
+export type GameEndedDto = {
+    roomId: string;
+    result: GameResult;
+};
 
 export type GameResult = {
     reason: GameEndReason;
@@ -90,6 +106,12 @@ export type TileDto = {
     row: number;
     color?: PieceColor | null;
     type?: PieceType | null;
+};
+
+export type TimerTickDto = {
+    roomId: string;
+    color: PieceColor;
+    remainingSeconds: number;
 };
 
 export type GetRoomsByRoomIdGameData = {

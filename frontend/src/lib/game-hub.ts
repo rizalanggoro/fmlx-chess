@@ -1,4 +1,3 @@
-import type { GameResult, PieceColor, TileDto } from '@/lib/api'
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5004'
@@ -10,32 +9,6 @@ export const connection = new HubConnectionBuilder()
 
 export const LOBBY_GROUP = 'lobby'
 export const roomGroup = (roomId: string) => `room:${roomId}`
-
-// Keep in sync with backend Api.DTOs.TimerTickDto.
-export type TimerTick = {
-  roomId: string
-  color: PieceColor
-  remainingSeconds: number
-}
-
-// Keep in sync with backend Api.DTOs.GameEndedDto.
-export type GameEnded = {
-  roomId: string
-  result: GameResult
-}
-
-// Keep in sync with backend Api.DTOs.DrawOfferedDto.
-export type DrawOffered = {
-  roomId: string
-  color: PieceColor
-  name: string
-}
-
-// Keep in sync with backend Api.DTOs.BoardChangedDto.
-export type BoardChanged = {
-  roomId: string
-  tiles: TileDto[]
-}
 
 const groups = new Set<string>()
 let startPromise: Promise<void> | null = null

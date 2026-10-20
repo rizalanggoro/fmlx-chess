@@ -19,6 +19,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SupportNonNullableReferenceTypes();
     c.UseAllOfToExtendReferenceSchemas();
     c.SchemaFilter<RequiredSchemaFilter>();
+    c.DocumentFilter<SignalRContractSchemaFilter>();
 });
 
 var app = builder.Build();

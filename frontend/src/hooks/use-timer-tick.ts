@@ -1,5 +1,5 @@
-import { getRoomsByRoomIdGameQueryKey, type GameStateDto, type PieceColor } from '@/lib/api'
-import { connection, type TimerTick } from '@/lib/game-hub'
+import { getRoomsByRoomIdGameQueryKey, type GameStateDto, type PieceColor, type TimerTickDto } from '@/lib/api'
+import { connection } from '@/lib/game-hub'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
@@ -8,7 +8,7 @@ export function useTimerTick(roomId: string, state: GameStateDto | undefined) {
 
   useEffect(() => {
     const queryKey = getRoomsByRoomIdGameQueryKey({ path: { roomId } })
-    const onTick = (tick: TimerTick) => {
+    const onTick = (tick: TimerTickDto) => {
       if (tick.roomId !== roomId) return
       qc.setQueryData<GameStateDto>(queryKey, (prev) => {
         if (!prev) return prev

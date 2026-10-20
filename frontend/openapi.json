@@ -908,6 +908,25 @@
   },
   "components": {
     "schemas": {
+      "BoardChangedDto": {
+        "required": [
+          "roomId",
+          "tiles"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "tiles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TileDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "CastlingRights": {
         "required": [
           "blackKingSide",
@@ -960,6 +979,30 @@
         },
         "additionalProperties": false
       },
+      "DrawOfferedDto": {
+        "required": [
+          "color",
+          "name",
+          "roomId"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "GameEndReason": {
         "enum": [
           "Checkmate",
@@ -974,6 +1017,26 @@
           "TimeExpired"
         ],
         "type": "string"
+      },
+      "GameEndedDto": {
+        "required": [
+          "result",
+          "roomId"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "result": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameResult"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
       },
       "GameResult": {
         "required": [
@@ -1307,6 +1370,31 @@
               }
             ],
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimerTickDto": {
+        "required": [
+          "color",
+          "remainingSeconds",
+          "roomId"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          },
+          "remainingSeconds": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

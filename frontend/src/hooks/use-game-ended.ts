@@ -1,5 +1,5 @@
-import { getRoomsByRoomIdGameQueryKey, type GameStateDto } from '@/lib/api'
-import { connection, type GameEnded } from '@/lib/game-hub'
+import { getRoomsByRoomIdGameQueryKey, type GameEndedDto, type GameStateDto } from '@/lib/api'
+import { connection } from '@/lib/game-hub'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
@@ -8,7 +8,7 @@ export function useGameEnded(roomId: string) {
 
   useEffect(() => {
     const queryKey = getRoomsByRoomIdGameQueryKey({ path: { roomId } })
-    const onGameEnded = (event: GameEnded) => {
+    const onGameEnded = (event: GameEndedDto) => {
       if (event.roomId !== roomId) return
       qc.setQueryData<GameStateDto>(queryKey, (prev) =>
         prev ? { ...prev, state: 'Completed', result: event.result } : prev,
