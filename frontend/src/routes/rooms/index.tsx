@@ -1,13 +1,22 @@
+import {zodResolver} from '@hookform/resolvers/zod'
 import {CreateRoomDialog} from '@/components/create-room-dialog'
 import {Brand, Eyebrow, Shell} from '@/components/room-chrome'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
+import {Field, FieldError, FieldLabel} from '@/components/ui/field'
 import {Input} from '@/components/ui/input'
 import {getRoomsOptions, postRoomsByRoomIdJoinMutation, type RoomSessionDto, type RoomStatusDto,} from '@/lib/api'
-import {saveRoomSession} from '@/lib/roomSession'
+import {saveRoomSession} from '@/lib/room-session'
 import {useMutation, useQuery} from '@tanstack/react-query'
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
-import {useState} from 'react'
+import {Controller, useForm} from 'react-hook-form'
+import {z} from 'zod'
+
+const joinRoomSchema = z.object({
+  name: z.string().trim().max(24, 'Nama maksimal 24 karakter'),
+})
+
+type JoinRoomValues = z.infer<typeof joinRoomSchema>
 
 export const Route = createFileRoute('/rooms/')({
   component: OpenRooms
@@ -20,7 +29,10 @@ const hostName = (room: RoomStatusDto) =>
 
 function OpenRooms() {
   const navigate = useNavigate()
-  const [name, setName] = useState('')
+  const form = useForm<JoinRoomValues>({
+    resolver: zodResolver(joinRoomSchema),
+    defaultValues: {name: ''},
+  })
   const {
     data: rooms = [],
     isError: openError,
@@ -38,10 +50,12 @@ function OpenRooms() {
   }
 
   const joinRoom = (roomId: string) =>
-    join(
-      {path: {roomId}, query: {name: name.trim() || undefined}},
-      {onSuccess: enter},
-    )
+    form.handleSubmit((values) =>
+      join(
+        {path: {roomId}, query: {name: values.name || undefined}},
+        {onSuccess: enter},
+      ),
+    )()
 
   return (
     <Shell>
@@ -60,13 +74,23 @@ function OpenRooms() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value.slice(0, 24))}
-              placeholder="Nama kamu (opsional)"
-              aria-label="Nama kamu"
-              autoComplete="off"
-              className="max-w-sm"
+            <Controller
+              name="name"
+              control={form.control}
+              render={({field, fieldState}) => (
+                <Field data-invalid={fieldState.invalid} className="max-w-sm">
+                  <FieldLabel htmlFor="join-room-name">Nama kamu</FieldLabel>
+                  <Input
+                    {...field}
+                    id="join-room-name"
+                    placeholder="Opsional"
+                    autoComplete="off"
+                    aria-invalid={fieldState.invalid}
+                    onChange={(e) => field.onChange(e.target.value.slice(0, 24))}
+                  />
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]}/>}
+                </Field>
+              )}
             />
 
             {openError ? (

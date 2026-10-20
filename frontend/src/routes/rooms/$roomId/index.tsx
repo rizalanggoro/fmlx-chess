@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -32,10 +34,18 @@ import {
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
 import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
-import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/roomSession'
+import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Controller, useForm } from 'react-hook-form'
 import { useEffect, useState } from 'react'
+import { z } from 'zod'
+
+const joinSchema = z.object({
+  name: z.string().trim().max(24, 'Nama maksimal 24 karakter'),
+})
+
+type JoinValues = z.infer<typeof joinSchema>
 
 export const Route = createFileRoute('/rooms/$roomId/')({ component: Room })
 
@@ -76,8 +86,11 @@ function Room() {
   const qc = useQueryClient()
   const [selected, setSelected] = useState<Position | null>(null)
   const [session, setSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
-  const [joinName, setJoinName] = useState('')
   const [copied, setCopied] = useState(false)
+  const form = useForm<JoinValues>({
+    resolver: zodResolver(joinSchema),
+    defaultValues: { name: '' },
+  })
 
   const {
     data: room,
@@ -156,9 +169,9 @@ function Room() {
     nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color)
 
   // Joining takes whichever seat is still free.
-  const takeSeat = () =>
+  const takeSeat = (values: JoinValues) =>
     join(
-      { path: { roomId }, query: { name: joinName.trim() || undefined } },
+      { path: { roomId }, query: { name: values.name || undefined } },
       {
         onSuccess: (res) => {
           if (!res.token || !res.color) return
@@ -268,21 +281,38 @@ function Room() {
                 {glyphOf(seat)}
               </span>
             </p>
-            <Input
-              value={joinName}
-              onChange={(e) => setJoinName(e.target.value.slice(0, 24))}
-              placeholder="Nama kamu (opsional)"
-              aria-label="Nama kamu"
-              autoComplete="off"
-            />
-            <div className="flex gap-2">
-              <Button className="flex-1" disabled={isJoining} onClick={takeSeat}>
-                {isJoining ? 'Menghubungkan…' : 'Gabung'}
-              </Button>
-              <Button variant="outline" onClick={toLobby}>
-                Lobby
-              </Button>
-            </div>
+            <form
+              id="join-room-form"
+              className="flex flex-col gap-4"
+              onSubmit={form.handleSubmit(takeSeat)}
+            >
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="join-room-name">Nama kamu</FieldLabel>
+                    <Input
+                      {...field}
+                      id="join-room-name"
+                      placeholder="Opsional"
+                      autoComplete="off"
+                      aria-invalid={fieldState.invalid}
+                      onChange={(e) => field.onChange(e.target.value.slice(0, 24))}
+                    />
+                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                  </Field>
+                )}
+              />
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1" disabled={isJoining}>
+                  {isJoining ? 'Menghubungkan…' : 'Gabung'}
+                </Button>
+                <Button type="button" variant="outline" onClick={toLobby}>
+                  Lobby
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </StateScreen>

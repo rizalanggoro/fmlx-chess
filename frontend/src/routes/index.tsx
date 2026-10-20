@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { postRoomsMutation, type RoomSessionDto } from '@/lib/api'
-import { saveRoomSession } from '@/lib/roomSession'
+import { saveRoomSession } from '@/lib/room-session'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
