@@ -36,7 +36,8 @@ import {
 import { useDrawOfferToast } from '@/hooks/use-draw-offer-toast'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { useTimerTick } from '@/hooks/use-timer-tick'
-import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
+import { FILES, GLYPHS, REASONS } from '@/constants/chess'
+import type { PieceColor, Position } from '@/lib/api'
 import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -53,31 +54,8 @@ type JoinValues = z.infer<typeof joinSchema>
 
 export const Route = createFileRoute('/rooms/$roomId/')({ component: Room })
 
-const GLYPHS: Record<PieceType, Record<PieceColor, string>> = {
-  King: { White: '♔', Black: '♚' },
-  Queen: { White: '♕', Black: '♛' },
-  Rook: { White: '♖', Black: '♜' },
-  Bishop: { White: '♗', Black: '♝' },
-  Knight: { White: '♘', Black: '♞' },
-  Pawn: { White: '♙', Black: '♟' },
-}
-
-const REASONS: Record<GameEndReason, string> = {
-  Checkmate: 'Checkmate',
-  DrawByStalemate: 'Stalemate',
-  DrawByAgreement: 'Draw disepakati',
-  DrawBy50MoveRule: 'Aturan 50 langkah',
-  DrawBy75MoveRule: 'Aturan 75 langkah',
-  DrawByDeadPosition: 'Posisi mati',
-  DrawByThreefoldRepetition: 'Repetisi 3x',
-  DrawByFivefoldRepetition: 'Repetisi 5x',
-  PlayerResigned: 'Menyerah',
-  TimeExpired: 'Waktu habis',
-}
-
-const FILES = 'abcdefgh'
 const colorName = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
-const glyphOf = (color: PieceColor) => (color === 'White' ? '♔' : '♚')
+const glyphOf = (color: PieceColor) => GLYPHS.King[color]
 
 const same = (a: Position | null, b: Position) =>
   a !== null && a.column === b.column && a.row === b.row
