@@ -52,7 +52,7 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
         room.Manager.TurnChangedEventHandler += (_, _) => NotifyRoom(room.Id);
         room.Manager.CheckDeclaredEventHandler += (_, _) => NotifyRoom(room.Id);
         room.Manager.GameEndedEventHandler += (_, e) => NotifyGameEnded(room.Id, e);
-        room.Manager.DrawOfferedEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.DrawOfferedEventHandler += (_, e) => NotifyDrawOffered(room.Id, e);
         room.Manager.TimerTickedEventHandler += (_, e) => NotifyTimerTick(room.Id, e);
     }
 
@@ -70,6 +70,14 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
             GameGroups.Room(roomId),
             "GameEnded",
             new GameEndedDto(roomId, e.Result));
+    }
+
+    private void NotifyDrawOffered(string roomId, DrawOfferedEventArgs e)
+    {
+        _ = SendSafeAsync(
+            GameGroups.Room(roomId),
+            "DrawOffered",
+            new DrawOfferedDto(roomId, e.Offerer.Color, e.Offerer.Name));
     }
 
     private async Task SendSafeAsync(string group, string method = "GameChanged", object? payload = null)

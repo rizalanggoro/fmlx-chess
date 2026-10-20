@@ -24,6 +24,13 @@ export type GameEnded = {
   result: GameResult
 }
 
+// Keep in sync with backend Api.DTOs.DrawOfferedDto.
+export type DrawOffered = {
+  roomId: string
+  color: PieceColor
+  name: string
+}
+
 const groups = new Set<string>()
 let startPromise: Promise<void> | null = null
 

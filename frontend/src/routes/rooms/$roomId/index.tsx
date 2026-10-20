@@ -33,6 +33,7 @@ import {
   postRoomsByRoomIdGameStartMutation,
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
+import { useDrawOfferToast } from '@/hooks/use-draw-offer-toast'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { useTimerTick } from '@/hooks/use-timer-tick'
 import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
@@ -104,6 +105,7 @@ function Room() {
   }, [roomId, qc])
 
   useGameEnded(roomId)
+  useDrawOfferToast(roomId, session?.color)
 
   const {
     data: room,
