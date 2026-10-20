@@ -951,6 +951,26 @@
         },
         "additionalProperties": false
       },
+      "CheckDeclaredDto": {
+        "required": [
+          "color",
+          "roomId"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateRoomRequest": {
         "required": [
           "mode"

@@ -50,7 +50,7 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
         room.Manager.PieceMovedEventHandler += (_, _) => NotifyBoard(room.Id);
         room.Manager.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
         room.Manager.TurnChangedEventHandler += (_, _) => NotifyRoom(room.Id);
-        room.Manager.CheckDeclaredEventHandler += (_, _) => NotifyRoom(room.Id);
+        room.Manager.CheckDeclaredEventHandler += (_, e) => NotifyCheck(room.Id, e);
         room.Manager.GameEndedEventHandler += (_, e) => NotifyGameEnded(room.Id, e);
         room.Manager.DrawOfferedEventHandler += (_, e) => NotifyDrawOffered(room.Id, e);
         room.Manager.TimerTickedEventHandler += (_, e) => NotifyTimerTick(room.Id, e);
@@ -73,6 +73,14 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
             GameGroups.Room(roomId),
             "BoardChanged",
             new BoardChangedDto(roomId, tiles));
+    }
+
+    private void NotifyCheck(string roomId, CheckEventArgs e)
+    {
+        _ = SendSafeAsync(
+            GameGroups.Room(roomId),
+            "CheckDeclared",
+            new CheckDeclaredDto(roomId, e.CheckedColor));
     }
 
     private void NotifyPieceCaptured(string roomId, PieceCapturedEventArgs e)

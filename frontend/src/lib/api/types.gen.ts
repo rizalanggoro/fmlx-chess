@@ -16,6 +16,11 @@ export type CastlingRights = {
     blackQueenSide: boolean;
 };
 
+export type CheckDeclaredDto = {
+    roomId: string;
+    color: PieceColor;
+};
+
 export type CreateRoomRequest = {
     mode: RoomMode;
     color?: PieceColor | null;

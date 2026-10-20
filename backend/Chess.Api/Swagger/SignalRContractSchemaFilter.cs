@@ -14,7 +14,8 @@ public class SignalRContractSchemaFilter : IDocumentFilter
         typeof(GameEndedDto),
         typeof(DrawOfferedDto),
         typeof(BoardChangedDto),
-        typeof(PieceCapturedDto)
+        typeof(PieceCapturedDto),
+        typeof(CheckDeclaredDto)
     ];
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)

@@ -34,6 +34,7 @@ import {
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
 import { useBoardChanged } from '@/hooks/use-board-changed'
+import { useCheckToast } from '@/hooks/use-check-toast'
 import { useDrawOfferToast } from '@/hooks/use-draw-offer-toast'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { usePieceCapturedToast } from '@/hooks/use-piece-captured-toast'
@@ -88,6 +89,7 @@ function Room() {
   useBoardChanged(roomId)
   useDrawOfferToast(roomId, session?.color)
   usePieceCapturedToast(roomId, session?.color)
+  useCheckToast(roomId, session?.color)
 
   const {
     data: room,
