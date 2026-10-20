@@ -47,7 +47,7 @@ function Lobby() {
 
   const enter = (res: RoomSessionDto) => {
     if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
-    void navigate({ to: '/room/$roomId', params: { roomId: res.id } })
+    void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
   }
 
   const creating = create.variables?.body?.mode

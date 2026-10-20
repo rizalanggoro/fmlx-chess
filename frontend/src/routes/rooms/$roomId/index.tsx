@@ -47,7 +47,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState, type ComponentProps } from 'react'
 
-export const Route = createFileRoute('/room/$roomId')({ component: Room })
+export const Route = createFileRoute('/rooms/$roomId/')({ component: Room })
 
 const GLYPHS: Record<PieceType, Record<PieceColor, string>> = {
   King: { White: '♔', Black: '♚' },

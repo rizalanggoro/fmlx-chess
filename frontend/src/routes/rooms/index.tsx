@@ -8,7 +8,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 
-export const Route = createFileRoute('/rooms')({ component: OpenRooms })
+export const Route = createFileRoute('/rooms/')({ component: OpenRooms })
 
 // Joining takes whichever seat is still free, so show that seat.
 const freeSeat = (room: RoomStatusDto) => (room.whiteJoined ? 'Hitam' : 'Putih')
@@ -30,7 +30,7 @@ function OpenRooms() {
       {
         onSuccess: (res) => {
           if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
-          void navigate({ to: '/room/$roomId', params: { roomId: res.id } })
+          void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
         },
       },
     )
