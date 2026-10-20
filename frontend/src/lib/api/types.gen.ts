@@ -64,6 +64,12 @@ export type MoveHistoryEntry = {
     playedBy: PieceColor;
 };
 
+export type PieceCapturedDto = {
+    roomId: string;
+    color: PieceColor;
+    type: PieceType;
+};
+
 export type PieceColor = 'Black' | 'White';
 
 export type PieceType = 'King' | 'Queen' | 'Rook' | 'Knight' | 'Bishop' | 'Pawn';

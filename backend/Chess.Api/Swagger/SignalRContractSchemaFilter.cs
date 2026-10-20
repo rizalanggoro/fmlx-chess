@@ -13,7 +13,8 @@ public class SignalRContractSchemaFilter : IDocumentFilter
         typeof(TimerTickDto),
         typeof(GameEndedDto),
         typeof(DrawOfferedDto),
-        typeof(BoardChangedDto)
+        typeof(BoardChangedDto),
+        typeof(PieceCapturedDto)
     ];
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)

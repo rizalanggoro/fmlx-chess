@@ -36,6 +36,7 @@ import {
 import { useBoardChanged } from '@/hooks/use-board-changed'
 import { useDrawOfferToast } from '@/hooks/use-draw-offer-toast'
 import { useGameEnded } from '@/hooks/use-game-ended'
+import { usePieceCapturedToast } from '@/hooks/use-piece-captured-toast'
 import { useTimerTick } from '@/hooks/use-timer-tick'
 import { FILES, GLYPHS, REASONS } from '@/constants/chess'
 import type { PieceColor, Position } from '@/lib/api'
@@ -86,6 +87,7 @@ function Room() {
   useGameEnded(roomId)
   useBoardChanged(roomId)
   useDrawOfferToast(roomId, session?.color)
+  usePieceCapturedToast(roomId, session?.color)
 
   const {
     data: room,

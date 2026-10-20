@@ -1189,6 +1189,34 @@
         },
         "additionalProperties": false
       },
+      "PieceCapturedDto": {
+        "required": [
+          "color",
+          "roomId",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "color": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceType"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "PieceColor": {
         "enum": [
           "Black",
