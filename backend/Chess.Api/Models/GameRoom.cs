@@ -23,9 +23,9 @@ public class GameRoom
         Manager = manager;
     }
 
-    public bool WhiteJoined => Mode == RoomMode.Hotseat || WhiteToken is not null;
+    public bool WhiteJoined => Mode == RoomMode.HotSeat || WhiteToken is not null;
 
-    public bool BlackJoined => Mode == RoomMode.Hotseat || BlackToken is not null;
+    public bool BlackJoined => Mode == RoomMode.HotSeat || BlackToken is not null;
 
     public string? Claim(PieceColor color, string? name = null)
     {

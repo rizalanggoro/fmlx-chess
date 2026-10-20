@@ -1,5 +1,5 @@
-using Api.Enums;
 using Api.DTOs;
+using Api.Enums;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -16,11 +16,12 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
         try
         {
             var room = rooms.Create(request.Mode);
-            if (room.Mode == RoomMode.Hotseat)
+            if (room.Mode == RoomMode.HotSeat)
             {
                 room.Manager.StartGame();
                 return Ok(new RoomSessionDto(room.Id, room.Mode, null, null));
             }
+
             var color = request.Color ?? PieceColor.White;
             var token = room.Claim(color, NormalizeName(request.Name))!;
             rooms.Notify();
