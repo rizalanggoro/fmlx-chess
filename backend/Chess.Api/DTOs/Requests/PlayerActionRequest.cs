@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using Api.Enums;
 using Api.Models;
 
-namespace Api.DTOs;
+namespace Api.DTOs.Requests;
 
 public record PlayerActionRequest(
     [property: JsonRequired] PieceColor Color,

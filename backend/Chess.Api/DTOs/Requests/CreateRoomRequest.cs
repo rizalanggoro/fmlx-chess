@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Api.Enums;
 
-namespace Api.DTOs;
+namespace Api.DTOs.Requests;
 
 public record CreateRoomRequest(
     [property: JsonRequired] RoomMode Mode,

@@ -1,5 +1,6 @@
 using Api.Enums;
 using Api.DTOs;
+using Api.DTOs.Requests;
 using Api.Models;
 using Api.Services;
 using Api.ValueObjects;
