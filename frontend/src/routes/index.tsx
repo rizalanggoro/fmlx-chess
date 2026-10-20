@@ -13,7 +13,6 @@ import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   getRoomsOptions,
-  postRoomsByRoomIdJoinMutation,
   postRoomsMutation,
   type PieceColor,
   type RoomSessionDto,
@@ -25,23 +24,11 @@ import { useState } from 'react'
 
 export const Route = createFileRoute('/')({ component: Lobby })
 
-const joinError = (error: unknown) => {
-  const message =
-    typeof error === 'object' && error !== null && 'message' in error
-      ? String((error as { message: unknown }).message)
-      : ''
-  if (message === 'Room not found') return 'Room tidak ditemukan. Cek lagi kodenya.'
-  if (message === 'Room is full') return 'Room sudah penuh.'
-  return 'Gagal bergabung. Pastikan backend jalan.'
-}
-
 function Lobby() {
   const navigate = useNavigate()
-  const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [color, setColor] = useState<PieceColor>('White')
   const create = useMutation(postRoomsMutation())
-  const join = useMutation(postRoomsByRoomIdJoinMutation())
   const open = useQuery(getRoomsOptions())
   const openRooms = open.data ?? []
 
@@ -174,38 +161,6 @@ function Lobby() {
               >
                 Pilih room terbuka{openRooms.length > 0 && ` (${openRooms.length})`}
               </Button>
-
-              <div className="flex gap-2">
-                <Input
-                  value={code}
-                  onChange={(e) =>
-                    setCode(
-                      e.target.value
-                        .toUpperCase()
-                        .replace(/[^A-Z0-9]/g, '')
-                        .slice(0, 6),
-                    )
-                  }
-                  placeholder="Kode room"
-                  aria-label="Kode room"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="min-w-0 flex-1 font-mono tracking-[0.2em] uppercase placeholder:font-sans placeholder:tracking-normal"
-                />
-                <Button
-                  variant="outline"
-                  disabled={code.length < 6 || join.isPending}
-                  onClick={() =>
-                    join.mutate(
-                      { path: { roomId: code }, query: { name: name.trim() || undefined } },
-                      { onSuccess: enter },
-                    )
-                  }
-                >
-                  {join.isPending ? 'Menghubungkan…' : 'Gabung'}
-                </Button>
-              </div>
-              {join.isError && <p className="text-sm text-destructive">{joinError(join.error)}</p>}
             </CardContent>
           </Card>
         </main>
