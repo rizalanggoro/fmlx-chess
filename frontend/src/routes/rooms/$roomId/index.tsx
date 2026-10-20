@@ -33,8 +33,10 @@ import {
   postRoomsByRoomIdGameStartMutation,
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
-import type { GameEndReason, GameStateDto, PieceColor, PieceType, Position } from '@/lib/api'
-import { connection, joinGroup, leaveGroup, roomGroup, type TimerTick } from '@/lib/game-hub'
+import { useGameEnded } from '@/hooks/use-game-ended'
+import { useTimerTick } from '@/hooks/use-timer-tick'
+import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
+import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -101,24 +103,7 @@ function Room() {
     }
   }, [roomId, qc])
 
-  useEffect(() => {
-    const queryKey = getRoomsByRoomIdGameOptions({ path: { roomId } }).queryKey
-    const onTick = (tick: TimerTick) => {
-      if (tick.roomId !== roomId) return
-      qc.setQueryData<GameStateDto>(queryKey, (prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          whiteRemainingSeconds:
-            tick.color === 'White' ? tick.remainingSeconds : prev.whiteRemainingSeconds,
-          blackRemainingSeconds:
-            tick.color === 'Black' ? tick.remainingSeconds : prev.blackRemainingSeconds,
-        }
-      })
-    }
-    connection.on('TimerTick', onTick)
-    return () => connection.off('TimerTick', onTick)
-  }, [roomId, qc])
+  useGameEnded(roomId)
 
   const {
     data: room,
@@ -129,6 +114,7 @@ function Room() {
   const { data: state } = useQuery({
     ...getRoomsByRoomIdGameOptions({ path: { roomId } }),
   })
+  const { secondsLeft, clock } = useTimerTick(roomId, state)
   const {
     data: board
   } = useQuery({
@@ -183,11 +169,6 @@ function Room() {
   const canAct = !online || myColor !== undefined
   const resignColor = online ? myColor : turn
 
-  // Sisa detik berasal dari snapshot HTTP dan diperbarui oleh event TimerTick dari SignalR.
-  const secondsLeft = (color: PieceColor) =>
-    (color === 'White' ? state?.whiteRemainingSeconds : state?.blackRemainingSeconds) ?? 0
-  const clock = (seconds: number) =>
-    `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
   const nameOf = (color: PieceColor) =>
     color === 'White' ? room?.whiteName : room?.blackName
   const label = (color: PieceColor) =>

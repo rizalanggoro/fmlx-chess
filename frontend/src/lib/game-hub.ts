@@ -1,4 +1,4 @@
-import type { PieceColor } from '@/lib/api'
+import type { GameResult, PieceColor } from '@/lib/api'
 import { HubConnectionBuilder, HubConnectionState } from '@microsoft/signalr'
 
 const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5004'
@@ -16,6 +16,12 @@ export type TimerTick = {
   roomId: string
   color: PieceColor
   remainingSeconds: number
+}
+
+// Keep in sync with backend Api.DTOs.GameEndedDto.
+export type GameEnded = {
+  roomId: string
+  result: GameResult
 }
 
 const groups = new Set<string>()
