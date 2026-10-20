@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Api.Services;
 
-public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger)
+public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger) : IRoomRegistry
 {
     private readonly ConcurrentDictionary<string, GameRoom> _rooms = new();
 

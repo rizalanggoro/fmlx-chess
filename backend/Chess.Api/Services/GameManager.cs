@@ -6,7 +6,7 @@ using Api.ValueObjects;
 
 namespace Api.Services;
 
-public class GameManager
+public class GameManager : IGameManager
 {
     private readonly IPlayer _blackPlayer;
 

@@ -9,7 +9,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("rooms")]
-public class RoomsController(RoomRegistry rooms) : ControllerBase
+public class RoomsController(IRoomRegistry rooms) : ControllerBase
 {
     [HttpPost]
     public ActionResult<RoomSessionDto> Create([FromBody] CreateRoomRequest request)

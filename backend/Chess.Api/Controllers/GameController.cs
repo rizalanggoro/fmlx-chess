@@ -10,7 +10,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("rooms/{roomId}/game")]
-public class GameController(RoomRegistry rooms) : ControllerBase
+public class GameController(IRoomRegistry rooms) : ControllerBase
 {
     [HttpGet]
     public ActionResult<GameStateDto> GetState(string roomId)
@@ -241,7 +241,7 @@ public class GameController(RoomRegistry rooms) : ControllerBase
             RemainingSeconds(manager, PieceColor.Black));
     }
 
-    private static int RemainingSeconds(GameManager manager, PieceColor color)
+    private static int RemainingSeconds(IGameManager manager, PieceColor color)
     {
         return (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
     }
