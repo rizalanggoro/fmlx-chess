@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ChessBoard } from '@/components/chess-board'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
 import { Badge } from '@/components/ui/badge'
@@ -189,8 +190,6 @@ function Room() {
 
   // Black sees the board from Black's side.
   const flip = myColor === 'Black'
-  const rows = flip ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
-  const cols = flip ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
 
   const moves = history ?? []
   const rounds = moves.reduce<(typeof moves)[]>((acc, move, i) => {
@@ -349,62 +348,14 @@ function Room() {
       </header>
 
       <main className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <section className="mx-auto w-[min(100%,calc(100svh_-_12rem))] rounded-2xl border border-amber-950/20 bg-amber-900 p-3 shadow-sm sm:p-4">
-          <div className="@container grid grid-cols-8 overflow-hidden rounded-[3px] border border-amber-950/40">
-            {rows.map((row) =>
-              cols.map((column) => {
-                const sq = { column, row }
-                const key = `${column},${row}`
-                const piece = pieces.get(key)
-                const dark = (column + row) % 2 === 1
-                const coord = dark ? 'text-amber-100/60' : 'text-amber-900/50'
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => click(sq)}
-                    aria-label={`${alg(sq)}${piece?.type ? ` ${piece.type}` : ''}`}
-                    className={`relative flex aspect-square items-center justify-center ${
-                      dark ? 'bg-amber-700' : 'bg-amber-100'
-                    } ${same(selected, sq) ? 'ring-4 ring-inset ring-sky-500' : ''}`}
-                  >
-                    {column === cols[0] && (
-                      <span
-                        className={`absolute top-0.5 left-0.5 text-[10px] font-semibold ${coord}`}
-                      >
-                        {row + 1}
-                      </span>
-                    )}
-                    {row === rows[7] && (
-                      <span
-                        className={`absolute right-0.5 bottom-0.5 text-[10px] font-semibold ${coord}`}
-                      >
-                        {FILES[column]}
-                      </span>
-                    )}
-                    {piece?.color && piece.type && (
-                      <span
-                        className={`text-[8.5cqw] leading-none ${
-                          piece.color === 'White'
-                            ? 'text-amber-50 drop-shadow-[0_1px_1px_rgba(80,50,10,0.9)]'
-                            : 'text-amber-950'
-                        }`}
-                      >
-                        {GLYPHS[piece.type][piece.color]}
-                      </span>
-                    )}
-                    {targets.has(key) && !piece?.type && (
-                      <span className="absolute h-3 w-3 rounded-full bg-sky-500/70" />
-                    )}
-                    {targets.has(key) && piece?.type && (
-                      <span className="absolute inset-0 rounded-full ring-4 ring-inset ring-sky-500/70" />
-                    )}
-                  </button>
-                )
-              }),
-            )}
-          </div>
-        </section>
+        <ChessBoard
+          tiles={board ?? []}
+          selected={selected}
+          targets={targets}
+          flip={flip}
+          disabled={state?.state !== 'InProgress' || isMoving || !myTurn}
+          onSelect={click}
+        />
 
         <aside className="flex flex-col gap-4">
           <Card size="sm">
