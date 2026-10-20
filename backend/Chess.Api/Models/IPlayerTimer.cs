@@ -1,3 +1,5 @@
+using Api.Events;
+
 namespace Api.Models;
 
 public interface IPlayerTimer

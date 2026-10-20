@@ -1,4 +1,5 @@
 using Api.Enums;
+using Api.Events;
 using Api.Models;
 using Api.ValueObjects;
 
