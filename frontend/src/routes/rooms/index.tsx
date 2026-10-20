@@ -1,8 +1,14 @@
+import { CreateRoomDialog } from '@/components/create-room-dialog'
 import { Brand, Eyebrow, Shell } from '@/components/room-chrome'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { getRoomsOptions, postRoomsByRoomIdJoinMutation, type RoomStatusDto } from '@/lib/api'
+import {
+  getRoomsOptions,
+  postRoomsByRoomIdJoinMutation,
+  type RoomSessionDto,
+  type RoomStatusDto,
+} from '@/lib/api'
 import { saveRoomSession } from '@/lib/roomSession'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -22,26 +28,22 @@ function OpenRooms() {
   const join = useMutation(postRoomsByRoomIdJoinMutation())
   const rooms = open.data ?? []
 
-  const toLobby = () => void navigate({ to: '/' })
+  const enter = (res: RoomSessionDto) => {
+    if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
+    void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
+  }
 
   const joinRoom = (roomId: string) =>
     join.mutate(
       { path: { roomId }, query: { name: name.trim() || undefined } },
-      {
-        onSuccess: (res) => {
-          if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
-          void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
-        },
-      },
+      { onSuccess: enter },
     )
 
   return (
     <Shell>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <Brand />
-        <Button variant="outline" onClick={toLobby}>
-          Lobby
-        </Button>
+        <CreateRoomDialog />
       </header>
 
       <main>
@@ -71,7 +73,7 @@ function OpenRooms() {
               <p className="text-sm text-muted-foreground">
                 {open.isLoading
                   ? 'Memuat…'
-                  : 'Belum ada room terbuka. Buat room dari lobby, lalu lawan bisa memilihnya di sini.'}
+                  : 'Belum ada room terbuka. Buat room baru, lalu bagikan kodenya ke lawan.'}
               </p>
             ) : (
               <ul className="flex flex-col gap-2">

@@ -2,44 +2,26 @@ import { BoardBand } from '@/components/board-band'
 import { Button } from '@/components/ui/button'
 import {
   Card,
-  CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
-import {
-  getRoomsOptions,
-  postRoomsMutation,
-  type PieceColor,
-  type RoomSessionDto,
-} from '@/lib/api'
+import { postRoomsMutation, type RoomSessionDto } from '@/lib/api'
 import { saveRoomSession } from '@/lib/roomSession'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 
 export const Route = createFileRoute('/')({ component: Lobby })
 
 function Lobby() {
   const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [color, setColor] = useState<PieceColor>('White')
   const create = useMutation(postRoomsMutation())
-  const open = useQuery(getRoomsOptions())
-  const openRooms = open.data ?? []
 
   const enter = (res: RoomSessionDto) => {
     if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
     void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
   }
-
-  const creating = create.variables?.body?.mode
-  const createLabel = (mode: 'Hotseat' | 'Online', idle: string) =>
-    create.isPending && creating === mode ? 'Menyiapkan…' : idle
 
   return (
     <div className="relative flex min-h-svh flex-col justify-center bg-background px-5 py-12 sm:px-8 md:px-10 md:py-16">
@@ -86,7 +68,7 @@ function Lobby() {
                 <span aria-hidden className="font-heading text-base leading-none">
                   ♞
                 </span>
-                {createLabel('Hotseat', 'Main Hotseat')}
+                {create.isPending ? 'Menyiapkan…' : 'Main Hotseat'}
               </Button>
             </CardFooter>
           </Card>
@@ -98,70 +80,22 @@ function Lobby() {
               </CardDescription>
               <CardTitle className="font-heading text-2xl">Main dari dua perangkat</CardTitle>
               <CardDescription>
-                Buat room, kirim kodenya ke lawan, lalu papan tersinkron otomatis.
+                Buat atau pilih room, kirim kodenya ke lawan, lalu papan tersinkron otomatis.
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value.slice(0, 24))}
-                placeholder="Nama kamu (opsional)"
-                aria-label="Nama kamu"
-                autoComplete="off"
-              />
-
-              <ToggleGroup
-                value={[color]}
-                onValueChange={(next) => {
-                  const picked = next[0]
-                  if (picked) setColor(picked as PieceColor)
-                }}
-                variant="outline"
-                aria-label="Main sebagai"
-                className="w-full"
-              >
-                {(['White', 'Black'] as const).map((c) => (
-                  <ToggleGroupItem
-                    key={c}
-                    value={c}
-                    className="flex-1 aria-pressed:bg-primary! aria-pressed:text-primary-foreground! aria-pressed:hover:bg-primary!"
-                  >
-                    <span aria-hidden className="font-heading text-base leading-none">
-                      {c === 'White' ? '♔' : '♚'}
-                    </span>
-                    {c === 'White' ? 'Putih' : 'Hitam'}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-
+            <CardFooter className="mt-auto">
               <Button
+                variant="outline"
                 size="lg"
-                className="w-full"
-                disabled={create.isPending}
-                onClick={() =>
-                  create.mutate(
-                    { body: { mode: 'Online', color, name: name.trim() || null } },
-                    { onSuccess: enter },
-                  )
-                }
-              >
-                {createLabel('Online', 'Buat Room')}
-              </Button>
-
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <Separator className="flex-1" />
-                atau gabung
-                <Separator className="flex-1" />
-              </div>
-
-              <Button
-                variant="outline"
                 className="w-full"
                 onClick={() => void navigate({ to: '/rooms' })}
               >
-                Pilih room terbuka{openRooms.length > 0 && ` (${openRooms.length})`}
+                <span aria-hidden className="font-heading text-base leading-none">
+                  ♚
+                </span>
+                Lihat Room
               </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
         </main>
 
