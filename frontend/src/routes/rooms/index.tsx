@@ -6,9 +6,11 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Field, FieldError, FieldLabel} from '@/components/ui/field'
 import {Input} from '@/components/ui/input'
 import {getRoomsOptions, postRoomsByRoomIdJoinMutation, type RoomSessionDto, type RoomStatusDto,} from '@/lib/api'
+import {LOBBY_GROUP, joinGroup, leaveGroup} from '@/lib/game-hub'
 import {saveRoomSession} from '@/lib/room-session'
-import {useMutation, useQuery} from '@tanstack/react-query'
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {useEffect} from 'react'
 import {Controller, useForm} from 'react-hook-form'
 import {z} from 'zod'
 
@@ -29,6 +31,13 @@ const hostName = (room: RoomStatusDto) =>
 
 function OpenRooms() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  useEffect(() => {
+    void joinGroup(LOBBY_GROUP).then(() => void qc.invalidateQueries())
+    return () => {
+      void leaveGroup(LOBBY_GROUP)
+    }
+  }, [qc])
   const form = useForm<JoinRoomValues>({
     resolver: zodResolver(joinRoomSchema),
     defaultValues: {name: ''},

@@ -33,26 +33,31 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
         return _rooms.TryGetValue(id, out var room) ? room : null;
     }
 
-    public void Notify()
+    public void NotifyRoom(string roomId)
     {
-        _ = SendSafeAsync();
+        _ = SendSafeAsync(GameGroups.Room(roomId));
+    }
+
+    public void NotifyLobby()
+    {
+        _ = SendSafeAsync(GameGroups.Lobby);
     }
 
     private void Hook(GameRoom room)
     {
-        room.Manager.PieceMoved += (_, _) => Notify();
-        room.Manager.PieceCaptured += (_, _) => Notify();
-        room.Manager.TurnChanged += (_, _) => Notify();
-        room.Manager.CheckDeclared += (_, _) => Notify();
-        room.Manager.GameEnded += (_, _) => Notify();
-        room.Manager.DrawOffered += (_, _) => Notify();
+        room.Manager.PieceMoved += (_, _) => NotifyRoom(room.Id);
+        room.Manager.PieceCaptured += (_, _) => NotifyRoom(room.Id);
+        room.Manager.TurnChanged += (_, _) => NotifyRoom(room.Id);
+        room.Manager.CheckDeclared += (_, _) => NotifyRoom(room.Id);
+        room.Manager.GameEnded += (_, _) => NotifyRoom(room.Id);
+        room.Manager.DrawOffered += (_, _) => NotifyRoom(room.Id);
     }
 
-    private async Task SendSafeAsync()
+    private async Task SendSafeAsync(string group)
     {
         try
         {
-            await hub.Clients.All.SendAsync("GameChanged");
+            await hub.Clients.Group(group).SendAsync("GameChanged");
         }
         catch (Exception ex)
         {

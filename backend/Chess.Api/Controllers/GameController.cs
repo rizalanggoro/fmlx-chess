@@ -27,7 +27,7 @@ public class GameController(RoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.StartGame();
-            rooms.Notify();
+            rooms.NotifyRoom(roomId);
             return Ok(State(room));
         }
         catch (Exception ex)
@@ -44,7 +44,7 @@ public class GameController(RoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.ResetGame();
-            rooms.Notify();
+            rooms.NotifyRoom(roomId);
             return Ok(State(room));
         }
         catch (Exception ex)

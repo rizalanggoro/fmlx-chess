@@ -1,9 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HubConnectionBuilder } from '@microsoft/signalr'
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { client } from './lib/api'
+import { connection, rejoinGroups, startHub } from './lib/game-hub'
 import './index.css'
 import { routeTree } from './routeTree.gen'
 
@@ -19,14 +19,11 @@ const queryClient = new QueryClient({
   }),
 })
 
-const connection = new HubConnectionBuilder()
-  .withUrl(`${apiUrl}/hubs/game`, { withCredentials: false })
-  .withAutomaticReconnect()
-  .build()
-
 connection.on('GameChanged', () => void queryClient.invalidateQueries())
-connection.onreconnected(() => void queryClient.invalidateQueries())
-void connection.start().catch(() => {
+connection.onreconnected(() => {
+  void rejoinGroups().then(() => queryClient.invalidateQueries())
+})
+void startHub().catch(() => {
   console.warn('Hub realtime tidak terhubung. Pastikan backend jalan.')
 })
 

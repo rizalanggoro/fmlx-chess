@@ -34,6 +34,7 @@ import {
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
 import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
+import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
@@ -91,6 +92,14 @@ function Room() {
     resolver: zodResolver(joinSchema),
     defaultValues: { name: '' },
   })
+
+  useEffect(() => {
+    const group = roomGroup(roomId)
+    void joinGroup(group).then(() => void qc.invalidateQueries())
+    return () => {
+      void leaveGroup(group)
+    }
+  }, [roomId, qc])
 
   const {
     data: room,

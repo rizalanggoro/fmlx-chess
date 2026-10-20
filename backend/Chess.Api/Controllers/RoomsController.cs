@@ -24,7 +24,7 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
 
             var color = request.Color ?? PieceColor.White;
             var token = room.Claim(color, NormalizeName(request.Name))!;
-            rooms.Notify();
+            rooms.NotifyLobby();
             return Ok(new RoomSessionDto(room.Id, room.Mode, color, token));
         }
         catch (Exception ex)
@@ -57,7 +57,8 @@ public class RoomsController(RoomRegistry rooms) : ControllerBase
                 return Conflict(new ApiErrorDto("Room is full"));
             if (room.Manager.State == GameState.NotStarted)
                 room.Manager.StartGame();
-            rooms.Notify();
+            rooms.NotifyRoom(room.Id);
+            rooms.NotifyLobby();
             return Ok(new RoomSessionDto(room.Id, room.Mode, seat.Color, seat.Token));
         }
         catch (Exception ex)
