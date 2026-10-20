@@ -32,3 +32,4 @@ Thumbs.db
 # Local agent notes (jangan push)
 AGENTS.md
 .playwright-mcp/
+.opencode/

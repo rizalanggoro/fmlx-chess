@@ -37,12 +37,16 @@ function OpenRooms() {
     data: rooms = [],
     isError: openError,
     isLoading: openLoading
-  } = useQuery(getRoomsOptions())
+  } = useQuery({
+    ...getRoomsOptions(),
+  })
   const {
     mutate: join,
     isPending: joinPending,
     isError: joinError
-  } = useMutation(postRoomsByRoomIdJoinMutation())
+  } = useMutation({
+    ...postRoomsByRoomIdJoinMutation(),
+  })
 
   const enter = (res: RoomSessionDto) => {
     if (res.token && res.color) saveRoomSession(res.id, {token: res.token, color: res.color})

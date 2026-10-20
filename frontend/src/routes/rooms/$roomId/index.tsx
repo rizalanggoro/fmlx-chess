@@ -95,17 +95,25 @@ function Room() {
   const {
     data: room,
     isError: roomError
-  } = useQuery(getRoomsByRoomIdOptions({ path: { roomId } }))
+  } = useQuery({
+    ...getRoomsByRoomIdOptions({ path: { roomId } }),
+  })
   const {
     data: state,
     dataUpdatedAt
-  } = useQuery(getRoomsByRoomIdGameOptions({ path: { roomId } }))
+  } = useQuery({
+    ...getRoomsByRoomIdGameOptions({ path: { roomId } }),
+  })
   const {
     data: board
-  } = useQuery(getRoomsByRoomIdGameBoardOptions({ path: { roomId } }))
+  } = useQuery({
+    ...getRoomsByRoomIdGameBoardOptions({ path: { roomId } }),
+  })
   const {
     data: history
-  } = useQuery(getRoomsByRoomIdGameHistoryOptions({ path: { roomId } }))
+  } = useQuery({
+    ...getRoomsByRoomIdGameHistoryOptions({ path: { roomId } }),
+  })
   const {
     data: legal
   } = useQuery({
@@ -119,19 +127,27 @@ function Room() {
   const {
     mutate: makeMove,
     isPending: isMoving
-  } = useMutation(postRoomsByRoomIdGameMovesMutation())
+  } = useMutation({
+    ...postRoomsByRoomIdGameMovesMutation(),
+  })
   const {
     mutate: start,
     isPending: isStarting
-  } = useMutation(postRoomsByRoomIdGameStartMutation())
+  } = useMutation({
+    ...postRoomsByRoomIdGameStartMutation(),
+  })
   const {
     mutate: resign,
     isPending: isResigning
-  } = useMutation(postRoomsByRoomIdGameResignMutation())
+  } = useMutation({
+    ...postRoomsByRoomIdGameResignMutation(),
+  })
   const {
     mutate: join,
     isPending: isJoining
-  } = useMutation(postRoomsByRoomIdJoinMutation())
+  } = useMutation({
+    ...postRoomsByRoomIdJoinMutation(),
+  })
 
   const online = room?.mode === 'Online'
   const waiting = online && !(room?.whiteJoined && room?.blackJoined)

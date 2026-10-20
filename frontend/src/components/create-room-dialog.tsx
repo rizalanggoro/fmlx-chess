@@ -40,7 +40,9 @@ export function CreateRoomDialog() {
     mutate: create,
     isPending: isCreating,
     isError: createError
-  } = useMutation(postRoomsMutation())
+  } = useMutation({
+    ...postRoomsMutation(),
+  })
   const form = useForm<CreateRoomValues>({
     resolver: zodResolver(createRoomSchema),
     defaultValues: { name: '', color: 'White' },

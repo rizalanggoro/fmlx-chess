@@ -20,7 +20,9 @@ function Lobby() {
     mutate: createRoom,
     isPending: isCreating,
     isError: createError
-  } = useMutation(postRoomsMutation())
+  } = useMutation({
+    ...postRoomsMutation(),
+  })
 
   const enter = (res: RoomSessionDto) => {
     if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
