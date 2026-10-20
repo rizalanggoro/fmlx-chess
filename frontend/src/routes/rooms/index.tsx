@@ -1,20 +1,17 @@
-import { CreateRoomDialog } from '@/components/create-room-dialog'
-import { Brand, Eyebrow, Shell } from '@/components/room-chrome'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import {
-  getRoomsOptions,
-  postRoomsByRoomIdJoinMutation,
-  type RoomSessionDto,
-  type RoomStatusDto,
-} from '@/lib/api'
-import { saveRoomSession } from '@/lib/roomSession'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import {CreateRoomDialog} from '@/components/create-room-dialog'
+import {Brand, Eyebrow, Shell} from '@/components/room-chrome'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
+import {Input} from '@/components/ui/input'
+import {getRoomsOptions, postRoomsByRoomIdJoinMutation, type RoomSessionDto, type RoomStatusDto,} from '@/lib/api'
+import {saveRoomSession} from '@/lib/roomSession'
+import {useMutation, useQuery} from '@tanstack/react-query'
+import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {useState} from 'react'
 
-export const Route = createFileRoute('/rooms/')({ component: OpenRooms })
+export const Route = createFileRoute('/rooms/')({
+  component: OpenRooms
+})
 
 // Joining takes whichever seat is still free, so show that seat.
 const freeSeat = (room: RoomStatusDto) => (room.whiteJoined ? 'Hitam' : 'Putih')
@@ -24,26 +21,33 @@ const hostName = (room: RoomStatusDto) =>
 function OpenRooms() {
   const navigate = useNavigate()
   const [name, setName] = useState('')
-  const open = useQuery(getRoomsOptions())
-  const join = useMutation(postRoomsByRoomIdJoinMutation())
-  const rooms = open.data ?? []
+  const {
+    data: rooms = [],
+    isError: openError,
+    isLoading: openLoading
+  } = useQuery(getRoomsOptions())
+  const {
+    mutate: join,
+    isPending: joinPending,
+    isError: joinError
+  } = useMutation(postRoomsByRoomIdJoinMutation())
 
   const enter = (res: RoomSessionDto) => {
-    if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
-    void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
+    if (res.token && res.color) saveRoomSession(res.id, {token: res.token, color: res.color})
+    void navigate({to: '/rooms/$roomId', params: {roomId: res.id}})
   }
 
   const joinRoom = (roomId: string) =>
-    join.mutate(
-      { path: { roomId }, query: { name: name.trim() || undefined } },
-      { onSuccess: enter },
+    join(
+      {path: {roomId}, query: {name: name.trim() || undefined}},
+      {onSuccess: enter},
     )
 
   return (
     <Shell>
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <Brand />
-        <CreateRoomDialog />
+        <Brand/>
+        <CreateRoomDialog/>
       </header>
 
       <main>
@@ -65,13 +69,13 @@ function OpenRooms() {
               className="max-w-sm"
             />
 
-            {open.isError ? (
+            {openError ? (
               <p className="text-sm text-destructive">
                 Gagal memuat daftar room. Pastikan backend jalan.
               </p>
             ) : rooms.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {open.isLoading
+                {openLoading
                   ? 'Memuat…'
                   : 'Belum ada room terbuka. Buat room baru, lalu bagikan kodenya ke lawan.'}
               </p>
@@ -91,7 +95,7 @@ function OpenRooms() {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={join.isPending}
+                      disabled={joinPending}
                       onClick={() => joinRoom(room.id)}
                     >
                       Gabung
@@ -101,7 +105,7 @@ function OpenRooms() {
               </ul>
             )}
 
-            {join.isError && (
+            {joinError && (
               <p className="text-sm text-destructive">
                 Gagal bergabung — mungkin room-nya baru saja penuh. Pilih room lain, ya.
               </p>

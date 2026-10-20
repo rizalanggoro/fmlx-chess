@@ -22,10 +22,14 @@ export function CreateRoomDialog() {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [color, setColor] = useState<PieceColor>('White')
-  const create = useMutation(postRoomsMutation())
+  const {
+    mutate: create,
+    isPending: isCreating,
+    isError: createError
+  } = useMutation(postRoomsMutation())
 
   const createRoom = () =>
-    create.mutate(
+    create(
       { body: { mode: 'Online', color, name: name.trim() || null } },
       {
         onSuccess: (res) => {
@@ -77,15 +81,15 @@ export function CreateRoomDialog() {
             ))}
           </ToggleGroup>
 
-          {create.isError && (
+          {createError && (
             <p className="text-sm text-destructive">Gagal membuat room. Pastikan backend jalan.</p>
           )}
         </div>
 
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Batal</DialogClose>
-          <Button disabled={create.isPending} onClick={createRoom}>
-            {create.isPending ? 'Menyiapkan…' : 'Buat Room'}
+          <Button disabled={isCreating} onClick={createRoom}>
+            {isCreating ? 'Menyiapkan…' : 'Buat Room'}
           </Button>
         </DialogFooter>
       </DialogContent>

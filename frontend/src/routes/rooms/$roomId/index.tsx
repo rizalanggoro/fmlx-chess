@@ -79,11 +79,23 @@ function Room() {
   const [joinName, setJoinName] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const room = useQuery(getRoomsByRoomIdOptions({ path: { roomId } }))
-  const state = useQuery(getRoomsByRoomIdGameOptions({ path: { roomId } }))
-  const board = useQuery(getRoomsByRoomIdGameBoardOptions({ path: { roomId } }))
-  const history = useQuery(getRoomsByRoomIdGameHistoryOptions({ path: { roomId } }))
-  const legal = useQuery({
+  const {
+    data: room,
+    isError: roomError
+  } = useQuery(getRoomsByRoomIdOptions({ path: { roomId } }))
+  const {
+    data: state,
+    dataUpdatedAt
+  } = useQuery(getRoomsByRoomIdGameOptions({ path: { roomId } }))
+  const {
+    data: board
+  } = useQuery(getRoomsByRoomIdGameBoardOptions({ path: { roomId } }))
+  const {
+    data: history
+  } = useQuery(getRoomsByRoomIdGameHistoryOptions({ path: { roomId } }))
+  const {
+    data: legal
+  } = useQuery({
     ...getRoomsByRoomIdGameLegalMovesOptions({
       path: { roomId },
       query: { column: selected?.column, row: selected?.row },
@@ -91,17 +103,29 @@ function Room() {
     enabled: selected !== null,
   })
 
-  const makeMove = useMutation(postRoomsByRoomIdGameMovesMutation())
-  const start = useMutation(postRoomsByRoomIdGameStartMutation())
-  const resign = useMutation(postRoomsByRoomIdGameResignMutation())
-  const join = useMutation(postRoomsByRoomIdJoinMutation())
+  const {
+    mutate: makeMove,
+    isPending: isMoving
+  } = useMutation(postRoomsByRoomIdGameMovesMutation())
+  const {
+    mutate: start,
+    isPending: isStarting
+  } = useMutation(postRoomsByRoomIdGameStartMutation())
+  const {
+    mutate: resign,
+    isPending: isResigning
+  } = useMutation(postRoomsByRoomIdGameResignMutation())
+  const {
+    mutate: join,
+    isPending: isJoining
+  } = useMutation(postRoomsByRoomIdJoinMutation())
 
-  const online = room.data?.mode === 'Online'
-  const waiting = online && !(room.data?.whiteJoined && room.data?.blackJoined)
+  const online = room?.mode === 'Online'
+  const waiting = online && !(room?.whiteJoined && room?.blackJoined)
   const myColor = session?.color
   const token = session?.token
-  const turn = state.data?.currentPlayer.color
-  const over = state.data?.state === 'Completed'
+  const turn = state?.currentPlayer.color
+  const over = state?.state === 'Completed'
   const myTurn = !online || turn === myColor
   const canAct = !online || myColor !== undefined
   const resignColor = online ? myColor : turn
@@ -110,30 +134,30 @@ function Room() {
   // memicu refetch sehingga jamnya tersinkron lagi.
   const [now, setNow] = useState(0)
   useEffect(() => {
-    if (state.data?.state !== 'InProgress') return
+    if (state?.state !== 'InProgress') return
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [state.data?.state])
+  }, [state?.state])
 
   const secondsLeft = (color: PieceColor) => {
     const base = (
-      color === 'White' ? state.data?.whiteRemainingSeconds : state.data?.blackRemainingSeconds
+      color === 'White' ? state?.whiteRemainingSeconds : state?.blackRemainingSeconds
     ) ?? 0
-    const running = state.data?.state === 'InProgress' && turn === color
+    const running = state?.state === 'InProgress' && turn === color
     // now = 0 sampai tick pertama: tampilkan angka server apa adanya (tanpa flash 10:01).
-    const elapsed = running ? Math.max(0, (now - state.dataUpdatedAt) / 1000) : 0
+    const elapsed = running ? Math.max(0, (now - dataUpdatedAt) / 1000) : 0
     return Math.max(0, Math.ceil(base - elapsed))
   }
   const clock = (seconds: number) =>
     `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
   const nameOf = (color: PieceColor) =>
-    color === 'White' ? room.data?.whiteName : room.data?.blackName
+    color === 'White' ? room?.whiteName : room?.blackName
   const label = (color: PieceColor) =>
     nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color)
 
   // Joining takes whichever seat is still free.
   const takeSeat = () =>
-    join.mutate(
+    join(
       { path: { roomId }, query: { name: joinName.trim() || undefined } },
       {
         onSuccess: (res) => {
@@ -155,15 +179,15 @@ function Room() {
       () => {},
     )
 
-  const pieces = new Map((board.data ?? []).map((t) => [`${t.column},${t.row}`, t]))
-  const targets = new Set((legal.data ?? []).map((m) => `${m.to.column},${m.to.row}`))
+  const pieces = new Map((board ?? []).map((t) => [`${t.column},${t.row}`, t]))
+  const targets = new Set((legal ?? []).map((m) => `${m.to.column},${m.to.row}`))
 
   // Black sees the board from Black's side.
   const flip = myColor === 'Black'
   const rows = flip ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
   const cols = flip ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
 
-  const moves = history.data ?? []
+  const moves = history ?? []
   const rounds = moves.reduce<(typeof moves)[]>((acc, move, i) => {
     if (i % 2 === 0) acc.push([move])
     else acc[acc.length - 1].push(move)
@@ -173,10 +197,10 @@ function Room() {
     `${alg(h.move.from)}→${alg(h.move.to)}${h.move.promotionType ? `=${h.move.promotionType[0]}` : ''}`
 
   const click = (sq: Position) => {
-    if (state.data?.state !== 'InProgress' || makeMove.isPending || !myTurn) return
+    if (state?.state !== 'InProgress' || isMoving || !myTurn) return
     const key = `${sq.column},${sq.row}`
     if (selected && targets.has(key)) {
-      makeMove.mutate({
+      makeMove({
         path: { roomId },
         body: { from: selected, to: sq, promotionType: null },
         query: token ? { token } : undefined,
@@ -194,7 +218,7 @@ function Room() {
 
   const toLobby = () => void navigate({ to: '/' })
 
-  if (room.isError) {
+  if (roomError) {
     return (
       <StateScreen>
         <Card className="w-full text-center">
@@ -213,7 +237,7 @@ function Room() {
     )
   }
 
-  if (!room.data) {
+  if (!room) {
     return (
       <Shell>
         <p className="text-center text-muted-foreground">Memuat…</p>
@@ -221,8 +245,8 @@ function Room() {
     )
   }
 
-  if (online && !session && !(room.data.whiteJoined && room.data.blackJoined)) {
-    const seat: PieceColor = room.data.whiteJoined ? 'Black' : 'White'
+  if (online && !session && !(room.whiteJoined && room.blackJoined)) {
+    const seat: PieceColor = room.whiteJoined ? 'Black' : 'White'
     return (
       <StateScreen>
         <Card className="w-full">
@@ -252,8 +276,8 @@ function Room() {
               autoComplete="off"
             />
             <div className="flex gap-2">
-              <Button className="flex-1" disabled={join.isPending} onClick={takeSeat}>
-                {join.isPending ? 'Menghubungkan…' : 'Gabung'}
+              <Button className="flex-1" disabled={isJoining} onClick={takeSeat}>
+                {isJoining ? 'Menghubungkan…' : 'Gabung'}
               </Button>
               <Button variant="outline" onClick={toLobby}>
                 Lobby
@@ -410,16 +434,16 @@ function Room() {
                 )
               })}
 
-              {over && state.data?.result && (
+              {over && state?.result && (
                 <p className="mt-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
-                  {state.data.result.winner
-                    ? `${label(state.data.result.winner)} menang — ${REASONS[state.data.result.reason]}`
-                    : `Seri — ${REASONS[state.data.result.reason]}`}
+                  {state.result.winner
+                    ? `${label(state.result.winner)} menang — ${REASONS[state.result.reason]}`
+                    : `Seri — ${REASONS[state.result.reason]}`}
                 </p>
               )}
 
               <p className="mt-1 text-xs text-muted-foreground">
-                Langkah: {state.data?.moveCount ?? 0}
+                Langkah: {state?.moveCount ?? 0}
                 {online && !myColor && ' · kamu penonton'}
               </p>
             </CardContent>
@@ -431,11 +455,11 @@ function Room() {
                 <ConfirmDialog
                   className="flex-1"
                   label="Game baru"
-                  disabled={start.isPending}
+                  disabled={isStarting}
                   title="Mulai game baru?"
                   description="Papan dan riwayat langkah akan direset dari awal."
                   confirmLabel="Ya, mulai baru"
-                  onConfirm={() => start.mutate({ path: { roomId } })}
+                  onConfirm={() => start({ path: { roomId } })}
                 />
               )}
               <ConfirmDialog
@@ -453,13 +477,13 @@ function Room() {
                 className="w-full"
                 label={`${colorName(resignColor)} menyerah`}
                 variant="destructive"
-                disabled={resign.isPending}
+                disabled={isResigning}
                 title="Menyerah?"
                 description={`${colorName(resignColor)} akan dinyatakan kalah dan game selesai.`}
                 confirmLabel="Ya, menyerah"
                 confirmVariant="destructive"
                 onConfirm={() =>
-                  resign.mutate({
+                  resign({
                     path: { roomId },
                     body: { color: resignColor },
                     query: token ? { token } : undefined,

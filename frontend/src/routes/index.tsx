@@ -16,7 +16,11 @@ export const Route = createFileRoute('/')({ component: Lobby })
 
 function Lobby() {
   const navigate = useNavigate()
-  const create = useMutation(postRoomsMutation())
+  const {
+    mutate: createRoom,
+    isPending: isCreating,
+    isError: createError
+  } = useMutation(postRoomsMutation())
 
   const enter = (res: RoomSessionDto) => {
     if (res.token && res.color) saveRoomSession(res.id, { token: res.token, color: res.color })
@@ -62,13 +66,13 @@ function Lobby() {
                 variant="secondary"
                 size="lg"
                 className="w-full"
-                disabled={create.isPending}
-                onClick={() => create.mutate({ body: { mode: 'Hotseat' } }, { onSuccess: enter })}
+                disabled={isCreating}
+                onClick={() => createRoom({ body: { mode: 'Hotseat' } }, { onSuccess: enter })}
               >
                 <span aria-hidden className="font-heading text-base leading-none">
                   ♞
                 </span>
-                {create.isPending ? 'Menyiapkan…' : 'Main Hotseat'}
+                {isCreating ? 'Menyiapkan…' : 'Main Hotseat'}
               </Button>
             </CardFooter>
           </Card>
@@ -101,7 +105,7 @@ function Lobby() {
 
         <footer className="flex flex-col gap-2 text-xs text-muted-foreground">
           <p>Tanpa akun · 10 menit per pemain · room hilang kalau server restart.</p>
-          {create.isError && (
+          {createError && (
             <p className="text-sm text-destructive">Gagal membuat room. Pastikan backend jalan.</p>
           )}
         </footer>
