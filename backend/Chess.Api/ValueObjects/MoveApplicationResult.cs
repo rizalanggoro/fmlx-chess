@@ -1,8 +1,9 @@
-using Api.ValueObjects;
+using Api.Models;
 
-namespace Api.Models;
+namespace Api.ValueObjects;
 
 public record MoveApplicationResult(
     IChessPiece MovingPiece,
     IChessPiece? CapturedPiece,
-    Position? CapturedSquare);
+    Position? CapturedSquare
+);

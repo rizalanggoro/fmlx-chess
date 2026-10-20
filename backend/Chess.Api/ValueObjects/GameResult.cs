@@ -1,7 +1,8 @@
 using Api.Enums;
 
-namespace Api.Models;
+namespace Api.ValueObjects;
 
 public record GameResult(
     GameEndReason Reason,
-    PieceColor? Winner);
+    PieceColor? Winner
+);

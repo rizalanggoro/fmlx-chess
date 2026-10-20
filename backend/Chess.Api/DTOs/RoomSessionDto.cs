@@ -1,5 +1,4 @@
 using Api.Enums;
-using Api.Models;
 
 namespace Api.DTOs;
 

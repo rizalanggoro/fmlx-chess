@@ -1,7 +1,8 @@
 using Api.Enums;
 
-namespace Api.Models;
+namespace Api.ValueObjects;
 
 public record MoveHistoryEntry(
     Move Move,
-    PieceColor PlayedBy);
+    PieceColor PlayedBy
+);

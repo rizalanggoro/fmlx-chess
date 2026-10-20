@@ -1,4 +1,4 @@
-using Api.Models;
+using Api.Enums;
 
 namespace Api.DTOs;
 
