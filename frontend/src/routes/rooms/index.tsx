@@ -17,8 +17,7 @@ export const Route = createFileRoute('/rooms/')({
   component: Page
 })
 
-// Joining takes whichever seat is still free, so show that seat.
-const freeSeat = (room: RoomStatusDto) => (room.whiteJoined ? 'Hitam' : 'Putih')
+const freeSeat = (room: RoomStatusDto) => (room.whiteJoined ? 'hitam' : 'putih')
 const hostName = (room: RoomStatusDto) =>
   (room.whiteJoined ? room.whiteName : room.blackName) ?? 'Tanpa nama'
 
@@ -106,7 +105,7 @@ function Page() {
                       {room.id}
                     </span>
                     <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                      {hostName(room)} · kamu jadi {freeSeat(room)}
+                      {hostName(room)} · kamu bermain sebagai {freeSeat(room)}
                     </span>
                     <Button
                       type="button"
