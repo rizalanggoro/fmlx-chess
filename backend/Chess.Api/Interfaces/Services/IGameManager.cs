@@ -22,6 +22,7 @@ public interface IGameManager
     event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;
     event EventHandler<GameEndedEventArgs>? GameEndedEventHandler;
     event EventHandler<DrawOfferedEventArgs>? DrawOfferedEventHandler;
+    event EventHandler<DrawDeclinedEventArgs>? DrawDeclinedEventHandler;
     event EventHandler<TimerTickEventArgs>? TimerTickedEventHandler;
 
     void StartGame();

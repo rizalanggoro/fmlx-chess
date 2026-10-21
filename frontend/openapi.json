@@ -999,6 +999,26 @@
         },
         "additionalProperties": false
       },
+      "DrawDeclinedDto": {
+        "required": [
+          "offerer",
+          "roomId"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "offerer": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
       "DrawOfferedDto": {
         "required": [
           "color",

@@ -61,6 +61,7 @@ public class GameManager : IGameManager
     public event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;
     public event EventHandler<GameEndedEventArgs>? GameEndedEventHandler;
     public event EventHandler<DrawOfferedEventArgs>? DrawOfferedEventHandler;
+    public event EventHandler<DrawDeclinedEventArgs>? DrawDeclinedEventHandler;
     public event EventHandler<TimerTickEventArgs>? TimerTickedEventHandler;
 
     public void StartGame()
@@ -799,9 +800,13 @@ public class GameManager : IGameManager
     {
         if (_drawOfferer is null || responder.Color == _drawOfferer.Color)
             return;
+
+        var offerer = _drawOfferer;
+        _drawOfferer = null;
         if (accepted)
             EndGame(new GameResult(GameEndReason.DrawByAgreement, null));
-        _drawOfferer = null;
+        else
+            DrawDeclinedEventHandler?.Invoke(this, new DrawDeclinedEventArgs(offerer));
     }
 
     public bool ClaimDrawByThreefoldRepetition(IPlayer player)

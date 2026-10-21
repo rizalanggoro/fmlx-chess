@@ -5,6 +5,16 @@ import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Card,
   CardAction,
   CardContent,
@@ -29,6 +39,8 @@ import {
   getRoomsByRoomIdGameLegalMovesOptions,
   getRoomsByRoomIdGameOptions,
   getRoomsByRoomIdOptions,
+  postRoomsByRoomIdGameDrawOfferMutation,
+  postRoomsByRoomIdGameDrawRespondMutation,
   postRoomsByRoomIdGameMovesMutation,
   postRoomsByRoomIdGameResignMutation,
   postRoomsByRoomIdGameStartMutation,
@@ -36,12 +48,12 @@ import {
 } from '@/lib/api'
 import { useBoardChanged } from '@/hooks/use-board-changed'
 import { useCheckToast } from '@/hooks/use-check-toast'
-import { useDrawOfferToast } from '@/hooks/use-draw-offer-toast'
+import { useDrawOffer } from '@/hooks/use-draw-offer'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { usePieceCapturedToast } from '@/hooks/use-piece-captured-toast'
 import { useTimerTick } from '@/hooks/use-timer-tick'
 import { FILES, GLYPHS, REASONS } from '@/constants/chess'
-import type { PieceColor, Position } from '@/lib/api'
+import type { DrawOfferedDto, PieceColor, Position } from '@/lib/api'
 import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -73,6 +85,8 @@ function Room() {
   const [selected, setSelected] = useState<Position | null>(null)
   const [session, setSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
   const [copied, setCopied] = useState(false)
+  // ponytail: pending draw offer is local state (API exposes none); persist it in GameStateDto if it must survive reload.
+  const [offer, setOffer] = useState<DrawOfferedDto | null>(null)
   const form = useForm<JoinValues>({
     resolver: zodResolver(joinSchema),
     defaultValues: { name: '' },
@@ -88,7 +102,7 @@ function Room() {
 
   useGameEnded(roomId)
   useBoardChanged(roomId)
-  useDrawOfferToast(roomId, session?.color)
+  useDrawOffer(roomId, session?.color, setOffer)
   usePieceCapturedToast(roomId, session?.color)
   useCheckToast(roomId, session?.color)
 
@@ -141,6 +155,18 @@ function Room() {
     ...postRoomsByRoomIdGameResignMutation(),
   })
   const {
+    mutate: offerDraw,
+    isPending: isOfferingDraw
+  } = useMutation({
+    ...postRoomsByRoomIdGameDrawOfferMutation(),
+  })
+  const {
+    mutate: respondDraw,
+    isPending: isRespondingDraw
+  } = useMutation({
+    ...postRoomsByRoomIdGameDrawRespondMutation(),
+  })
+  const {
     mutate: join,
     isPending: isJoining
   } = useMutation({
@@ -160,6 +186,14 @@ function Room() {
     color === 'White' ? room?.whiteName : room?.blackName
   const label = (color: PieceColor) =>
     nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color)
+
+  const respond = (accepted: boolean) => {
+    if (!myColor) return
+    respondDraw(
+      { path: { roomId }, body: { color: myColor, accepted } },
+      { onSuccess: () => setOffer(null) },
+    )
+  }
 
   // Joining takes whichever seat is still free.
   const takeSeat = (values: JoinValues) =>
@@ -463,7 +497,44 @@ function Room() {
                 }
               />
             )}
+            {online && !over && myColor && !offer && (
+              <ConfirmDialog
+                className="w-full"
+                label="Tawarkan draw"
+                variant="outline"
+                disabled={isOfferingDraw}
+                title="Tawarkan draw?"
+                description="Lawan bisa menerima untuk mengakhiri game seri, atau menolak."
+                confirmLabel="Ya, tawarkan"
+                onConfirm={() => offerDraw({ path: { roomId }, body: { color: myColor } })}
+              />
+            )}
           </div>
+
+          <AlertDialog
+            open={!!offer && !over}
+            onOpenChange={(open) => {
+              if (!open) setOffer(null)
+            }}
+          >
+            <AlertDialogContent size="sm">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tawaran draw</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {offer ? label(offer.color) : 'Lawan'} menawarkan permainan seri. Terima
+                  tawaran ini?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isRespondingDraw} onClick={() => respond(false)}>
+                  Tolak
+                </AlertDialogCancel>
+                <AlertDialogAction disabled={isRespondingDraw} onClick={() => respond(true)}>
+                  Terima
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <Card size="sm">
             <CardHeader>

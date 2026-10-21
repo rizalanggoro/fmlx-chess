@@ -13,6 +13,7 @@ public class SignalRContractSchemaFilter : IDocumentFilter
         typeof(TimerTickDto),
         typeof(GameEndedDto),
         typeof(DrawOfferedDto),
+        typeof(DrawDeclinedDto),
         typeof(BoardChangedDto),
         typeof(PieceCapturedDto),
         typeof(CheckDeclaredDto)

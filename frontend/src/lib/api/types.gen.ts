@@ -27,6 +27,11 @@ export type CreateRoomRequest = {
     name?: string | null;
 };
 
+export type DrawDeclinedDto = {
+    roomId: string;
+    offerer: PieceColor;
+};
+
 export type DrawOfferedDto = {
     roomId: string;
     color: PieceColor;
