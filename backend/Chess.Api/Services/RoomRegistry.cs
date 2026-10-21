@@ -44,11 +44,6 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
         return _rooms.GetValueOrDefault(id);
     }
 
-    public void NotifyRoom(string roomId)
-    {
-        _ = SendSafeAsync(GameGroups.Room(roomId));
-    }
-
     public void NotifyLobby()
     {
         _ = SendSafeAsync(GameGroups.Lobby, "LobbyChanged", new LobbyChangedDto(OpenRooms()));
@@ -62,27 +57,31 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
             .Select(RoomStatusDto.From)
             .ToList();
 
-    private void NotifyBoard(string roomId, IBoard board)
+    private void NotifySnapshot(GameRoom room, RoomSnapshotChangedEventArgs e)
     {
-        var tiles = new List<TileDto>(64);
+        var board = new List<TileDto>(64);
         for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
         {
-            var p = board.Tiles[c, r].Piece;
-            tiles.Add(new TileDto(c, r, p?.Color, p?.Type));
+            var p = e.Board.Tiles[c, r].Piece;
+            board.Add(new TileDto(c, r, p?.Color, p?.Type));
         }
 
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
-            "BoardChanged",
-            new BoardChangedDto(roomId, tiles));
+            GameGroups.Room(room.Id),
+            "RoomSnapshotChanged",
+            new RoomSnapshotChangedDto(
+                room.Id,
+                RoomStatusDto.From(room),
+                GameStateDto.From(room),
+                board,
+                e.History));
     }
 
     private void Hook(GameRoom room)
     {
-        room.Manager.BoardChangedEventHandler += (_, e) => NotifyBoard(room.Id, e.Board);
+        room.Manager.SnapshotChangedEventHandler += (_, e) => NotifySnapshot(room, e);
         room.Manager.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
-        room.Manager.TurnChangedEventHandler += (_, _) => NotifyRoom(room.Id);
         room.Manager.CheckDeclaredEventHandler += (_, e) => NotifyCheck(room.Id, e);
         room.Manager.GameEndedEventHandler += (_, e) => NotifyGameEnded(room.Id, e);
         room.Manager.DrawOfferedEventHandler += (_, e) => NotifyDrawOffered(room.Id, e);

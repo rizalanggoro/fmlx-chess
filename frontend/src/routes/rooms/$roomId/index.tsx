@@ -38,7 +38,7 @@ import {
   postRoomsByRoomIdGameStartMutation,
   postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
-import { useBoardChanged } from '@/hooks/use-board-changed'
+import { useRoomSnapshot } from '@/hooks/use-room-snapshot'
 import { useCheckToast } from '@/hooks/use-check-toast'
 import { useDrawOffer } from '@/hooks/use-draw-offer'
 import { useGameEnded } from '@/hooks/use-game-ended'
@@ -93,7 +93,7 @@ function Room() {
   }, [roomId, qc])
 
   useGameEnded(roomId)
-  useBoardChanged(roomId)
+  useRoomSnapshot(roomId)
   useDrawOffer(roomId, session?.color, setOffer)
   usePieceCapturedToast(roomId, session?.color)
   useCheckToast(roomId, session?.color)
@@ -108,6 +108,18 @@ function Room() {
     ...getRoomsByRoomIdGameOptions({ path: { roomId } }),
   })
   const { secondsLeft, clock } = useTimerTick(roomId, state)
+
+  const online = room?.mode === 'Online'
+  const waiting = online && !(room?.whiteJoined && room?.blackJoined)
+  const myColor = session?.color
+  const turn = state?.currentPlayer.color
+  const over = state?.state === 'Completed'
+  const myTurn = !online || turn === myColor
+  const canAct = !online || myColor !== undefined
+  const resignColor = online ? myColor : turn
+  // Legal moves bergantung pada kotak yang dipilih; saat bukan giliran kita, pilihan lama diabaikan
+  // supaya daftar langkah basi tidak tampil (tidak ada invalidasi query lagi).
+  const activeSquare = myTurn ? selected : null
   const {
     data: board
   } = useQuery({
@@ -123,9 +135,9 @@ function Room() {
   } = useQuery({
     ...getRoomsByRoomIdGameLegalMovesOptions({
       path: { roomId },
-      query: { column: selected?.column, row: selected?.row },
+      query: { column: activeSquare?.column, row: activeSquare?.row },
     }),
-    enabled: selected !== null,
+    enabled: activeSquare !== null,
   })
 
   const {
@@ -164,15 +176,6 @@ function Room() {
   } = useMutation({
     ...postRoomsByRoomIdJoinMutation(),
   })
-
-  const online = room?.mode === 'Online'
-  const waiting = online && !(room?.whiteJoined && room?.blackJoined)
-  const myColor = session?.color
-  const turn = state?.currentPlayer.color
-  const over = state?.state === 'Completed'
-  const myTurn = !online || turn === myColor
-  const canAct = !online || myColor !== undefined
-  const resignColor = online ? myColor : turn
 
   const nameOf = (color: PieceColor) =>
     color === 'White' ? room?.whiteName : room?.blackName
@@ -229,10 +232,10 @@ function Room() {
   const click = (sq: Position) => {
     if (state?.state !== 'InProgress' || isMoving || !myTurn) return
     const key = `${sq.column},${sq.row}`
-    if (selected && targets.has(key)) {
+    if (activeSquare && targets.has(key)) {
       makeMove({
         path: { roomId },
-        body: { from: selected, to: sq, promotionType: null },
+        body: { from: activeSquare, to: sq, promotionType: null },
         query: myColor ? { color: myColor } : undefined,
       })
       setSelected(null)
@@ -377,7 +380,7 @@ function Room() {
       <main className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
         <ChessBoard
           tiles={board ?? []}
-          selected={selected}
+          selected={activeSquare}
           targets={targets}
           flip={flip}
           disabled={state?.state !== 'InProgress' || isMoving || !myTurn}

@@ -908,25 +908,6 @@
   },
   "components": {
     "schemas": {
-      "BoardChangedDto": {
-        "required": [
-          "roomId",
-          "tiles"
-        ],
-        "type": "object",
-        "properties": {
-          "roomId": {
-            "type": "string"
-          },
-          "tiles": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/TileDto"
-            }
-          }
-        },
-        "additionalProperties": false
-      },
       "CastlingRights": {
         "required": [
           "blackKingSide",
@@ -1383,6 +1364,48 @@
               }
             ],
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoomSnapshotChangedDto": {
+        "required": [
+          "board",
+          "history",
+          "room",
+          "roomId",
+          "state"
+        ],
+        "type": "object",
+        "properties": {
+          "roomId": {
+            "type": "string"
+          },
+          "room": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoomStatusDto"
+              }
+            ]
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameStateDto"
+              }
+            ]
+          },
+          "board": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TileDto"
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MoveHistoryEntry"
+            }
           }
         },
         "additionalProperties": false

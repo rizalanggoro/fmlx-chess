@@ -18,7 +18,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         if (rooms.Find(roomId) is not { } room)
             return RoomNotFound();
-        return Ok(State(room));
+        return Ok(GameStateDto.From(room));
     }
 
     [HttpPost("start")]
@@ -29,8 +29,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.StartGame();
-            rooms.NotifyRoom(roomId);
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -46,8 +45,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.ResetGame();
-            rooms.NotifyRoom(roomId);
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -111,7 +109,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             }
             if (!room.Manager.TryMakeMove(move))
                 return BadRequest(new ApiErrorDto("Illegal move"));
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -144,7 +142,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.Resign(player);
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -162,7 +160,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.OfferDraw(player);
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -180,7 +178,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.RespondToDrawOffer(player, request.Accepted ?? false);
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -199,7 +197,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
                 return NotAPlayer();
             if (!room.Manager.ClaimDrawByThreefoldRepetition(player))
                 return BadRequest(new ApiErrorDto("Threefold repetition claim not available"));
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
@@ -218,31 +216,12 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
                 return NotAPlayer();
             if (!room.Manager.ClaimDrawByFiftyMoveRule(player))
                 return BadRequest(new ApiErrorDto("Fifty-move claim not available"));
-            return Ok(State(room));
+            return Ok(GameStateDto.From(room));
         }
         catch (Exception ex)
         {
             return Error(ex, "An error occurred while claiming the draw");
         }
-    }
-
-    private GameStateDto State(GameRoom room)
-    {
-        var manager = room.Manager;
-        return new GameStateDto(
-            manager.State,
-            new PlayerDto(manager.CurrentPlayer.Name, manager.CurrentPlayer.Color),
-            manager.Result,
-            manager.CastlingRights,
-            manager.EnPassantTarget,
-            manager.MoveHistory.Count,
-            RemainingSeconds(manager, PieceColor.White),
-            RemainingSeconds(manager, PieceColor.Black));
-    }
-
-    private static int RemainingSeconds(IGameManager manager, PieceColor color)
-    {
-        return (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
     }
 
     private static IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request)

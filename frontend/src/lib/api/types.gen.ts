@@ -4,11 +4,6 @@ export type ClientOptions = {
     baseUrl: `${string}://openapi.json` | (string & {});
 };
 
-export type BoardChangedDto = {
-    roomId: string;
-    tiles: Array<TileDto>;
-};
-
 export type CastlingRights = {
     whiteKingSide: boolean;
     whiteQueenSide: boolean;
@@ -110,6 +105,14 @@ export type RoomSessionDto = {
     id: string;
     mode: RoomMode;
     color?: PieceColor | null;
+};
+
+export type RoomSnapshotChangedDto = {
+    roomId: string;
+    room: RoomStatusDto;
+    state: GameStateDto;
+    board: Array<TileDto>;
+    history: Array<MoveHistoryEntry>;
 };
 
 export type RoomStatusDto = {

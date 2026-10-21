@@ -47,8 +47,6 @@ export function useGameEnded(roomId: string) {
           description: reason,
         })
       }
-
-      void qc.invalidateQueries()
     }
 
     connection.on('GameEnded', onGameEnded)

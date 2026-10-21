@@ -38,13 +38,7 @@ public class GameManager : IGameManager
         ResetTimers();
     }
 
-    public IBoard GameBoard { get; }
-    public IPlayer CurrentPlayer { get; private set; }
-    public GameState State { get; private set; }
-    public GameResult? Result { get; private set; }
-    public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
     public PromotionSelectionHandler PromotionSelector { get; set; }
-    public Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; } = new();
 
     public Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker => new()
     {
@@ -52,12 +46,21 @@ public class GameManager : IGameManager
         [PieceColor.Black] = _captured[PieceColor.Black]
     };
 
+    public IBoard GameBoard { get; }
+    public IPlayer CurrentPlayer { get; private set; }
+    public GameState State { get; private set; }
+    public GameResult? Result { get; private set; }
+    public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
+    public Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; } = new();
+
     public CastlingRights CastlingRights { get; private set; }
     public Position? EnPassantTarget { get; private set; }
 
-    // Dinonaktifkan: papan disiarkan lewat BoardChangedEventHandler. Lihat notes.md.
+    // Dinonaktifkan: state room disiarkan lewat SnapshotChangedEventHandler. Lihat notes.md.
     // public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
-    public event EventHandler<BoardChangedEventArgs>? BoardChangedEventHandler;
+    // Dinonaktifkan: klik kotak ditangani frontend. Lihat notes.md.
+    // public event EventHandler<SquareClickedEventArgs>? SquareClickedEventHandler;
+    public event EventHandler<RoomSnapshotChangedEventArgs>? SnapshotChangedEventHandler;
     public event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     public event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
     public event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;
@@ -80,6 +83,7 @@ public class GameManager : IGameManager
         ResetTimers();
         _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
         PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
+        SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
     }
 
     public void ResetGame()
@@ -98,18 +102,7 @@ public class GameManager : IGameManager
         CastlingRights = new CastlingRights(true, true, true, true);
         EnPassantTarget = null;
         ResetTimers();
-    }
-
-    private void EndGame(GameResult result)
-    {
-        if (State == GameState.Completed)
-            return;
-        State = GameState.Completed;
-        Result = result;
-        foreach (var t in PlayerTimeTracker.Values)
-            t.StopTimer();
-
-        GameEndedEventHandler?.Invoke(this, new GameEndedEventArgs(result));
+        SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
     }
 
     public bool TryMakeMove(Move move)
@@ -168,9 +161,8 @@ public class GameManager : IGameManager
         var opponent = moverColor == PieceColor.White ? PieceColor.Black : PieceColor.White;
         RecordCompletedMove(GameBoard, opponent, wasPawn, wasCapture);
         _drawOfferer = null;
-        // Dinonaktifkan: papan disiarkan lewat BoardChangedEventHandler. Lihat notes.md.
+        // Dinonaktifkan: state room disiarkan lewat SnapshotChangedEventHandler. Lihat notes.md.
         // PieceMovedEventHandler?.Invoke(this, new PieceMovedEventArgs(effective));
-        BoardChangedEventHandler?.Invoke(this, new BoardChangedEventArgs(GameBoard));
         if (app.CapturedPiece is not null && app.CapturedSquare.HasValue)
             PieceCapturedEventHandler?.Invoke(this,
                 new PieceCapturedEventArgs(app.CapturedPiece, app.CapturedSquare.Value));
@@ -180,11 +172,106 @@ public class GameManager : IGameManager
         if (auto is not null)
         {
             EndGame(auto);
+            SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
             return true;
         }
 
         ChangeTurn();
+        SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
         return true;
+    }
+
+    public bool IsInBounds(Position pos)
+    {
+        return pos.Column >= 0 && pos.Column < 8 && pos.Row >= 0 && pos.Row < 8;
+    }
+
+    public IReadOnlyList<Move> GetLegalMoves(Position from)
+    {
+        if (!IsInBounds(from))
+            return Array.Empty<Move>();
+        var piece = GameBoard.Tiles[from.Column, from.Row].Piece;
+        if (piece is null || piece.Color != CurrentPlayer.Color)
+            return Array.Empty<Move>();
+        var pseudo = GenerateMovesForPiece(GameBoard, from);
+        var legal = new List<Move>();
+        foreach (var m in pseudo)
+            if (!WouldLeaveKingInCheck(GameBoard, m))
+                legal.Add(m);
+        return legal;
+    }
+
+    public IReadOnlyList<MoveHistoryEntry> GetMoveHistory(PieceColor color)
+    {
+        return _moveHistory.Where(e => e.PlayedBy == color).ToList();
+    }
+
+    public void OfferDraw(IPlayer offerer)
+    {
+        if (State != GameState.InProgress)
+            return;
+        _drawOfferer = offerer;
+        DrawOfferedEventHandler?.Invoke(this, new DrawOfferedEventArgs(offerer));
+    }
+
+    public void RespondToDrawOffer(IPlayer responder, bool accepted)
+    {
+        if (_drawOfferer is null || responder.Color == _drawOfferer.Color)
+            return;
+
+        var offerer = _drawOfferer;
+        _drawOfferer = null;
+        if (accepted)
+            EndGame(new GameResult(GameEndReason.DrawByAgreement, null));
+        else
+            DrawDeclinedEventHandler?.Invoke(this, new DrawDeclinedEventArgs(offerer));
+    }
+
+    public bool ClaimDrawByThreefoldRepetition(IPlayer player)
+    {
+        if (State != GameState.InProgress)
+            return false;
+        if (!IsThreefoldRepetitionClaimAvailable())
+            return false;
+        EndGame(new GameResult(GameEndReason.DrawByThreefoldRepetition, null));
+        return true;
+    }
+
+    public bool ClaimDrawByFiftyMoveRule(IPlayer player)
+    {
+        if (State != GameState.InProgress)
+            return false;
+        if (!IsFiftyMoveRuleClaimAvailable())
+            return false;
+        EndGame(new GameResult(GameEndReason.DrawBy50MoveRule, null));
+        return true;
+    }
+
+    public void Resign(IPlayer player)
+    {
+        if (State != GameState.InProgress)
+            return;
+
+        var winner = player.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
+
+        EndGame(
+            new GameResult(
+                GameEndReason.PlayerResigned,
+                winner
+            )
+        );
+    }
+
+    private void EndGame(GameResult result)
+    {
+        if (State == GameState.Completed)
+            return;
+        State = GameState.Completed;
+        Result = result;
+        foreach (var t in PlayerTimeTracker.Values)
+            t.StopTimer();
+
+        GameEndedEventHandler?.Invoke(this, new GameEndedEventArgs(result));
     }
 
     public void SetupInitialBoardPosition()
@@ -207,7 +294,6 @@ public class GameManager : IGameManager
 
         CastlingRights = new CastlingRights(true, true, true, true);
         EnPassantTarget = null;
-        BoardChangedEventHandler?.Invoke(this, new BoardChangedEventArgs(GameBoard));
     }
 
     public IChessTile GetTileAt(Position pos)
@@ -222,11 +308,6 @@ public class GameManager : IGameManager
         return GetTileAt(pos).Piece;
     }
 
-    public bool IsInBounds(Position pos)
-    {
-        return pos.Column >= 0 && pos.Column < 8 && pos.Row >= 0 && pos.Row < 8;
-    }
-
     public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
     {
         var list = new List<IChessPiece>();
@@ -239,21 +320,6 @@ public class GameManager : IGameManager
         }
 
         return list;
-    }
-
-    public IReadOnlyList<Move> GetLegalMoves(Position from)
-    {
-        if (!IsInBounds(from))
-            return Array.Empty<Move>();
-        var piece = GameBoard.Tiles[from.Column, from.Row].Piece;
-        if (piece is null || piece.Color != CurrentPlayer.Color)
-            return Array.Empty<Move>();
-        var pseudo = GenerateMovesForPiece(GameBoard, from);
-        var legal = new List<Move>();
-        foreach (var m in pseudo)
-            if (!WouldLeaveKingInCheck(GameBoard, m))
-                legal.Add(m);
-        return legal;
     }
 
     private List<Move> GenerateMovesForPiece(IBoard board, Position from)
@@ -786,67 +852,6 @@ public class GameManager : IGameManager
         if (knights == 0 && !mixedBishopColor)
             return true;
         return false;
-    }
-
-    public IReadOnlyList<MoveHistoryEntry> GetMoveHistory(PieceColor color)
-    {
-        return _moveHistory.Where(e => e.PlayedBy == color).ToList();
-    }
-
-    public void OfferDraw(IPlayer offerer)
-    {
-        if (State != GameState.InProgress)
-            return;
-        _drawOfferer = offerer;
-        DrawOfferedEventHandler?.Invoke(this, new DrawOfferedEventArgs(offerer));
-    }
-
-    public void RespondToDrawOffer(IPlayer responder, bool accepted)
-    {
-        if (_drawOfferer is null || responder.Color == _drawOfferer.Color)
-            return;
-
-        var offerer = _drawOfferer;
-        _drawOfferer = null;
-        if (accepted)
-            EndGame(new GameResult(GameEndReason.DrawByAgreement, null));
-        else
-            DrawDeclinedEventHandler?.Invoke(this, new DrawDeclinedEventArgs(offerer));
-    }
-
-    public bool ClaimDrawByThreefoldRepetition(IPlayer player)
-    {
-        if (State != GameState.InProgress)
-            return false;
-        if (!IsThreefoldRepetitionClaimAvailable())
-            return false;
-        EndGame(new GameResult(GameEndReason.DrawByThreefoldRepetition, null));
-        return true;
-    }
-
-    public bool ClaimDrawByFiftyMoveRule(IPlayer player)
-    {
-        if (State != GameState.InProgress)
-            return false;
-        if (!IsFiftyMoveRuleClaimAvailable())
-            return false;
-        EndGame(new GameResult(GameEndReason.DrawBy50MoveRule, null));
-        return true;
-    }
-
-    public void Resign(IPlayer player)
-    {
-        if (State != GameState.InProgress)
-            return;
-
-        var winner = player.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-
-        EndGame(
-            new GameResult(
-                GameEndReason.PlayerResigned,
-                winner
-            )
-        );
     }
 
     private void ChangeTurn()

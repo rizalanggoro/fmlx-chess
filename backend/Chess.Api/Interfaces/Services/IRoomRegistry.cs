@@ -11,6 +11,5 @@ public interface IRoomRegistry
     GameRoom Create(RoomMode mode);
     GameRoom? Find(string id);
     IReadOnlyList<RoomStatusDto> OpenRooms();
-    void NotifyRoom(string roomId);
     void NotifyLobby();
 }
