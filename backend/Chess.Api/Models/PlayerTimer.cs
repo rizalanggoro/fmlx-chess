@@ -1,5 +1,6 @@
 using Api.Enums;
 using Api.Events;
+using Api.Interfaces.Models;
 
 namespace Api.Models;
 

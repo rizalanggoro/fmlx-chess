@@ -1,9 +1,9 @@
 using Api.Enums;
 using Api.Events;
-using Api.Models;
+using Api.Interfaces.Models;
 using Api.ValueObjects;
 
-namespace Api.Services;
+namespace Api.Interfaces.Services;
 
 public interface IGameManager
 {

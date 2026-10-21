@@ -1,8 +1,9 @@
 using Api.Enums;
 using Api.DTOs;
 using Api.DTOs.Requests;
+using Api.Interfaces.Models;
+using Api.Interfaces.Services;
 using Api.Models;
-using Api.Services;
 using Api.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 

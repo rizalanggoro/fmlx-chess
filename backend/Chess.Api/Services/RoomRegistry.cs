@@ -3,6 +3,7 @@ using Api.DTOs;
 using Api.Enums;
 using Api.Events;
 using Api.Hubs;
+using Api.Interfaces.Services;
 using Api.Models;
 using Microsoft.AspNetCore.SignalR;
 

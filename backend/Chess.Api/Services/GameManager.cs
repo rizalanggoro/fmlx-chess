@@ -1,6 +1,8 @@
 using System.Text;
 using Api.Enums;
 using Api.Events;
+using Api.Interfaces.Models;
+using Api.Interfaces.Services;
 using Api.Models;
 using Api.ValueObjects;
 

@@ -1,5 +1,5 @@
 using Api.Enums;
-using Api.Services;
+using Api.Interfaces.Services;
 
 namespace Api.Models;
 

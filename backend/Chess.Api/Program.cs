@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Api.Hubs;
+using Api.Interfaces.Services;
 using Api.Services;
 using Api.Swagger;
 

@@ -1,4 +1,5 @@
 using Api.Enums;
+using Api.Interfaces.Models;
 
 namespace Api.Models;
 

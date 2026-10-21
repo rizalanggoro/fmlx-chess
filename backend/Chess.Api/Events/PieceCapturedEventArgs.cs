@@ -1,3 +1,4 @@
+using Api.Interfaces.Models;
 using Api.Models;
 using Api.ValueObjects;
 

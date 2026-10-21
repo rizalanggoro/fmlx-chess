@@ -1,6 +1,6 @@
 using Api.ValueObjects;
 
-namespace Api.Models;
+namespace Api.Interfaces.Models;
 
 public interface IChessTile
 {

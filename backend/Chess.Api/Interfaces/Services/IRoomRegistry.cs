@@ -1,7 +1,7 @@
 using Api.Enums;
 using Api.Models;
 
-namespace Api.Services;
+namespace Api.Interfaces.Services;
 
 public interface IRoomRegistry
 {
