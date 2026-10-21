@@ -17,6 +17,7 @@ public interface IGameManager
     Position? EnPassantTarget { get; }
 
     event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
+    event EventHandler<BoardChangedEventArgs>? BoardChangedEventHandler;
     event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
     event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;

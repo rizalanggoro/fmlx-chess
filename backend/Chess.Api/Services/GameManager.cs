@@ -56,6 +56,7 @@ public class GameManager : IGameManager
     public Position? EnPassantTarget { get; private set; }
 
     public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
+    public event EventHandler<BoardChangedEventArgs>? BoardChangedEventHandler;
     public event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     public event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
     public event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;
@@ -167,6 +168,7 @@ public class GameManager : IGameManager
         RecordCompletedMove(GameBoard, opponent, wasPawn, wasCapture);
         _drawOfferer = null;
         PieceMovedEventHandler?.Invoke(this, new PieceMovedEventArgs(effective));
+        BoardChangedEventHandler?.Invoke(this, new BoardChangedEventArgs(GameBoard));
         if (app.CapturedPiece is not null && app.CapturedSquare.HasValue)
             PieceCapturedEventHandler?.Invoke(this,
                 new PieceCapturedEventArgs(app.CapturedPiece, app.CapturedSquare.Value));
@@ -203,6 +205,7 @@ public class GameManager : IGameManager
 
         CastlingRights = new CastlingRights(true, true, true, true);
         EnPassantTarget = null;
+        BoardChangedEventHandler?.Invoke(this, new BoardChangedEventArgs(GameBoard));
     }
 
     public IChessTile GetTileAt(Position pos)

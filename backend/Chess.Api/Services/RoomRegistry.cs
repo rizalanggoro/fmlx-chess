@@ -4,6 +4,7 @@ using Api.DTOs.Events;
 using Api.Enums;
 using Api.Events;
 using Api.Hubs;
+using Api.Interfaces.Models;
 using Api.Interfaces.Services;
 using Api.Models;
 using Microsoft.AspNetCore.SignalR;
@@ -61,16 +62,13 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
             .Select(RoomStatusDto.From)
             .ToList();
 
-    public void NotifyBoard(string roomId)
+    private void NotifyBoard(string roomId, IBoard board)
     {
-        if (Find(roomId) is not { } room)
-            return;
-
         var tiles = new List<TileDto>(64);
         for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
         {
-            var p = room.Manager.GameBoard.Tiles[c, r].Piece;
+            var p = board.Tiles[c, r].Piece;
             tiles.Add(new TileDto(c, r, p?.Color, p?.Type));
         }
 
@@ -82,7 +80,7 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
 
     private void Hook(GameRoom room)
     {
-        room.Manager.PieceMovedEventHandler += (_, _) => NotifyBoard(room.Id);
+        room.Manager.BoardChangedEventHandler += (_, e) => NotifyBoard(room.Id, e.Board);
         room.Manager.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
         room.Manager.TurnChangedEventHandler += (_, _) => NotifyRoom(room.Id);
         room.Manager.CheckDeclaredEventHandler += (_, e) => NotifyCheck(room.Id, e);

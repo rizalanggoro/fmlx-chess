@@ -13,5 +13,4 @@ public interface IRoomRegistry
     IReadOnlyList<RoomStatusDto> OpenRooms();
     void NotifyRoom(string roomId);
     void NotifyLobby();
-    void NotifyBoard(string roomId);
 }
