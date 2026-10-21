@@ -308,19 +308,20 @@ public class GameManager : IGameManager
         return GetTileAt(pos).Piece;
     }
 
-    public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
-    {
-        var list = new List<IChessPiece>();
-        for (var c = 0; c < 8; c++)
-        for (var r = 0; r < 8; r++)
-        {
-            var p = GameBoard.Tiles[c, r].Piece;
-            if (p is not null && p.Color == color)
-                list.Add(p);
-        }
-
-        return list;
-    }
+    // Dinonaktifkan: tidak ada pemanggil; bidak dibaca dari papan. Lihat notes.md.
+    // public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
+    // {
+    //     var list = new List<IChessPiece>();
+    //     for (var c = 0; c < 8; c++)
+    //     for (var r = 0; r < 8; r++)
+    //     {
+    //         var p = GameBoard.Tiles[c, r].Piece;
+    //         if (p is not null && p.Color == color)
+    //             list.Add(p);
+    //     }
+    //
+    //     return list;
+    // }
 
     private List<Move> GenerateMovesForPiece(IBoard board, Position from)
     {
@@ -940,10 +941,5 @@ public class GameManager : IGameManager
                 winner
             )
         );
-    }
-
-    private static PieceColor Opposite(PieceColor color)
-    {
-        return color == PieceColor.White ? PieceColor.Black : PieceColor.White;
     }
 }

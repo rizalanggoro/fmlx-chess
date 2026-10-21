@@ -12,6 +12,7 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | --- | --- | --- |
 | `PieceMovedEventArgs` + event `PieceMoved` | Dikomentari di `Services/GameManager.cs` dan `Interfaces/Services/IGameManager.cs`; file `Events/PieceMovedEventArgs.cs` dibiarkan ada | State room dikirim sebagai snapshot lewat `RoomSnapshotChanged`, bukan per langkah. Event langkah hanya membawa `from`/`to`, sehingga kasus castling, en passant, dan promosi tidak cukup untuk menyusun ulang papan di klien |
 | `SquareClickedEventArgs` | File `Events/SquareClickedEventArgs.cs` ada; deklarasi event `SquareClicked` hanya dikomentari di `Services/GameManager.cs` dan `Interfaces/Services/IGameManager.cs` (tidak ada di diagram, sekadar placeholder) | Interaksi kotak papan ditangani di frontend, tidak ada event klik di engine |
+| `GetPieces(PieceColor)` | Dikomentari di `Services/GameManager.cs`; tidak ada pemanggil | Daftar bidak per warna tidak pernah dibutuhkan; posisi bidak sudah dibaca langsung dari `GameBoard` dan dikirim sebagai `board` di `RoomSnapshotChangedDto` |
 
 ## 2. Disesuaikan dari diagram
 
@@ -27,7 +28,7 @@ Domain / engine:
 
 - `Events/SnapshotChangedEventArgs.cs` + `SnapshotChangedEventHandler`, dipicu di `TryMakeMove` (setelah hasil otomatis dievaluasi dan giliran berganti), `StartGame`, dan `ResetGame`. Membawa `IBoard` dan riwayat langkah sebagai referensi.
 - `Interfaces/Services/IGameManager.cs` sebagai kontrak `GameManager`.
-- Helper privat tambahan di `GameManager`: `AddPawnMove`, `ResetTimers`, `OnTimeExpired`, `Opposite` (tidak ada di diagram, hanya pemecahan implementasi).
+- Helper privat tambahan di `GameManager`: `AddPawnMove`, `ResetTimers`, `OnTimeExpired` (tidak ada di diagram, hanya pemecahan implementasi).
 
 Di luar domain (tidak digambarkan sama sekali di class diagram):
 
