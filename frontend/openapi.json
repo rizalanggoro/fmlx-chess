@@ -1173,6 +1173,21 @@
         },
         "additionalProperties": false
       },
+      "LobbyChangedDto": {
+        "required": [
+          "rooms"
+        ],
+        "type": "object",
+        "properties": {
+          "rooms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoomStatusDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "Move": {
         "required": [
           "from",

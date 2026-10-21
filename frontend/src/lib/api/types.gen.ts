@@ -63,6 +63,10 @@ export type GameStateDto = {
     blackRemainingSeconds: number;
 };
 
+export type LobbyChangedDto = {
+    rooms: Array<RoomStatusDto>;
+};
+
 export type Move = {
     from: Position;
     to: Position;

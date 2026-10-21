@@ -37,12 +37,7 @@ public class RoomsController(IRoomRegistry rooms) : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<RoomStatusDto>> List()
     {
-        // ponytail: all open rooms in one array; add paging when a lobby actually gets crowded
-        var open = rooms.All
-            .Where(room => room.Mode == RoomMode.Online && room.WhiteJoined != room.BlackJoined)
-            .OrderBy(room => room.Id)
-            .Select(ToDto);
-        return Ok(open);
+        return Ok(rooms.OpenRooms());
     }
 
     [HttpPost("{roomId}/join")]
@@ -74,18 +69,7 @@ public class RoomsController(IRoomRegistry rooms) : ControllerBase
     {
         if (rooms.Find(roomId) is not { } room)
             return NotFound(new ApiErrorDto("Room not found"));
-        return Ok(ToDto(room));
-    }
-
-    private static RoomStatusDto ToDto(GameRoom room)
-    {
-        return new RoomStatusDto(
-            room.Id,
-            room.Mode,
-            room.WhiteJoined,
-            room.BlackJoined,
-            room.WhiteName,
-            room.BlackName);
+        return Ok(RoomStatusDto.From(room));
     }
 
     private static string? NormalizeName(string? name)

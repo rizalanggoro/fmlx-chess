@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Enums;
 using Api.Models;
 
@@ -9,6 +10,7 @@ public interface IRoomRegistry
 
     GameRoom Create(RoomMode mode);
     GameRoom? Find(string id);
+    IReadOnlyList<RoomStatusDto> OpenRooms();
     void NotifyRoom(string roomId);
     void NotifyLobby();
     void NotifyBoard(string roomId);

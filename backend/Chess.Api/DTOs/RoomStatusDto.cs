@@ -1,4 +1,5 @@
 using Api.Enums;
+using Api.Models;
 
 namespace Api.DTOs;
 
@@ -8,4 +9,8 @@ public record RoomStatusDto(
     bool WhiteJoined,
     bool BlackJoined,
     string? WhiteName = null,
-    string? BlackName = null);
+    string? BlackName = null)
+{
+    public static RoomStatusDto From(GameRoom room) =>
+        new(room.Id, room.Mode, room.WhiteJoined, room.BlackJoined, room.WhiteName, room.BlackName);
+}

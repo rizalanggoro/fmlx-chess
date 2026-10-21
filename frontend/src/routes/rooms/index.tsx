@@ -7,11 +7,11 @@ import {Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from '@/co
 import {Skeleton} from '@/components/ui/skeleton'
 import {Spinner} from '@/components/ui/spinner'
 import {getRoomsOptions, type RoomStatusDto} from '@/lib/api'
-import {joinGroup, leaveGroup, LOBBY_GROUP} from '@/lib/game-hub'
-import {useQuery, useQueryClient} from '@tanstack/react-query'
+import {useLobbyChanged} from '@/hooks/use-lobby-changed'
+import {useQuery} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import {RiDoorOpenLine, RiErrorWarningLine} from '@remixicon/react'
-import {useEffect, useState} from 'react'
+import {useState} from 'react'
 
 export const Route = createFileRoute('/rooms/')({
   component: Page
@@ -23,15 +23,8 @@ const hostName = (room: RoomStatusDto) =>
   (room.whiteJoined ? room.whiteName : room.blackName) ?? 'Tanpa nama'
 
 function Page() {
-  const qc = useQueryClient()
   const [target, setTarget] = useState<RoomStatusDto | null>(null)
-
-  useEffect(() => {
-    void joinGroup(LOBBY_GROUP).then(() => void qc.invalidateQueries())
-    return () => {
-      void leaveGroup(LOBBY_GROUP)
-    }
-  }, [qc])
+  useLobbyChanged()
 
   const {
     data: rooms = [],

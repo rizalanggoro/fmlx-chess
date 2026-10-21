@@ -49,8 +49,16 @@ public class RoomRegistry(IHubContext<GameHub> hub, ILogger<RoomRegistry> logger
 
     public void NotifyLobby()
     {
-        _ = SendSafeAsync(GameGroups.Lobby);
+        _ = SendSafeAsync(GameGroups.Lobby, "LobbyChanged", new LobbyChangedDto(OpenRooms()));
     }
+
+    // ponytail: all open rooms in one array; add paging when a lobby actually gets crowded
+    public IReadOnlyList<RoomStatusDto> OpenRooms() =>
+        _rooms.Values
+            .Where(room => room.Mode == RoomMode.Online && room.WhiteJoined != room.BlackJoined)
+            .OrderBy(room => room.Id)
+            .Select(RoomStatusDto.From)
+            .ToList();
 
     public void NotifyBoard(string roomId)
     {

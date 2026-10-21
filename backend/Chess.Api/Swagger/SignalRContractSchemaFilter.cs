@@ -16,7 +16,8 @@ public class SignalRContractSchemaFilter : IDocumentFilter
         typeof(DrawDeclinedDto),
         typeof(BoardChangedDto),
         typeof(PieceCapturedDto),
-        typeof(CheckDeclaredDto)
+        typeof(CheckDeclaredDto),
+        typeof(LobbyChangedDto)
     ];
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
