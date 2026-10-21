@@ -55,7 +55,8 @@ public class GameManager : IGameManager
     public CastlingRights CastlingRights { get; private set; }
     public Position? EnPassantTarget { get; private set; }
 
-    public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
+    // Dinonaktifkan: papan disiarkan lewat BoardChangedEventHandler. Lihat notes.md.
+    // public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
     public event EventHandler<BoardChangedEventArgs>? BoardChangedEventHandler;
     public event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     public event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
@@ -167,7 +168,8 @@ public class GameManager : IGameManager
         var opponent = moverColor == PieceColor.White ? PieceColor.Black : PieceColor.White;
         RecordCompletedMove(GameBoard, opponent, wasPawn, wasCapture);
         _drawOfferer = null;
-        PieceMovedEventHandler?.Invoke(this, new PieceMovedEventArgs(effective));
+        // Dinonaktifkan: papan disiarkan lewat BoardChangedEventHandler. Lihat notes.md.
+        // PieceMovedEventHandler?.Invoke(this, new PieceMovedEventArgs(effective));
         BoardChangedEventHandler?.Invoke(this, new BoardChangedEventArgs(GameBoard));
         if (app.CapturedPiece is not null && app.CapturedSquare.HasValue)
             PieceCapturedEventHandler?.Invoke(this,

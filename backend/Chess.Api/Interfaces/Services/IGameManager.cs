@@ -16,7 +16,8 @@ public interface IGameManager
     CastlingRights CastlingRights { get; }
     Position? EnPassantTarget { get; }
 
-    event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
+    // Dinonaktifkan: papan disiarkan lewat BoardChangedEventHandler. Lihat notes.md.
+    // event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
     event EventHandler<BoardChangedEventArgs>? BoardChangedEventHandler;
     event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
