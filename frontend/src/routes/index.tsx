@@ -1,38 +1,46 @@
 import { BoardBand } from '@/components/board-band'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { postRoomsMutation, type RoomSessionDto } from '@/lib/api'
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle, } from '@/components/ui/card'
+import { toast } from '@/components/ui/toast'
+import { postRoomsMutation } from '@/lib/api'
 import { saveRoomSession } from '@/lib/room-session'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
-export const Route = createFileRoute('/')({ component: Lobby })
+export const Route = createFileRoute('/')({ component: Page })
 
-function Lobby() {
+function Page() {
   const navigate = useNavigate()
   const {
     mutate: createRoom,
-    isPending: isCreating,
-    isError: createError
+    isPending: isCreating
   } = useMutation({
     ...postRoomsMutation(),
+    onError: () => {
+      toast.add({
+        type: 'error',
+        title: 'Gagal membuat room',
+        description: 'Pastikan backend jalan.'
+      })
+    }
   })
 
-  const enter = (res: RoomSessionDto) => {
-    if (res.color) saveRoomSession(res.id, { color: res.color })
-    void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
-  }
+  const onClickHotSeat = () =>
+    createRoom(
+      { body: { mode: 'HotSeat' } },
+      {
+        onSuccess: (res) => {
+          if (res.color) saveRoomSession(res.id, { color: res.color })
+          void navigate({ to: '/rooms/$roomId', params: { roomId: res.id } })
+        },
+      },
+    )
 
   return (
     <div className="relative flex min-h-svh flex-col justify-center bg-background px-5 py-12 sm:px-8 md:px-10 md:py-16">
       <span aria-hidden className="pointer-events-none absolute inset-0 overflow-clip">
-        <span className="absolute -right-10 -bottom-12 hidden font-heading text-[22rem] leading-none text-foreground/5 select-none lg:block">
+        <span
+          className="absolute -right-10 -bottom-12 hidden font-heading text-[22rem] leading-none text-foreground/5 select-none lg:block">
           ♞
         </span>
       </span>
@@ -60,7 +68,7 @@ function Lobby() {
               </CardDescription>
               <CardTitle className="font-heading text-2xl">Dua pemain, satu perangkat</CardTitle>
               <CardDescription className="text-primary-foreground/80">
-                Jalan bergantian di papan yang sama — langsung mulai, tanpa room.
+                Jalan bergantian di papan yang sama. Langsung mulai, tanpa kode room.
               </CardDescription>
             </CardHeader>
             <CardFooter className="mt-auto">
@@ -69,7 +77,7 @@ function Lobby() {
                 size="lg"
                 className="w-full"
                 disabled={isCreating}
-                onClick={() => createRoom({ body: { mode: 'HotSeat' } }, { onSuccess: enter })}
+                onClick={onClickHotSeat}
               >
                 <span aria-hidden className="font-heading text-base leading-none">
                   ♞
@@ -106,10 +114,7 @@ function Lobby() {
         </main>
 
         <footer className="flex flex-col gap-2 text-xs text-muted-foreground">
-          <p>Tanpa akun · 10 menit per pemain · room hilang kalau server restart.</p>
-          {createError && (
-            <p className="text-sm text-destructive">Gagal membuat room. Pastikan backend jalan.</p>
-          )}
+          <p>Tanpa akun · 10 menit per pemain</p>
         </footer>
       </div>
     </div>

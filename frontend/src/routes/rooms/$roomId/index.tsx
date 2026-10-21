@@ -1,19 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ChessBoard } from '@/components/chess-board'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { DrawOfferDialog } from '@/components/draw-offer-dialog'
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import {
   Card,
   CardAction,
@@ -511,30 +502,13 @@ function Room() {
             )}
           </div>
 
-          <AlertDialog
+          <DrawOfferDialog
             open={!!offer && !over}
-            onOpenChange={(open) => {
-              if (!open) setOffer(null)
-            }}
-          >
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Tawaran draw</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {offer ? label(offer.color) : 'Lawan'} menawarkan permainan seri. Terima
-                  tawaran ini?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isRespondingDraw} onClick={() => respond(false)}>
-                  Tolak
-                </AlertDialogCancel>
-                <AlertDialogAction disabled={isRespondingDraw} onClick={() => respond(true)}>
-                  Terima
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            offerer={offer ? label(offer.color) : 'Lawan'}
+            pending={isRespondingDraw}
+            onRespond={respond}
+            onDismiss={() => setOffer(null)}
+          />
 
           <Card size="sm">
             <CardHeader>
