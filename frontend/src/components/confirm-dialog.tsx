@@ -10,6 +10,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import { useState, type ComponentProps } from 'react'
 
 export function ConfirmDialog({
@@ -40,6 +41,7 @@ export function ConfirmDialog({
       <AlertDialogTrigger
         render={<Button className={className} variant={variant} disabled={disabled} />}
       >
+        {disabled && <Spinner data-icon="inline-start" />}
         {label}
       </AlertDialogTrigger>
       <AlertDialogContent size="sm">

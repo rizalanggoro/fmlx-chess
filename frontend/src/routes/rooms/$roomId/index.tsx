@@ -16,6 +16,7 @@ import {
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Table,
   TableBody,
@@ -322,6 +323,7 @@ function Room() {
               />
               <div className="flex gap-2">
                 <Button type="submit" className="flex-1" disabled={isJoining}>
+                  {isJoining && <Spinner data-icon="inline-start" />}
                   {isJoining ? 'Menghubungkan…' : 'Gabung'}
                 </Button>
                 <Button type="button" variant="outline" onClick={toLobby}>

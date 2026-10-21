@@ -17,6 +17,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { postRoomsMutation } from '@/lib/api'
 import { saveRoomSession } from '@/lib/room-session'
@@ -132,6 +133,7 @@ export function CreateRoomDialog() {
         <DialogFooter>
           <DialogClose render={<Button variant="outline" />}>Batal</DialogClose>
           <Button type="submit" form="create-room-form" disabled={isCreating}>
+            {isCreating && <Spinner data-icon="inline-start" />}
             {isCreating ? 'Menyiapkan…' : 'Buat Room'}
           </Button>
         </DialogFooter>

@@ -1,6 +1,7 @@
 import { BoardBand } from '@/components/board-band'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle, } from '@/components/ui/card'
+import { Spinner } from '@/components/ui/spinner'
 import { toast } from '@/components/ui/toast'
 import { postRoomsMutation } from '@/lib/api'
 import { saveRoomSession } from '@/lib/room-session'
@@ -79,9 +80,13 @@ function Page() {
                 disabled={isCreating}
                 onClick={onClickHotSeat}
               >
-                <span aria-hidden className="font-heading text-base leading-none">
-                  ♞
-                </span>
+                {isCreating ? (
+                  <Spinner data-icon="inline-start" />
+                ) : (
+                  <span aria-hidden className="font-heading text-base leading-none">
+                    ♞
+                  </span>
+                )}
                 {isCreating ? 'Menyiapkan…' : 'Main Hotseat'}
               </Button>
             </CardFooter>
