@@ -1,0 +1,6 @@
+root = true
+
+# Payload SignalR hanya dibaca lewat serialisasi JSON (reflection), getter-nya tidak pernah
+# dipanggil langsung di kode. Matikan inspection "positional property never accessed" di sini.
+[backend/Chess.Api/DTOs/Events/*.cs]
+resharper_not_accessed_positional_property_global_highlighting = none

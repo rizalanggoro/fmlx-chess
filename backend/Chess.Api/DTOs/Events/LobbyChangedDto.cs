@@ -1,5 +1,5 @@
-using Api.DTOs;
-
 namespace Api.DTOs.Events;
 
-public record LobbyChangedDto(IReadOnlyList<RoomStatusDto> Rooms);
+public record LobbyChangedDto(
+    IReadOnlyList<RoomStatusDto> Rooms
+);
