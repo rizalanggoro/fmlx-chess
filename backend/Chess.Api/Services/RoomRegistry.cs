@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Api.DTOs;
+using Api.DTOs.Events;
 using Api.Enums;
 using Api.Events;
 using Api.Hubs;

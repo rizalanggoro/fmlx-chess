@@ -1,4 +1,4 @@
-using Api.DTOs;
+using Api.DTOs.Events;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 

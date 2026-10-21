@@ -1,4 +1,6 @@
-namespace Api.DTOs;
+using Api.DTOs;
+
+namespace Api.DTOs.Events;
 
 public record BoardChangedDto(
     string RoomId,

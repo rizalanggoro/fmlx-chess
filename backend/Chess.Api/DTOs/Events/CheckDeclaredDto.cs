@@ -1,6 +1,6 @@
 using Api.Enums;
 
-namespace Api.DTOs;
+namespace Api.DTOs.Events;
 
 public record CheckDeclaredDto(
     string RoomId,
