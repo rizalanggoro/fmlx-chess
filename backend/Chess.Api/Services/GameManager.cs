@@ -186,7 +186,7 @@ public class GameManager : IGameManager
         var wasCapture = targetPiece is not null || isEnPassant;
         var app = ApplyMove(GameBoard, effective);
         UpdateCastlingRights(GameBoard, effective, piece, app.CapturedPiece);
-        UpdateEnPassantTarget(GameBoard, effective, piece);
+        UpdateEnPassantTarget(effective, piece);
         if (app.CapturedPiece is not null)
             _captured[piece.Color].Add(app.CapturedPiece);
         var moverColor = piece.Color;
@@ -838,10 +838,20 @@ public class GameManager : IGameManager
         CastlingRights = cr;
     }
 
-    private void UpdateEnPassantTarget(IBoard board, Move move, IChessPiece movingPiece)
+    /// <summary>
+    ///     Sets EnPassantTarget to the square a pawn skipped when it just moved
+    ///     two squares forward, or clears it for any other move because the right
+    ///     expires after one move. The board parameter was removed: the skipped
+    ///     square follows from the move alone (same column, midpoint row), so
+    ///     reading the board was unnecessary.
+    /// </summary>
+    private void UpdateEnPassantTarget(Move move, IChessPiece movingPiece)
     {
         if (movingPiece.Type == PieceType.Pawn && Math.Abs(move.To.Row - move.From.Row) == 2)
-            EnPassantTarget = new Position(move.From.Column, (move.From.Row + move.To.Row) / 2);
+            EnPassantTarget = move.From with
+            {
+                Row = (move.From.Row + move.To.Row) / 2
+            };
         else
             EnPassantTarget = null;
     }
