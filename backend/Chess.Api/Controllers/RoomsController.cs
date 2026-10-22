@@ -57,10 +57,12 @@ public class RoomsController(
                 return BadRequest(new ApiErrorDto("Color is required"));
             if (!roomService.Claim(room, color.Value, NameUtils.Normalize(name)))
                 return Conflict(new ApiErrorDto(
-                    room.WhiteJoined && room.BlackJoined ? "Room is full" : "Seat is already taken"));
+                    room is { WhiteJoined: true, BlackJoined: true } ? "Room is full" : "Seat is already taken"));
             if (room.Manager.State == GameState.NotStarted)
                 room.Manager.StartGame();
+
             roomService.NotifyLobby();
+
             return Ok(new RoomSessionDto(room.Id, room.Mode, color));
         }
         catch (Exception ex)
@@ -74,6 +76,7 @@ public class RoomsController(
     {
         if (roomService.FindRoom(roomId) is not { } room)
             return NotFound(new ApiErrorDto("Room not found"));
+
         return Ok(RoomStatusDto.FromGameRoom(room));
     }
 }
