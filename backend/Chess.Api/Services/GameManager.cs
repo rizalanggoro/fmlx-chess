@@ -943,14 +943,25 @@ public class GameManager : IGameManager
             return true;
         return false;
     }
-
+    
+    /// <summary>
+    ///     Hands the turn to the other colour: stops the previous clock, switches
+    ///     CurrentPlayer, starts the opponent's clock, and raises the turn-changed
+    ///     event.
+    /// </summary>
     private void ChangeTurn()
     {
-        var next = CurrentPlayer.Color == PieceColor.White ? _blackPlayer : _whitePlayer;
         StopCountdown(CurrentPlayer.Color);
-        CurrentPlayer = next;
+        
+        var nextPlayer = CurrentPlayer.Color == PieceColor.White ? _blackPlayer : _whitePlayer;
+        CurrentPlayer = nextPlayer;
+        
         StartCountdown(CurrentPlayer.Color);
-        TurnChangedEventHandler?.Invoke(this, new TurnChangedEventArgs(next));
+        
+        TurnChangedEventHandler?.Invoke(
+            this,
+            new TurnChangedEventArgs(nextPlayer)
+        );
     }
 
     public void RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture)
