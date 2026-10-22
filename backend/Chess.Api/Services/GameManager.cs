@@ -472,49 +472,50 @@ public class GameManager : IGameManager
         return moves;
     }
 
+    /// <summary>
+    ///     Generates the pseudo-legal sliding moves from the given square: four
+    ///     diagonal directions for a bishop, four straight ones for a rook, and
+    ///     all eight for a queen. Each ray stops after capturing an enemy piece
+    ///     or before a friendly one.
+    /// </summary>
     private List<Move> GenerateSlidingMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
         var piece = board.Tiles[from.Column, from.Row].Piece;
         if (piece is null)
             return moves;
-        var dirs = new List<(int, int)>();
-        if (piece.Type == PieceType.Bishop || piece.Type == PieceType.Queen)
-        {
-            dirs.Add((1, 1));
-            dirs.Add((1, -1));
-            dirs.Add((-1, 1));
-            dirs.Add((-1, -1));
-        }
 
-        if (piece.Type == PieceType.Rook || piece.Type == PieceType.Queen)
-        {
-            dirs.Add((1, 0));
-            dirs.Add((-1, 0));
-            dirs.Add((0, 1));
-            dirs.Add((0, -1));
-        }
+        var directions = new List<(int, int)>();
+        if (piece.Type is PieceType.Bishop or PieceType.Queen)
+            directions.AddRange([(1, 1), (1, -1), (-1, 1), (-1, -1)]);
 
-        foreach (var (dc, dr) in dirs)
+        if (piece.Type is PieceType.Rook or PieceType.Queen)
+            directions.AddRange([(1, 0), (-1, 0), (0, 1), (0, -1)]);
+
+        foreach (var (deltaCol, deltaRow) in directions)
         {
-            var c = from.Column + dc;
-            var r = from.Row + dr;
-            while (c >= 0 && c < 8 && r >= 0 && r < 8)
+            var to = new Position(
+                from.Column + deltaCol,
+                from.Row + deltaRow
+            );
+            while (IsInBounds(to))
             {
-                var target = board.Tiles[c, r].Piece;
-                if (target is null)
+                var targetPiece = board.Tiles[to.Column, to.Row].Piece;
+                if (targetPiece is null)
                 {
-                    moves.Add(new Move(from, new Position(c, r)));
+                    moves.Add(new Move(from, to));
                 }
                 else
                 {
-                    if (target.Color != piece.Color)
-                        moves.Add(new Move(from, new Position(c, r)));
+                    if (targetPiece.Color != piece.Color)
+                        moves.Add(new Move(from, to));
                     break;
                 }
 
-                c += dc;
-                r += dr;
+                to = new Position(
+                    to.Column + deltaCol,
+                    to.Row + deltaRow
+                );
             }
         }
 
