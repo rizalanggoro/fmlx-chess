@@ -2,4 +2,5 @@ using Api.Enums;
 
 namespace Api.Models;
 
-public delegate PieceType PromotionSelectionHandler(PieceColor color);
+// Dinonaktifkan: promosi memakai PromotionType dari langkah legal (default Queen). Lihat notes.md.
+// public delegate PieceType PromotionSelectionHandler(PieceColor color);

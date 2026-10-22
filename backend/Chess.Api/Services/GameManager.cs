@@ -22,6 +22,7 @@ public class GameManager : IGameManager
     private readonly List<MoveHistoryEntry> _moveHistory = [];
     private readonly List<string> _positionHistory = [];
     private readonly IPlayer _whitePlayer;
+ 
     private IPlayer? _drawOfferer;
     private int _halfMoveClock;
 
@@ -33,12 +34,14 @@ public class GameManager : IGameManager
         _initialTime = initialTime;
         CurrentPlayer = whitePlayer;
         State = GameState.NotStarted;
-        PromotionSelector = _ => PieceType.Queen;
+        // Dinonaktifkan: promosi selalu default Queen dari langkah legal. Lihat notes.md.
+        // PromotionSelector = _ => PieceType.Queen;
         CastlingRights = new CastlingRights(true, true, true, true);
         ResetTimers();
     }
 
-    public PromotionSelectionHandler PromotionSelector { get; set; }
+    // Dinonaktifkan: promosi memakai PromotionType dari langkah legal (Queen/Rook/Bishop/Knight). Lihat notes.md.
+    // public PromotionSelectionHandler PromotionSelector { get; set; }
 
     public Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker => new()
     {
@@ -145,7 +148,7 @@ public class GameManager : IGameManager
         var effective = chosen;
         if (effective.PromotionType is null && piece.Type == PieceType.Pawn &&
             IsOnPromotionRank(effective.To, piece.Color))
-            effective = effective with { PromotionType = PromotionSelector(piece.Color) };
+            effective = effective with { PromotionType = PieceType.Queen };
         var wasPawn = piece.Type == PieceType.Pawn;
         var targetPiece = GetPieceAt(effective.To);
         var isEnPassant = wasPawn && EnPassantTarget.HasValue && effective.To.Equals(EnPassantTarget.Value) &&
@@ -684,7 +687,7 @@ public class GameManager : IGameManager
         fromTile.Piece = null;
         if (moving.Type == PieceType.Pawn && IsOnPromotionRank(move.To, moving.Color))
         {
-            var promo = move.PromotionType ?? PromotionSelector(moving.Color);
+            var promo = move.PromotionType ?? PieceType.Queen;
             toTile.Piece = new ChessPiece(moving.Color, promo);
         }
         else

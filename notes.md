@@ -12,7 +12,8 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | --- | --- | --- |
 | `PieceMovedEventArgs` + event `PieceMoved` | Dikomentari di `Services/GameManager.cs` dan `Interfaces/Services/IGameManager.cs`; file `Events/PieceMovedEventArgs.cs` dibiarkan ada | State room dikirim sebagai snapshot lewat `RoomSnapshotChanged`, bukan per langkah. Event langkah hanya membawa `from`/`to`, sehingga kasus castling, en passant, dan promosi tidak cukup untuk menyusun ulang papan di klien |
 | `SquareClickedEventArgs` | File `Events/SquareClickedEventArgs.cs` ada; deklarasi event `SquareClicked` hanya dikomentari di `Services/GameManager.cs` dan `Interfaces/Services/IGameManager.cs` (tidak ada di diagram, sekadar placeholder) | Interaksi kotak papan ditangani di frontend, tidak ada event klik di engine |
-| `GetPieces(PieceColor)` | Dikomentari di `Services/GameManager.cs`; tidak ada pemanggil | Daftar bidak per warna tidak pernah dibutuhkan; posisi bidak sudah dibaca langsung dari `GameBoard` dan dikirim sebagai `board` di `RoomSnapshotChangedDto` |
+| `GetPieces(PieceColor)` | Dikomentari di `Services/GameManager.cs`; tidak ada pemanggil | Daftar bidak per warna tidak pernah dibutuhkan; posisi bidak sudah dibaca langsung dari `GameBoard` dan dikirim sebagai `board` di `SnapshotChangedDto` |
+| `PromotionSelector` + delegate `PromotionSelectionHandler` | Dikomentari di `Services/GameManager.cs` dan `Models/PromotionSelectionHandler.cs`; file delegate dibiarkan ada | Promosi memakai `PromotionType` yang sudah dibawa langkah legal (Queen/Rook/Bishop/Knight). Request tanpa `promotionType` memilih langkah pertama (Queen), jadi hook selector tidak pernah terpanggil |
 
 ## 2. Disesuaikan dari diagram
 
