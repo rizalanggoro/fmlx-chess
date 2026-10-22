@@ -522,22 +522,34 @@ public class GameManager : IGameManager
         return moves;
     }
 
+    /// <summary>
+    ///     Generates the pseudo-legal king steps from the given square: the eight
+    ///     neighbouring squares that are empty or hold an enemy piece. Castling
+    ///     is handled separately by <see cref="GetCastlingMoves" />.
+    /// </summary>
     private List<Move> GenerateKingMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
         var piece = board.Tiles[from.Column, from.Row].Piece;
         if (piece is null)
             return moves;
-        for (var dc = -1; dc <= 1; dc++)
-        for (var dr = -1; dr <= 1; dr++)
+
+        for (var deltaCol = -1; deltaCol <= 1; deltaCol++)
+        for (var deltaRow = -1; deltaRow <= 1; deltaRow++)
         {
-            if (dc == 0 && dr == 0)
+            if (deltaCol == 0 && deltaRow == 0)
                 continue;
-            var to = new Position(from.Column + dc, from.Row + dr);
+
+            var to = new Position(
+                from.Column + deltaCol,
+                from.Row + deltaRow
+            );
+
             if (!IsInBounds(to))
                 continue;
-            var target = board.Tiles[to.Column, to.Row].Piece;
-            if (target is null || target.Color != piece.Color)
+
+            var targetPiece = board.Tiles[to.Column, to.Row].Piece;
+            if (targetPiece is null || targetPiece.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
 
