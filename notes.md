@@ -31,6 +31,7 @@ Domain / engine:
 - `Events/SnapshotChangedEventArgs.cs` + `SnapshotChangedEventHandler`, dipicu di `TryMakeMove` (setelah hasil otomatis dievaluasi dan giliran berganti), `StartGame`, dan `ResetGame`. Membawa `IBoard` dan riwayat langkah sebagai referensi.
 - `Interfaces/Services/IGameManager.cs` sebagai kontrak `GameManager`.
 - Helper privat tambahan di `GameManager`: `AddPawnMove`, `ResetTimers`, `OnTimeExpired` (tidak ada di diagram, hanya pemecahan implementasi).
+- `ValueObjects/SquareOffset.cs` + `Constants/SquareOffsets.cs`: tipe offset (`Column`/`Row` sebagai delta, plus operator `Position + SquareOffset`) dan daftar offset bersama — knight, diagonal, lurus, raja, ratu, dan kolom tangkap pion — dipakai ulang oleh `GenerateKnightMoves`, `GenerateSlidingMoves`, `GenerateKingMoves`, `GeneratePawnMoves`, dan `IsSquareAttacked`.
 
 Di luar domain (tidak digambarkan sama sekali di class diagram):
 

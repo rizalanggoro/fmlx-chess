@@ -1,4 +1,5 @@
 using System.Text;
+using Api.Constants;
 using Api.Enums;
 using Api.Events;
 using Api.Interfaces.Models;
@@ -407,7 +408,7 @@ public class GameManager : IGameManager
                 moves.Add(new Move(from, two));
         }
 
-        foreach (var dc in new[] { -1, 1 })
+        foreach (var dc in SquareOffsets.PawnCaptureColumns)
         {
             var to = new Position(from.Column + dc, from.Row + dir);
             if (!IsInBounds(to))
@@ -450,22 +451,14 @@ public class GameManager : IGameManager
         if (piece is null)
             return moves;
 
-        var offsets = new[]
+        foreach (var offset in SquareOffsets.Knight)
         {
-            (1, 2), (1, -2), (-1, 2), (-1, -2),
-            (2, 1), (2, -1), (-2, 1), (-2, -1)
-        };
-        foreach (var (deltaCol, deltaRow) in offsets)
-        {
-            var to = new Position(
-                from.Column + deltaCol,
-                from.Row + deltaRow
-            );
+            var to = from + offset;
             if (!IsInBounds(to))
                 continue;
 
-            var target = board.Tiles[to.Column, to.Row].Piece;
-            if (target is null || target.Color != piece.Color)
+            var targetPiece = board.Tiles[to.Column, to.Row].Piece;
+            if (targetPiece is null || targetPiece.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
 
@@ -485,19 +478,16 @@ public class GameManager : IGameManager
         if (piece is null)
             return moves;
 
-        var directions = new List<(int, int)>();
-        if (piece.Type is PieceType.Bishop or PieceType.Queen)
-            directions.AddRange([(1, 1), (1, -1), (-1, 1), (-1, -1)]);
-
-        if (piece.Type is PieceType.Rook or PieceType.Queen)
-            directions.AddRange([(1, 0), (-1, 0), (0, 1), (0, -1)]);
-
-        foreach (var (deltaCol, deltaRow) in directions)
+        var directions = piece.Type switch
         {
-            var to = new Position(
-                from.Column + deltaCol,
-                from.Row + deltaRow
-            );
+            PieceType.Bishop => SquareOffsets.Diagonal,
+            PieceType.Rook => SquareOffsets.Straight,
+            _ => SquareOffsets.Queen
+        };
+
+        foreach (var offset in directions)
+        {
+            var to = from + offset;
             while (IsInBounds(to))
             {
                 var targetPiece = board.Tiles[to.Column, to.Row].Piece;
@@ -512,10 +502,7 @@ public class GameManager : IGameManager
                     break;
                 }
 
-                to = new Position(
-                    to.Column + deltaCol,
-                    to.Row + deltaRow
-                );
+                to += offset;
             }
         }
 
@@ -534,17 +521,9 @@ public class GameManager : IGameManager
         if (piece is null)
             return moves;
 
-        for (var deltaCol = -1; deltaCol <= 1; deltaCol++)
-        for (var deltaRow = -1; deltaRow <= 1; deltaRow++)
+        foreach (var offset in SquareOffsets.King)
         {
-            if (deltaCol == 0 && deltaRow == 0)
-                continue;
-
-            var to = new Position(
-                from.Column + deltaCol,
-                from.Row + deltaRow
-            );
-
+            var to = from + offset;
             if (!IsInBounds(to))
                 continue;
 
@@ -622,21 +601,20 @@ public class GameManager : IGameManager
     private bool IsSquareAttacked(IBoard board, Position pos, PieceColor byColor)
     {
         var pawnRow = byColor == PieceColor.White ? pos.Row - 1 : pos.Row + 1;
-        foreach (var dc in new[] { -1, 1 })
+        foreach (var dc in SquareOffsets.PawnCaptureColumns)
         {
             var p = new Position(pos.Column + dc, pawnRow);
-            if (p.Column >= 0 && p.Column < 8 && p.Row >= 0 && p.Row < 8)
-            {
-                var piece = board.Tiles[p.Column, p.Row].Piece;
-                if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Pawn)
-                    return true;
-            }
+            if (!IsInBounds(p))
+                continue;
+
+            var piece = board.Tiles[p.Column, p.Row].Piece;
+            if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Pawn)
+                return true;
         }
 
-        var knightOffsets = new[] { (1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2) };
-        foreach (var (dc, dr) in knightOffsets)
+        foreach (var offset in SquareOffsets.Knight)
         {
-            var p = new Position(pos.Column + dc, pos.Row + dr);
+            var p = pos + offset;
             if (!IsInBounds(p))
                 continue;
             var piece = board.Tiles[p.Column, p.Row].Piece;
@@ -644,12 +622,9 @@ public class GameManager : IGameManager
                 return true;
         }
 
-        for (var dc = -1; dc <= 1; dc++)
-        for (var dr = -1; dr <= 1; dr++)
+        foreach (var offset in SquareOffsets.King)
         {
-            if (dc == 0 && dr == 0)
-                continue;
-            var p = new Position(pos.Column + dc, pos.Row + dr);
+            var p = pos + offset;
             if (!IsInBounds(p))
                 continue;
             var piece = board.Tiles[p.Column, p.Row].Piece;
@@ -657,14 +632,12 @@ public class GameManager : IGameManager
                 return true;
         }
 
-        var diag = new[] { (1, 1), (1, -1), (-1, 1), (-1, -1) };
-        foreach (var (dc, dr) in diag)
+        foreach (var offset in SquareOffsets.Diagonal)
         {
-            var c = pos.Column + dc;
-            var r = pos.Row + dr;
-            while (c >= 0 && c < 8 && r >= 0 && r < 8)
+            var p = pos + offset;
+            while (IsInBounds(p))
             {
-                var piece = board.Tiles[c, r].Piece;
+                var piece = board.Tiles[p.Column, p.Row].Piece;
                 if (piece is not null)
                 {
                     if (piece.Color == byColor && (piece.Type == PieceType.Bishop || piece.Type == PieceType.Queen))
@@ -672,19 +645,16 @@ public class GameManager : IGameManager
                     break;
                 }
 
-                c += dc;
-                r += dr;
+                p += offset;
             }
         }
 
-        var straight = new[] { (1, 0), (-1, 0), (0, 1), (0, -1) };
-        foreach (var (dc, dr) in straight)
+        foreach (var offset in SquareOffsets.Straight)
         {
-            var c = pos.Column + dc;
-            var r = pos.Row + dr;
-            while (c >= 0 && c < 8 && r >= 0 && r < 8)
+            var p = pos + offset;
+            while (IsInBounds(p))
             {
-                var piece = board.Tiles[c, r].Piece;
+                var piece = board.Tiles[p.Column, p.Row].Piece;
                 if (piece is not null)
                 {
                     if (piece.Color == byColor && (piece.Type == PieceType.Rook || piece.Type == PieceType.Queen))
@@ -692,8 +662,7 @@ public class GameManager : IGameManager
                     break;
                 }
 
-                c += dc;
-                r += dr;
+                p += offset;
             }
         }
 
