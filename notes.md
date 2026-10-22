@@ -14,6 +14,7 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | `SquareClickedEventArgs` | File `Events/SquareClickedEventArgs.cs` ada; deklarasi event `SquareClicked` hanya dikomentari di `Services/GameManager.cs` dan `Interfaces/Services/IGameManager.cs` (tidak ada di diagram, sekadar placeholder) | Interaksi kotak papan ditangani di frontend, tidak ada event klik di engine |
 | `GetPieces(PieceColor)` | Dikomentari di `Services/GameManager.cs`; tidak ada pemanggil | Daftar bidak per warna tidak pernah dibutuhkan; posisi bidak sudah dibaca langsung dari `GameBoard` dan dikirim sebagai `board` di `SnapshotChangedDto` |
 | `PromotionSelector` + delegate `PromotionSelectionHandler` | Dikomentari di `Services/GameManager.cs` dan `Models/PromotionSelectionHandler.cs`; file delegate dibiarkan ada | Promosi memakai `PromotionType` yang sudah dibawa langkah legal (Queen/Rook/Bishop/Knight). Request tanpa `promotionType` memilih langkah pertama (Queen), jadi hook selector tidak pernah terpanggil |
+| `PlayerTimer` + `IPlayerTimer` | Keduanya tetap ada, tetapi hanya sebagai model data: satu properti `RemainingTime` (`get; set;`), tanpa `StartTimer`/`StopTimer`/event. Countdown, tick, dan timeout dipindah ke `Services/GameManager.cs` (`StartCountdown`, `StopCountdown`, `StopAllCountdowns`, `TickCountdown`, `OnTimeExpired`) | Class diagram salah: logic timer seharusnya berada di `GameManager`; `PlayerTimer` cukup menyimpan sisa waktu. Catatan juga ditulis sebagai summary di `PlayerTimeTracker` dan `ResetTimers` |
 
 ## 2. Disesuaikan dari diagram
 

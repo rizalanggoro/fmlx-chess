@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using Api.Constants;
 using Api.Enums;
@@ -23,6 +24,8 @@ public class GameManager : IGameManager
     private readonly List<MoveHistoryEntry> _moveHistory = [];
     private readonly List<string> _positionHistory = [];
     private readonly IPlayer _whitePlayer;
+
+    private readonly ConcurrentDictionary<PieceColor, Timer> _countdownTimers = new();
 
     private IPlayer? _drawOfferer;
     private int _halfMoveClock;
@@ -55,6 +58,13 @@ public class GameManager : IGameManager
     public GameState State { get; private set; }
     public GameResult? Result { get; private set; }
     public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
+
+    /// <summary>
+    ///     Remaining time per colour, held in a PlayerTimer model. The countdown
+    ///     logic does not live in PlayerTimer: GameManager starts, stops, and
+    ///     ticks the clocks and ends the game on timeout. Ticks fire on
+    ///     thread-pool threads via System.Threading.Timer.
+    /// </summary>
     public Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; } = new();
 
     public CastlingRights CastlingRights { get; private set; }
@@ -93,7 +103,7 @@ public class GameManager : IGameManager
         _captured[PieceColor.White].Clear();
         _captured[PieceColor.Black].Clear();
         _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
-        PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
+        StartCountdown(CurrentPlayer.Color);
 
         SnapshotChangedEventHandler?.Invoke(
             this,
@@ -113,8 +123,7 @@ public class GameManager : IGameManager
         _drawOfferer = null;
         CurrentPlayer = _whitePlayer;
 
-        foreach (var t in PlayerTimeTracker.Values)
-            t.StopTimer();
+        StopAllCountdowns();
         SetupInitialBoardPosition();
         Reset();
         ResetTimers();
@@ -309,8 +318,7 @@ public class GameManager : IGameManager
             return;
         State = GameState.Completed;
         Result = result;
-        foreach (var t in PlayerTimeTracker.Values)
-            t.StopTimer();
+        StopAllCountdowns();
 
         GameEndedEventHandler?.Invoke(this, new GameEndedEventArgs(result));
     }
@@ -939,9 +947,9 @@ public class GameManager : IGameManager
     private void ChangeTurn()
     {
         var next = CurrentPlayer.Color == PieceColor.White ? _blackPlayer : _whitePlayer;
-        PlayerTimeTracker[CurrentPlayer.Color].StopTimer();
+        StopCountdown(CurrentPlayer.Color);
         CurrentPlayer = next;
-        PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
+        StartCountdown(CurrentPlayer.Color);
         TurnChangedEventHandler?.Invoke(this, new TurnChangedEventArgs(next));
     }
 
@@ -979,34 +987,76 @@ public class GameManager : IGameManager
         _halfMoveClock = 0;
     }
 
+    /// <summary>
+    ///     Resets both clocks to the initial time and stops any running timer.
+    ///     PlayerTimer is only a model; restarting the countdown is GameManager's
+    ///     job, so no timer logic lives in the model.
+    /// </summary>
     private void ResetTimers()
     {
-        foreach (var t in PlayerTimeTracker.Values)
-            t.StopTimer();
+        StopAllCountdowns();
+        PlayerTimeTracker[PieceColor.White] = new PlayerTimer(_initialTime);
+        PlayerTimeTracker[PieceColor.Black] = new PlayerTimer(_initialTime);
+    }
 
-        var whiteTimer = new PlayerTimer(_initialTime);
-        var blackTimer = new PlayerTimer(_initialTime);
+    /// <summary>
+    ///     Starts the one-second countdown for the given colour, replacing any
+    ///     timer already running for it. The first tick fires after one second
+    ///     and repeats every second until the clock is stopped or hits zero.
+    /// </summary>
+    private void StartCountdown(PieceColor color)
+    {
+        StopCountdown(color);
 
-        whiteTimer.TimerTick += (s, e) => TimerTickedEventHandler?.Invoke(
-            this,
-            new TimerTickEventArgs(
-                PieceColor.White,
-                e.TimeRemaining
-            )
+        _countdownTimers[color] = new Timer(
+            _ => TickCountdown(color),
+            null,
+            1000,
+            1000
         );
-        blackTimer.TimerTick += (s, e) => TimerTickedEventHandler?.Invoke(
-            this,
-            new TimerTickEventArgs(
-                PieceColor.Black,
-                e.TimeRemaining
-            )
-        );
+    }
 
-        whiteTimer.TimeExpired += (s, e) => OnTimeExpired(PieceColor.White);
-        blackTimer.TimeExpired += (s, e) => OnTimeExpired(PieceColor.Black);
+    /// <summary>
+    ///     Stops and disposes the countdown timer of the given colour, if one is
+    ///     running. Safe to call when no timer exists.
+    /// </summary>
+    private void StopCountdown(PieceColor color)
+    {
+        if (_countdownTimers.TryRemove(color, out var timer))
+            timer.Dispose();
+    }
 
-        PlayerTimeTracker[PieceColor.White] = whiteTimer;
-        PlayerTimeTracker[PieceColor.Black] = blackTimer;
+    /// <summary>
+    ///     Stops every running countdown timer, used when the game is reset or
+    ///     ends so no clock keeps ticking afterwards.
+    /// </summary>
+    private void StopAllCountdowns()
+    {
+        foreach (var color in _countdownTimers.Keys)
+            StopCountdown(color);
+    }
+
+    /// <summary>
+    ///     Consumes one second of the given player's clock. Runs on a
+    ///     thread-pool thread, broadcasts the remaining time, and ends the game
+    ///     once the clock reaches zero.
+    /// </summary>
+    private void TickCountdown(PieceColor color)
+    {
+        var timer = PlayerTimeTracker[color];
+        timer.RemainingTime -= TimeSpan.FromSeconds(1);
+        if (timer.RemainingTime > TimeSpan.Zero)
+        {
+            TimerTickedEventHandler?.Invoke(
+                this,
+                new TimerTickEventArgs(color, timer.RemainingTime)
+            );
+            return;
+        }
+
+        timer.RemainingTime = TimeSpan.Zero;
+        StopCountdown(color);
+        OnTimeExpired(color);
     }
 
     private void OnTimeExpired(PieceColor color)
