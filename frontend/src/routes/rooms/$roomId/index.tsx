@@ -1,4 +1,3 @@
-import { zodResolver } from '@hookform/resolvers/zod'
 import { ChessBoard } from '@/components/chess-board'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DrawOfferDialog } from '@/components/draw-offer-dialog'
@@ -13,10 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Field, FieldError, FieldLabel } from '@/components/ui/field'
-import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Spinner } from '@/components/ui/spinner'
 import {
   Table,
   TableBody,
@@ -26,6 +22,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
+  getRoomsByRoomId,
   getRoomsByRoomIdGameBoardOptions,
   getRoomsByRoomIdGameHistoryOptions,
   getRoomsByRoomIdGameLegalMovesOptions,
@@ -36,7 +33,6 @@ import {
   postRoomsByRoomIdGameMovesMutation,
   postRoomsByRoomIdGameResignMutation,
   postRoomsByRoomIdGameStartMutation,
-  postRoomsByRoomIdJoinMutation,
 } from '@/lib/api'
 import { useRoomSnapshot } from '@/hooks/use-room-snapshot'
 import { useCheckToast } from '@/hooks/use-check-toast'
@@ -47,20 +43,20 @@ import { useTimerTick } from '@/hooks/use-timer-tick'
 import { FILES, GLYPHS, REASONS } from '@/constants/chess'
 import type { DrawOfferedDto, PieceColor, Position } from '@/lib/api'
 import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
-import { loadRoomSession, saveRoomSession, type RoomSession } from '@/lib/room-session'
+import { loadRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Controller, useForm } from 'react-hook-form'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { z } from 'zod'
 
-const joinSchema = z.object({
-  name: z.string().trim().max(24, 'Nama maksimal 24 karakter'),
+export const Route = createFileRoute('/rooms/$roomId/')({
+  // Link room online tanpa session diarahkan ke daftar room; join lewat dialog di sana.
+  beforeLoad: async ({ params }) => {
+    if (loadRoomSession(params.roomId)) return
+    const room = await getRoomsByRoomId({ path: { roomId: params.roomId } }).catch(() => null)
+    if (room?.data?.mode === 'Online') throw redirect({ to: '/rooms' })
+  },
+  component: Room,
 })
-
-type JoinValues = z.infer<typeof joinSchema>
-
-export const Route = createFileRoute('/rooms/$roomId/')({ component: Room })
 
 const colorName = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
 const opposite = (color: PieceColor): PieceColor => (color === 'White' ? 'Black' : 'White')
@@ -76,14 +72,10 @@ function Room() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [selected, setSelected] = useState<Position | null>(null)
-  const [session, setSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
+  const [session] = useState<RoomSession | null>(() => loadRoomSession(roomId))
   const [copied, setCopied] = useState(false)
   // ponytail: pending draw offer is local state (API exposes none); persist it in GameStateDto if it must survive reload.
   const [offer, setOffer] = useState<DrawOfferedDto | null>(null)
-  const form = useForm<JoinValues>({
-    resolver: zodResolver(joinSchema),
-    defaultValues: { name: '' },
-  })
 
   useEffect(() => {
     const group = roomGroup(roomId)
@@ -112,8 +104,6 @@ function Room() {
 
   const online = room?.mode === 'Online'
   const waiting = online && !(room?.whiteJoined && room?.blackJoined)
-  // Kursi yang ditampilkan/dikirim saat join; server tetap memvalidasi (409 kalau sudah diambil).
-  const seat: PieceColor = room?.whiteJoined ? 'Black' : 'White'
   const myColor = session?.color
   const turn = state?.currentPlayer.color
   const over = state?.state === 'Completed'
@@ -173,12 +163,6 @@ function Room() {
   } = useMutation({
     ...postRoomsByRoomIdGameDrawRespondMutation(),
   })
-  const {
-    mutate: join,
-    isPending: isJoining
-  } = useMutation({
-    ...postRoomsByRoomIdJoinMutation(),
-  })
 
   const nameOf = (color: PieceColor) =>
     color === 'White' ? room?.whiteName : room?.blackName
@@ -192,21 +176,6 @@ function Room() {
       { onSuccess: () => setOffer(null) },
     )
   }
-
-  // Joining takes whichever seat is still free.
-  const takeSeat = (values: JoinValues) =>
-    join(
-      { path: { roomId }, query: { name: values.name || undefined, color: seat } },
-      {
-        onSuccess: (res) => {
-          if (!res.color) return
-          const s: RoomSession = { color: res.color }
-          saveRoomSession(roomId, s)
-          setSession(s)
-        },
-        onError: () => void qc.invalidateQueries(),
-      },
-    )
 
   const copyCode = () =>
     navigator.clipboard?.writeText(roomId).then(
@@ -281,67 +250,6 @@ function Room() {
       <Shell>
         <p className="text-center text-muted-foreground">Memuat…</p>
       </Shell>
-    )
-  }
-
-  if (online && !session && !(room.whiteJoined && room.blackJoined)) {
-    return (
-      <StateScreen>
-        <Card className="w-full">
-          <CardHeader>
-            <Eyebrow>Online</Eyebrow>
-            <CardTitle className="text-2xl">Gabung ke room</CardTitle>
-            <CardDescription>
-              Kode room{' '}
-              <span className="font-mono text-base font-semibold tracking-[0.2em] text-foreground">
-                {roomId}
-              </span>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-sm text-muted-foreground">
-              Kamu akan main sebagai{' '}
-              <span className="font-semibold text-foreground">{colorName(seat)}</span>{' '}
-              <span aria-hidden className="font-heading text-base">
-                {glyphOf(seat)}
-              </span>
-            </p>
-            <form
-              id="join-room-form"
-              className="flex flex-col gap-4"
-              onSubmit={form.handleSubmit(takeSeat)}
-            >
-              <Controller
-                name="name"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="join-room-name">Nama kamu</FieldLabel>
-                    <Input
-                      {...field}
-                      id="join-room-name"
-                      placeholder="Opsional"
-                      autoComplete="off"
-                      aria-invalid={fieldState.invalid}
-                      onChange={(e) => field.onChange(e.target.value.slice(0, 24))}
-                    />
-                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-                  </Field>
-                )}
-              />
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1" disabled={isJoining}>
-                  {isJoining && <Spinner data-icon="inline-start" />}
-                  {isJoining ? 'Menghubungkan…' : 'Gabung'}
-                </Button>
-                <Button type="button" variant="outline" onClick={toLobby}>
-                  Lobby
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </StateScreen>
     )
   }
 
