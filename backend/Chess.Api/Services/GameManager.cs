@@ -74,37 +74,41 @@ public class GameManager : IGameManager
 
     public void StartGame()
     {
-        SetupInitialBoardPosition();
         Result = null;
-        _moveHistory.Clear();
-        _captured[PieceColor.White].Clear();
-        _captured[PieceColor.Black].Clear();
-        Reset();
         _drawOfferer = null;
         State = GameState.InProgress;
         CurrentPlayer = _whitePlayer;
+
+        SetupInitialBoardPosition();
+        Reset();
         ResetTimers();
+
+        _moveHistory.Clear();
+        _captured[PieceColor.White].Clear();
+        _captured[PieceColor.Black].Clear();
         _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
         PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
+
         SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
     }
 
     public void ResetGame()
     {
+        State = GameState.NotStarted;
+        Result = null;
+        _drawOfferer = null;
+        CurrentPlayer = _whitePlayer;
+
         foreach (var t in PlayerTimeTracker.Values)
             t.StopTimer();
         SetupInitialBoardPosition();
-        State = GameState.NotStarted;
-        Result = null;
+        Reset();
+        ResetTimers();
+
         _moveHistory.Clear();
         _captured[PieceColor.White].Clear();
         _captured[PieceColor.Black].Clear();
-        Reset();
-        _drawOfferer = null;
-        CurrentPlayer = _whitePlayer;
-        CastlingRights = new CastlingRights(true, true, true, true);
-        EnPassantTarget = null;
-        ResetTimers();
+
         SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
     }
 
