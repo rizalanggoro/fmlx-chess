@@ -971,12 +971,24 @@ public class GameManager : IGameManager
         return _positionHistory.Count(k => k == key) >= 5;
     }
 
-    public bool IsFiftyMoveRuleClaimAvailable()
+    /// <summary>
+    ///     Tells whether the fifty-move rule can be claimed now, i.e. at least
+    ///     fifty moves by each side have passed without a pawn move or capture.
+    ///     The class diagram lists this as public, but it is private because
+    ///     only GameManager itself consults it.
+    /// </summary>
+    private bool IsFiftyMoveRuleClaimAvailable()
     {
         return _halfMoveClock >= 100;
     }
 
-    public bool IsSeventyFiveMoveRuleAutomatic()
+    /// <summary>
+    ///     Tells whether the seventy-five-move rule applies automatically, i.e.
+    ///     seventy-five moves by each side have passed without a pawn move or
+    ///     capture. The class diagram lists this as public, but it is private
+    ///     because only GameManager itself consults it.
+    /// </summary>
+    private bool IsSeventyFiveMoveRuleAutomatic()
     {
         return _halfMoveClock >= 150;
     }

@@ -24,6 +24,8 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | Nama event `PieceMoved`, `PieceCaptured`, `TurnChanged`, `CheckDeclared`, `GameEnded`, `DrawOffered`, `TimerTick` | Memakai sufiks konvensi .NET: `PieceMovedEventHandler`, `PieceCapturedEventHandler`, `TurnChangedEventHandler`, `CheckDeclaredEventHandler`, `GameEndedEventHandler`, `DrawOfferedEventHandler`, `TimerTickedEventHandler` |
 | Tidak ada `DrawDeclined` | Ada `Events/DrawDeclinedEventArgs.cs` + `DrawDeclinedEventHandler` (jawaban penolakan draw) |
 | `SetupInitialBoardPosition()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `StartGame` dan `ResetGame`, tidak dipakai controller atau service lain |
+| `IsFiftyMoveRuleClaimAvailable()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `ClaimDrawByFiftyMoveRule`, tidak dipakai controller atau service lain |
+| `IsSeventyFiveMoveRuleAutomatic()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `EvaluateAutomaticResult`, tidak dipakai controller atau service lain |
 
 ## 3. Ditambahkan di luar diagram
 
