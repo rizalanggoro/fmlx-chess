@@ -188,9 +188,13 @@ public class GameManager : IGameManager
         return true;
     }
 
+    /// <summary>
+    ///     Tells whether the given position lies on the 8x8 board, i.e. both
+    ///     column and row are between 0 and 7.
+    /// </summary>
     public bool IsInBounds(Position pos)
     {
-        return pos.Column >= 0 && pos.Column < 8 && pos.Row >= 0 && pos.Row < 8;
+        return pos.Column is >= 0 and < 8 && pos.Row is >= 0 and < 8;
     }
 
     public IReadOnlyList<Move> GetLegalMoves(Position from)
@@ -433,18 +437,33 @@ public class GameManager : IGameManager
         }
     }
 
+    /// <summary>
+    ///     Generates the pseudo-legal knight jumps from the given square: up to
+    ///     eight L-shaped targets, keeping only squares that are empty or hold
+    ///     an enemy piece.
+    /// </summary>
     private List<Move> GenerateKnightMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
         var piece = board.Tiles[from.Column, from.Row].Piece;
+
         if (piece is null)
             return moves;
-        var offsets = new[] { (1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2) };
-        foreach (var (dc, dr) in offsets)
+
+        var offsets = new[]
         {
-            var to = new Position(from.Column + dc, from.Row + dr);
+            (1, 2), (1, -2), (-1, 2), (-1, -2),
+            (2, 1), (2, -1), (-2, 1), (-2, -1)
+        };
+        foreach (var (deltaCol, deltaRow) in offsets)
+        {
+            var to = new Position(
+                from.Column + deltaCol,
+                from.Row + deltaRow
+            );
             if (!IsInBounds(to))
                 continue;
+
             var target = board.Tiles[to.Column, to.Row].Piece;
             if (target is null || target.Color != piece.Color)
                 moves.Add(new Move(from, to));
