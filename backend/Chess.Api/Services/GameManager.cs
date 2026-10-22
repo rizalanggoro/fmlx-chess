@@ -229,17 +229,30 @@ public class GameManager : IGameManager
         return legal;
     }
 
+    /// <summary>
+    ///     Returns the moves played by the given colour, in play order.
+    /// </summary>
     public IReadOnlyList<MoveHistoryEntry> GetMoveHistory(PieceColor color)
     {
-        return _moveHistory.Where(e => e.PlayedBy == color).ToList();
+        return _moveHistory
+            .Where(e => e.PlayedBy == color)
+            .ToList();
     }
 
+    /// <summary>
+    ///     Records the given player as the one offering a draw and notifies the
+    ///     room; ignored when the game is not in progress.
+    /// </summary>
     public void OfferDraw(IPlayer offerer)
     {
         if (State != GameState.InProgress)
             return;
+
         _drawOfferer = offerer;
-        DrawOfferedEventHandler?.Invoke(this, new DrawOfferedEventArgs(offerer));
+        DrawOfferedEventHandler?.Invoke(
+            this,
+            new DrawOfferedEventArgs(offerer)
+        );
     }
 
     public void RespondToDrawOffer(IPlayer responder, bool accepted)
