@@ -1024,7 +1024,16 @@ public class GameManager : IGameManager
         return _halfMoveClock >= 150;
     }
 
-    public void Reset()
+    /// <summary>
+    ///     Clears the draw-tracking bookkeeping: the position history used to
+    ///     detect repetitions and the half-move clock used by the fifty-move and
+    ///     seventy-five-move rules. This is not a full game reset — that is
+    ///     <see cref="ResetGame" />, which also restores the board, the clocks,
+    ///     and the histories. Private because only StartGame and ResetGame call
+    ///     it; the class diagram lists it as public, but the diagram is
+    ///     read-only, so the discrepancy is documented here instead.
+    /// </summary>
+    private void Reset()
     {
         _positionHistory.Clear();
         _halfMoveClock = 0;

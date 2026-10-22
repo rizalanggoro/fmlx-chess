@@ -26,6 +26,8 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | `SetupInitialBoardPosition()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `StartGame` dan `ResetGame`, tidak dipakai controller atau service lain |
 | `IsFiftyMoveRuleClaimAvailable()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `ClaimDrawByFiftyMoveRule`, tidak dipakai controller atau service lain |
 | `IsSeventyFiveMoveRuleAutomatic()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `EvaluateAutomaticResult`, tidak dipakai controller atau service lain |
+| `GeneratePositionKey()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `GameManager` sendiri untuk mencatat dan menghitung pengulangan posisi |
+| `Reset()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya clearing riwayat posisi dan half-move clock, dipanggil dari `StartGame` dan `ResetGame`, tidak dipakai controller atau service lain |
 
 ## 3. Ditambahkan di luar diagram
 
