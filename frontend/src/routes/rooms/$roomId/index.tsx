@@ -1,6 +1,7 @@
 import { ChessBoard } from '@/components/chess-board'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DrawOfferDialog } from '@/components/draw-offer-dialog'
+import { PromotionDialog } from '@/components/promotion-dialog'
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -41,7 +42,7 @@ import { useGameEnded } from '@/hooks/use-game-ended'
 import { usePieceCapturedToast } from '@/hooks/use-piece-captured-toast'
 import { useTimerTick } from '@/hooks/use-timer-tick'
 import { FILES, GLYPHS, REASONS } from '@/constants/chess'
-import type { DrawOfferedDto, PieceColor, Position } from '@/lib/api'
+import type { DrawOfferedDto, PieceColor, PieceType, Position } from '@/lib/api'
 import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, type RoomSession } from '@/lib/room-session'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -76,6 +77,11 @@ function Room() {
   const [copied, setCopied] = useState(false)
   // ponytail: pending draw offer is local state (API exposes none); persist it in GameStateDto if it must survive reload.
   const [offer, setOffer] = useState<DrawOfferedDto | null>(null)
+  const [promotion, setPromotion] = useState<{
+    from: Position
+    to: Position
+    options: PieceType[]
+  } | null>(null)
 
   useEffect(() => {
     const group = roomGroup(roomId)
@@ -208,6 +214,14 @@ function Room() {
     if (state?.state !== 'InProgress' || isMoving || !myTurn) return
     const key = `${sq.column},${sq.row}`
     if (activeSquare && targets.has(key)) {
+      // Server menandai langkah promosi lewat PromotionType; pilih dulu sebelum kirim move.
+      const options = (legal ?? []).flatMap((m) =>
+        same(m.to, sq) && m.promotionType ? [m.promotionType] : [],
+      )
+      if (options.length > 0) {
+        setPromotion({ from: activeSquare, to: sq, options })
+        return
+      }
       makeMove({
         path: { roomId },
         body: { from: activeSquare, to: sq, promotionType: null },
@@ -222,6 +236,17 @@ function Room() {
     } else {
       setSelected(null)
     }
+  }
+
+  const promote = (type: PieceType) => {
+    if (!promotion) return
+    makeMove({
+      path: { roomId },
+      body: { from: promotion.from, to: promotion.to, promotionType: type },
+      query: myColor ? { color: myColor } : undefined,
+    })
+    setPromotion(null)
+    setSelected(null)
   }
 
   const toLobby = () => void navigate({ to: '/' })
@@ -440,6 +465,15 @@ function Room() {
             pending={isRespondingDraw}
             onRespond={respond}
             onDismiss={() => setOffer(null)}
+          />
+
+          <PromotionDialog
+            open={promotion !== null && !over}
+            color={turn ?? 'White'}
+            options={promotion?.options ?? []}
+            pending={isMoving}
+            onSelect={promote}
+            onDismiss={() => setPromotion(null)}
           />
 
           <Card size="sm">
