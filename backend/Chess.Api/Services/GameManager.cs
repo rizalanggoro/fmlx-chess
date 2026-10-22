@@ -593,6 +593,10 @@ public class GameManager : IGameManager
         return moves;
     }
 
+    /// <summary>
+    ///     Tells whether the given square is the far rank for that colour, i.e.
+    ///     row 7 for white and row 0 for black — the rank where a pawn promotes.
+    /// </summary>
     private bool IsOnPromotionRank(Position position, PieceColor color)
     {
         return color == PieceColor.White ? position.Row == 7 : position.Row == 0;
