@@ -943,7 +943,7 @@ public class GameManager : IGameManager
             return true;
         return false;
     }
-    
+
     /// <summary>
     ///     Hands the turn to the other colour: stops the previous clock, switches
     ///     CurrentPlayer, starts the opponent's clock, and raises the turn-changed
@@ -952,12 +952,12 @@ public class GameManager : IGameManager
     private void ChangeTurn()
     {
         StopCountdown(CurrentPlayer.Color);
-        
+
         var nextPlayer = CurrentPlayer.Color == PieceColor.White ? _blackPlayer : _whitePlayer;
         CurrentPlayer = nextPlayer;
-        
+
         StartCountdown(CurrentPlayer.Color);
-        
+
         TurnChangedEventHandler?.Invoke(
             this,
             new TurnChangedEventArgs(nextPlayer)
@@ -1018,21 +1018,42 @@ public class GameManager : IGameManager
     private void ResetTimers()
     {
         StopAllCountdowns();
+
         PlayerTimeTracker[PieceColor.White] = new PlayerTimer(_initialTime);
         PlayerTimeTracker[PieceColor.Black] = new PlayerTimer(_initialTime);
     }
 
     /// <summary>
     ///     Starts the one-second countdown for the given colour, replacing any
-    ///     timer already running for it. The first tick fires after one second
-    ///     and repeats every second until the clock is stopped or hits zero.
+    ///     timer already running for it. Each tick consumes one second of that
+    ///     player's clock, broadcasts the remaining time, and ends the game once
+    ///     the clock reaches zero. Ticks run on thread-pool threads.
     /// </summary>
     private void StartCountdown(PieceColor color)
     {
         StopCountdown(color);
 
         _countdownTimers[color] = new Timer(
-            _ => TickCountdown(color),
+            _ =>
+            {
+                var playerTimer = PlayerTimeTracker[color];
+                playerTimer.RemainingTime -= TimeSpan.FromSeconds(1);
+
+                if (playerTimer.RemainingTime <= TimeSpan.Zero)
+                {
+                    playerTimer.RemainingTime = TimeSpan.Zero;
+
+                    StopCountdown(color);
+                    OnTimeExpired(color);
+
+                    return;
+                }
+
+                TimerTickedEventHandler?.Invoke(
+                    this,
+                    new TimerTickEventArgs(color, playerTimer.RemainingTime)
+                );
+            },
             null,
             1000,
             1000
@@ -1057,29 +1078,6 @@ public class GameManager : IGameManager
     {
         foreach (var color in _countdownTimers.Keys)
             StopCountdown(color);
-    }
-
-    /// <summary>
-    ///     Consumes one second of the given player's clock. Runs on a
-    ///     thread-pool thread, broadcasts the remaining time, and ends the game
-    ///     once the clock reaches zero.
-    /// </summary>
-    private void TickCountdown(PieceColor color)
-    {
-        var timer = PlayerTimeTracker[color];
-        timer.RemainingTime -= TimeSpan.FromSeconds(1);
-        if (timer.RemainingTime > TimeSpan.Zero)
-        {
-            TimerTickedEventHandler?.Invoke(
-                this,
-                new TimerTickEventArgs(color, timer.RemainingTime)
-            );
-            return;
-        }
-
-        timer.RemainingTime = TimeSpan.Zero;
-        StopCountdown(color);
-        OnTimeExpired(color);
     }
 
     private void OnTimeExpired(PieceColor color)
