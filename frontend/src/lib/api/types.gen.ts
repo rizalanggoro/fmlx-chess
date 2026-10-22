@@ -56,6 +56,8 @@ export type GameStateDto = {
     moveCount: number;
     whiteRemainingSeconds: number;
     blackRemainingSeconds: number;
+    capturedByWhite: Array<PieceType>;
+    capturedByBlack: Array<PieceType>;
 };
 
 export type LobbyChangedDto = {

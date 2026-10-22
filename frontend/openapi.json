@@ -1094,6 +1094,8 @@
       "GameStateDto": {
         "required": [
           "blackRemainingSeconds",
+          "capturedByBlack",
+          "capturedByWhite",
           "castlingRights",
           "currentPlayer",
           "moveCount",
@@ -1150,6 +1152,18 @@
           "blackRemainingSeconds": {
             "type": "integer",
             "format": "int32"
+          },
+          "capturedByWhite": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceType"
+            }
+          },
+          "capturedByBlack": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PieceType"
+            }
           }
         },
         "additionalProperties": false

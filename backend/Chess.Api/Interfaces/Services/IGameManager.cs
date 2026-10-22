@@ -13,6 +13,7 @@ public interface IGameManager
     GameResult? Result { get; }
     IReadOnlyList<MoveHistoryEntry> MoveHistory { get; }
     Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; }
+    Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker { get; }
     CastlingRights CastlingRights { get; }
     Position? EnPassantTarget { get; }
 

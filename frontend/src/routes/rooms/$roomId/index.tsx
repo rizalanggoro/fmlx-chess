@@ -63,6 +63,7 @@ type JoinValues = z.infer<typeof joinSchema>
 export const Route = createFileRoute('/rooms/$roomId/')({ component: Room })
 
 const colorName = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
+const opposite = (color: PieceColor): PieceColor => (color === 'White' ? 'Black' : 'White')
 const glyphOf = (color: PieceColor) => GLYPHS.King[color]
 
 const same = (a: Position | null, b: Position) =>
@@ -216,6 +217,9 @@ function Room() {
 
   const pieces = new Map((board ?? []).map((t) => [`${t.column},${t.row}`, t]))
   const targets = new Set((legal ?? []).map((m) => `${m.to.column},${m.to.row}`))
+  // Bidak yang dimakan tiap warna, dari tracker backend (GameStateDto), bukan dihitung ulang dari papan.
+  const capturedOf = (color: PieceColor) =>
+    (color === 'White' ? state?.capturedByWhite : state?.capturedByBlack) ?? []
 
   // Black sees the board from Black's side.
   const flip = myColor === 'Black'
@@ -423,6 +427,20 @@ function Room() {
                       <p className="text-xs text-muted-foreground">
                         {colorName(color)}
                         {myColor === color && ' · kamu'}
+                      </p>
+                      <p className="mt-1 min-h-6 font-heading text-xl leading-none text-muted-foreground">
+                        <span aria-hidden>
+                          {capturedOf(color).map((type, i) => (
+                            <span key={i} className="mr-0.5">
+                              {GLYPHS[type][opposite(color)]}
+                            </span>
+                          ))}
+                        </span>
+                        {capturedOf(color).length > 0 && (
+                          <span className="sr-only">
+                            {`Bidak ${colorName(opposite(color))} yang dimakan: ${capturedOf(color).length}`}
+                          </span>
+                        )}
                       </p>
                     </div>
                     {active && <Badge>Giliran</Badge>}

@@ -14,7 +14,9 @@ public record GameStateDto(
     Position? EnPassantTarget,
     int MoveCount,
     int WhiteRemainingSeconds,
-    int BlackRemainingSeconds)
+    int BlackRemainingSeconds,
+    IReadOnlyList<PieceType> CapturedByWhite,
+    IReadOnlyList<PieceType> CapturedByBlack)
 {
     public static GameStateDto From(GameRoom room)
     {
@@ -27,8 +29,13 @@ public record GameStateDto(
             manager.EnPassantTarget,
             manager.MoveHistory.Count,
             RemainingSeconds(manager, PieceColor.White),
-            RemainingSeconds(manager, PieceColor.Black));
+            RemainingSeconds(manager, PieceColor.Black),
+            CapturedTypes(manager, PieceColor.White),
+            CapturedTypes(manager, PieceColor.Black));
     }
+
+    private static IReadOnlyList<PieceType> CapturedTypes(IGameManager manager, PieceColor color) =>
+        manager.CapturedPiecesTracker[color].Select(p => p.Type).ToList();
 
     private static int RemainingSeconds(IGameManager manager, PieceColor color) =>
         (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
