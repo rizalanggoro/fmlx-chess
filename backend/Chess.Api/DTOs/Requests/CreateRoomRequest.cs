@@ -6,4 +6,5 @@ namespace Api.DTOs.Requests;
 public record CreateRoomRequest(
     [property: JsonRequired] RoomMode Mode,
     PieceColor? Color = null,
-    string? Name = null);
+    string? PlayerName = null
+);

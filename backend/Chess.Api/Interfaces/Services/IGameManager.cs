@@ -21,7 +21,7 @@ public interface IGameManager
     // event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
     // Dinonaktifkan: klik kotak ditangani frontend. Lihat notes.md.
     // event EventHandler<SquareClickedEventArgs>? SquareClickedEventHandler;
-    event EventHandler<RoomSnapshotChangedEventArgs>? SnapshotChangedEventHandler;
+    event EventHandler<SnapshotChangedEventArgs>? SnapshotChangedEventHandler;
     event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
     event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;

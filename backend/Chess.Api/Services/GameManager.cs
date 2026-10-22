@@ -60,7 +60,7 @@ public class GameManager : IGameManager
     // public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
     // Dinonaktifkan: klik kotak ditangani frontend. Lihat notes.md.
     // public event EventHandler<SquareClickedEventArgs>? SquareClickedEventHandler;
-    public event EventHandler<RoomSnapshotChangedEventArgs>? SnapshotChangedEventHandler;
+    public event EventHandler<SnapshotChangedEventArgs>? SnapshotChangedEventHandler;
     public event EventHandler<PieceCapturedEventArgs>? PieceCapturedEventHandler;
     public event EventHandler<TurnChangedEventArgs>? TurnChangedEventHandler;
     public event EventHandler<CheckEventArgs>? CheckDeclaredEventHandler;
@@ -83,7 +83,7 @@ public class GameManager : IGameManager
         ResetTimers();
         _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
         PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
-        SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
+        SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
     }
 
     public void ResetGame()
@@ -102,7 +102,7 @@ public class GameManager : IGameManager
         CastlingRights = new CastlingRights(true, true, true, true);
         EnPassantTarget = null;
         ResetTimers();
-        SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
+        SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
     }
 
     public bool TryMakeMove(Move move)
@@ -172,12 +172,12 @@ public class GameManager : IGameManager
         if (auto is not null)
         {
             EndGame(auto);
-            SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
+            SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
             return true;
         }
 
         ChangeTurn();
-        SnapshotChangedEventHandler?.Invoke(this, new RoomSnapshotChangedEventArgs(GameBoard, _moveHistory));
+        SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
         return true;
     }
 

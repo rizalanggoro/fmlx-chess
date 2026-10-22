@@ -2,21 +2,21 @@ using Api.DTOs;
 using Api.DTOs.Requests;
 using Api.Enums;
 using Api.Interfaces.Services;
-using Api.Models;
+using Api.Utils;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("rooms")]
-public class RoomsController(IRoomRegistry rooms) : ControllerBase
+public class RoomsController(IRoomRegistry rooms, IRoomService roomService) : ControllerBase
 {
     [HttpPost]
     public ActionResult<RoomSessionDto> Create([FromBody] CreateRoomRequest request)
     {
         try
         {
-            var room = rooms.Create(request.Mode);
+            var room = roomService.Create(request.Mode);
             if (room.Mode == RoomMode.HotSeat)
             {
                 room.Manager.StartGame();
@@ -24,8 +24,10 @@ public class RoomsController(IRoomRegistry rooms) : ControllerBase
             }
 
             var color = request.Color ?? PieceColor.White;
-            room.Claim(color, NormalizeName(request.Name));
-            rooms.NotifyLobby();
+
+            roomService.Claim(room, color, NameUtils.Normalize(request.PlayerName));
+            roomService.NotifyLobby();
+
             return Ok(new RoomSessionDto(room.Id, room.Mode, color));
         }
         catch (Exception ex)
@@ -37,11 +39,11 @@ public class RoomsController(IRoomRegistry rooms) : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<RoomStatusDto>> List()
     {
-        return Ok(rooms.OpenRooms());
+        return Ok(roomService.AvailableRooms());
     }
 
     [HttpPost("{roomId}/join")]
-    public ActionResult<RoomSessionDto> Join(string roomId, [FromQuery] string? name)
+    public ActionResult<RoomSessionDto> Join(string roomId, [FromQuery] string? name, [FromQuery] PieceColor? color)
     {
         try
         {
@@ -49,12 +51,15 @@ public class RoomsController(IRoomRegistry rooms) : ControllerBase
                 return NotFound(new ApiErrorDto("Room not found"));
             if (room.Mode != RoomMode.Online)
                 return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
-            if (room.ClaimFree(NormalizeName(name)) is not { } seatColor)
-                return Conflict(new ApiErrorDto("Room is full"));
+            if (color is null)
+                return BadRequest(new ApiErrorDto("Color is required"));
+            if (!roomService.Claim(room, color.Value, NameUtils.Normalize(name)))
+                return Conflict(new ApiErrorDto(
+                    room.WhiteJoined && room.BlackJoined ? "Room is full" : "Seat is already taken"));
             if (room.Manager.State == GameState.NotStarted)
                 room.Manager.StartGame();
-            rooms.NotifyLobby();
-            return Ok(new RoomSessionDto(room.Id, room.Mode, seatColor));
+            roomService.NotifyLobby();
+            return Ok(new RoomSessionDto(room.Id, room.Mode, color));
         }
         catch (Exception ex)
         {
@@ -67,14 +72,6 @@ public class RoomsController(IRoomRegistry rooms) : ControllerBase
     {
         if (rooms.Find(roomId) is not { } room)
             return NotFound(new ApiErrorDto("Room not found"));
-        return Ok(RoomStatusDto.From(room));
-    }
-
-    private static string? NormalizeName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return null;
-        var trimmed = name.Trim();
-        return trimmed.Length > 24 ? trimmed[..24] : trimmed;
+        return Ok(RoomStatusDto.FromGameRoom(room));
     }
 }

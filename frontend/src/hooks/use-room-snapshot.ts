@@ -3,7 +3,7 @@ import {
   getRoomsByRoomIdGameHistoryQueryKey,
   getRoomsByRoomIdGameQueryKey,
   getRoomsByRoomIdQueryKey,
-  type RoomSnapshotChangedDto,
+  type SnapshotChangedDto,
 } from '@/lib/api'
 import { connection } from '@/lib/game-hub'
 import { useQueryClient } from '@tanstack/react-query'
@@ -14,7 +14,7 @@ export function useRoomSnapshot(roomId: string) {
   const qc = useQueryClient()
 
   useEffect(() => {
-    const onSnapshot = (event: RoomSnapshotChangedDto) => {
+    const onSnapshot = (event: SnapshotChangedDto) => {
       if (event.roomId !== roomId) return
       qc.setQueryData(getRoomsByRoomIdQueryKey({ path: { roomId } }), event.room)
       qc.setQueryData(getRoomsByRoomIdGameQueryKey({ path: { roomId } }), event.state)
@@ -22,7 +22,7 @@ export function useRoomSnapshot(roomId: string) {
       qc.setQueryData(getRoomsByRoomIdGameHistoryQueryKey({ path: { roomId } }), event.history)
     }
 
-    connection.on('RoomSnapshotChanged', onSnapshot)
-    return () => connection.off('RoomSnapshotChanged', onSnapshot)
+    connection.on('SnapshotChanged', onSnapshot)
+    return () => connection.off('SnapshotChanged', onSnapshot)
   }, [roomId, qc])
 }

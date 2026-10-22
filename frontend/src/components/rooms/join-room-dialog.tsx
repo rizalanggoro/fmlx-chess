@@ -58,7 +58,7 @@ export function JoinRoomDialog(
   const onSubmit = (values: JoinRoomValues) => {
     if (!room) return
     join(
-      {path: {roomId: room.id}, query: {name: values.name || undefined}},
+      {path: {roomId: room.id}, query: {name: values.name || undefined, color: room.whiteJoined ? 'Black' : 'White'}},
       {
         onSuccess: (res) => {
           if (res.color) saveRoomSession(res.id, {color: res.color})

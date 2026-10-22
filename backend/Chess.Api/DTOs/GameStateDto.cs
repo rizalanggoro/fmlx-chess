@@ -18,7 +18,7 @@ public record GameStateDto(
     IReadOnlyList<PieceType> CapturedByWhite,
     IReadOnlyList<PieceType> CapturedByBlack)
 {
-    public static GameStateDto From(GameRoom room)
+    public static GameStateDto FromGameRoom(GameRoom room)
     {
         var manager = room.Manager;
         return new GameStateDto(

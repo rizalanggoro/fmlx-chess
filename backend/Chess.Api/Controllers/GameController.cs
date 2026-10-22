@@ -18,7 +18,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         if (rooms.Find(roomId) is not { } room)
             return RoomNotFound();
-        return Ok(GameStateDto.From(room));
+        return Ok(GameStateDto.FromGameRoom(room));
     }
 
     [HttpPost("start")]
@@ -29,7 +29,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.StartGame();
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -45,7 +45,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (rooms.Find(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.ResetGame();
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -109,7 +109,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             }
             if (!room.Manager.TryMakeMove(move))
                 return BadRequest(new ApiErrorDto("Illegal move"));
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -142,7 +142,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.Resign(player);
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -160,7 +160,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.OfferDraw(player);
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -178,7 +178,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
             room.Manager.RespondToDrawOffer(player, request.Accepted ?? false);
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -197,7 +197,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
                 return NotAPlayer();
             if (!room.Manager.ClaimDrawByThreefoldRepetition(player))
                 return BadRequest(new ApiErrorDto("Threefold repetition claim not available"));
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {
@@ -216,7 +216,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
                 return NotAPlayer();
             if (!room.Manager.ClaimDrawByFiftyMoveRule(player))
                 return BadRequest(new ApiErrorDto("Fifty-move claim not available"));
-            return Ok(GameStateDto.From(room));
+            return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {

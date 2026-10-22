@@ -51,7 +51,7 @@ export function CreateRoomDialog() {
 
   const createRoom = (values: CreateRoomValues) =>
     create(
-      { body: { mode: 'Online', color: values.color, name: values.name || null } },
+      { body: { mode: 'Online', color: values.color, playerName: values.name || null } },
       {
         onSuccess: (res) => {
           if (res.color) saveRoomSession(res.id, { color: res.color })

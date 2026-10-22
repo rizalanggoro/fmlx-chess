@@ -840,6 +840,17 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/PieceColor"
+                }
+              ]
+            }
           }
         ],
         "responses": {
@@ -973,7 +984,7 @@
             ],
             "nullable": true
           },
-          "name": {
+          "playerName": {
             "type": "string",
             "nullable": true
           }
@@ -1382,7 +1393,43 @@
         },
         "additionalProperties": false
       },
-      "RoomSnapshotChangedDto": {
+      "RoomStatusDto": {
+        "required": [
+          "blackJoined",
+          "id",
+          "mode",
+          "whiteJoined"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "mode": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoomMode"
+              }
+            ]
+          },
+          "whiteJoined": {
+            "type": "boolean"
+          },
+          "blackJoined": {
+            "type": "boolean"
+          },
+          "whiteName": {
+            "type": "string",
+            "nullable": true
+          },
+          "blackName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SnapshotChangedDto": {
         "required": [
           "board",
           "history",
@@ -1420,42 +1467,6 @@
             "items": {
               "$ref": "#/components/schemas/MoveHistoryEntry"
             }
-          }
-        },
-        "additionalProperties": false
-      },
-      "RoomStatusDto": {
-        "required": [
-          "blackJoined",
-          "id",
-          "mode",
-          "whiteJoined"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "mode": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/RoomMode"
-              }
-            ]
-          },
-          "whiteJoined": {
-            "type": "boolean"
-          },
-          "blackJoined": {
-            "type": "boolean"
-          },
-          "whiteName": {
-            "type": "string",
-            "nullable": true
-          },
-          "blackName": {
-            "type": "string",
-            "nullable": true
           }
         },
         "additionalProperties": false

@@ -19,7 +19,7 @@ export type CheckDeclaredDto = {
 export type CreateRoomRequest = {
     mode: RoomMode;
     color?: PieceColor | null;
-    name?: string | null;
+    playerName?: string | null;
 };
 
 export type DrawDeclinedDto = {
@@ -109,14 +109,6 @@ export type RoomSessionDto = {
     color?: PieceColor | null;
 };
 
-export type RoomSnapshotChangedDto = {
-    roomId: string;
-    room: RoomStatusDto;
-    state: GameStateDto;
-    board: Array<TileDto>;
-    history: Array<MoveHistoryEntry>;
-};
-
 export type RoomStatusDto = {
     id: string;
     mode: RoomMode;
@@ -124,6 +116,14 @@ export type RoomStatusDto = {
     blackJoined: boolean;
     whiteName?: string | null;
     blackName?: string | null;
+};
+
+export type SnapshotChangedDto = {
+    roomId: string;
+    room: RoomStatusDto;
+    state: GameStateDto;
+    board: Array<TileDto>;
+    history: Array<MoveHistoryEntry>;
 };
 
 export type TileDto = {
@@ -401,6 +401,7 @@ export type PostRoomsByRoomIdJoinData = {
     };
     query?: {
         name?: string;
+        color?: PieceColor;
     };
     url: '/rooms/{roomId}/join';
 };

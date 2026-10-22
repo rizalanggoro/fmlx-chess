@@ -14,7 +14,7 @@ public class SignalRContractSchemaFilter : IDocumentFilter
         typeof(GameEndedDto),
         typeof(DrawOfferedDto),
         typeof(DrawDeclinedDto),
-        typeof(RoomSnapshotChangedDto),
+        typeof(SnapshotChangedDto),
         typeof(PieceCapturedDto),
         typeof(CheckDeclaredDto),
         typeof(LobbyChangedDto)

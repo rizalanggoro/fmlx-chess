@@ -3,7 +3,7 @@ using Api.ValueObjects;
 
 namespace Api.Events;
 
-public class RoomSnapshotChangedEventArgs(
+public class SnapshotChangedEventArgs(
     IBoard board,
     IReadOnlyList<MoveHistoryEntry> history
 ) : EventArgs

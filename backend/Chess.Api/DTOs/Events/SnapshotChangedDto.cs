@@ -2,7 +2,7 @@ using Api.ValueObjects;
 
 namespace Api.DTOs.Events;
 
-public record RoomSnapshotChangedDto(
+public record SnapshotChangedDto(
     string RoomId,
     RoomStatusDto Room,
     GameStateDto State,

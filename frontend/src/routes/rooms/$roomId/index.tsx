@@ -112,6 +112,8 @@ function Room() {
 
   const online = room?.mode === 'Online'
   const waiting = online && !(room?.whiteJoined && room?.blackJoined)
+  // Kursi yang ditampilkan/dikirim saat join; server tetap memvalidasi (409 kalau sudah diambil).
+  const seat: PieceColor = room?.whiteJoined ? 'Black' : 'White'
   const myColor = session?.color
   const turn = state?.currentPlayer.color
   const over = state?.state === 'Completed'
@@ -194,7 +196,7 @@ function Room() {
   // Joining takes whichever seat is still free.
   const takeSeat = (values: JoinValues) =>
     join(
-      { path: { roomId }, query: { name: values.name || undefined } },
+      { path: { roomId }, query: { name: values.name || undefined, color: seat } },
       {
         onSuccess: (res) => {
           if (!res.color) return
@@ -283,7 +285,6 @@ function Room() {
   }
 
   if (online && !session && !(room.whiteJoined && room.blackJoined)) {
-    const seat: PieceColor = room.whiteJoined ? 'Black' : 'White'
     return (
       <StateScreen>
         <Card className="w-full">
