@@ -282,11 +282,11 @@ public class GameManager : IGameManager
     }
 
     /// <summary>
-    /// Clears the board and places the standard starting position: back-rank
-    /// pieces on rows 0 and 7, pawns on rows 1 and 6, then resets castling
-    /// rights and the en passant target.
-    /// Declared private although the class diagram shows it public, because it
-    /// is only called by <see cref="StartGame"/> and <see cref="ResetGame"/>.
+    ///     Clears the board and places the standard starting position: back-rank
+    ///     pieces on rows 0 and 7, pawns on rows 1 and 6, then resets castling
+    ///     rights and the en passant target.
+    ///     Declared private although the class diagram shows it public, because it
+    ///     is only called by <see cref="StartGame" /> and <see cref="ResetGame" />.
     /// </summary>
     private void SetupInitialBoardPosition()
     {
@@ -335,7 +335,9 @@ public class GameManager : IGameManager
         return GetTileAt(pos).Piece;
     }
 
-    // Dinonaktifkan: tidak ada pemanggil; bidak dibaca dari papan. Lihat notes.md.
+    /// <summary>
+    ///     Disabled: no callers, pieces are read directly from the board.
+    /// </summary>
     // public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
     // {
     //     var list = new List<IChessPiece>();
@@ -350,20 +352,38 @@ public class GameManager : IGameManager
     //     return list;
     // }
 
+    /// <summary>
+    ///     Generates the pseudo-legal moves for the piece on the given square:
+    ///     pawn moves, knight jumps, sliding moves for bishop/rook/queen, or king
+    ///     steps plus castling. Returns an empty list when the square is empty.
+    ///     King safety is checked afterwards by <see cref="GetLegalMoves" />.
+    /// </summary>
     private List<Move> GenerateMovesForPiece(IBoard board, Position from)
     {
         var piece = board.Tiles[from.Column, from.Row].Piece;
+
         if (piece is null)
-            return new List<Move>();
-        if (piece.Type == PieceType.Pawn)
-            return GeneratePawnMoves(board, from);
-        if (piece.Type == PieceType.Knight)
-            return GenerateKnightMoves(board, from);
-        if (piece.Type == PieceType.Bishop || piece.Type == PieceType.Rook || piece.Type == PieceType.Queen)
-            return GenerateSlidingMoves(board, from);
-        var moves = GenerateKingMoves(board, from);
-        moves.AddRange(GetCastlingMoves(board, from));
-        return moves;
+            return [];
+
+        switch (piece.Type)
+        {
+            case PieceType.Pawn:
+                return GeneratePawnMoves(board, from);
+            case PieceType.Knight:
+                return GenerateKnightMoves(board, from);
+            case PieceType.Bishop or PieceType.Rook or PieceType.Queen:
+                return GenerateSlidingMoves(board, from);
+            case PieceType.King:
+            {
+                var moves = GenerateKingMoves(board, from);
+                moves.AddRange(GetCastlingMoves(board, from));
+
+                return moves;
+            }
+
+            default:
+                return [];
+        }
     }
 
     private List<Move> GeneratePawnMoves(IBoard board, Position from)
