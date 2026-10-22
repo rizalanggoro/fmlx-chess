@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Text;
 using Api.Constants;
 using Api.Enums;
 using Api.Events;
@@ -856,16 +855,23 @@ public class GameManager : IGameManager
             EnPassantTarget = null;
     }
 
-    public string GeneratePositionKey(IBoard board, PieceColor sideToMove)
+    /// <summary>
+    ///     Builds a compact key for the current position (piece placement, side
+    ///     to move, castling rights, en passant target) used to detect repeated
+    ///     positions. 
+    ///     Private because only GameManager itself calls it: it records the key
+    ///     and counts repeats in _positionHistory. 
+    /// </summary>
+    private string GeneratePositionKey(IBoard board, PieceColor sideToMove)
     {
-        var sb = new StringBuilder(128);
+        var key = string.Empty;
         for (var r = 7; r >= 0; r--)
         for (var c = 0; c < 8; c++)
         {
             var p = board.Tiles[c, r].Piece;
             if (p is null)
             {
-                sb.Append('-');
+                key += '-';
                 continue;
             }
 
@@ -878,27 +884,31 @@ public class GameManager : IGameManager
                 PieceType.Knight => 'n',
                 _ => 'p'
             };
+
             if (p.Color == PieceColor.White)
                 ch = char.ToUpperInvariant(ch);
-            sb.Append(ch);
+
+            key += ch;
         }
 
-        sb.Append(sideToMove == PieceColor.White ? 'w' : 'b');
-        sb.Append(CastlingRights.WhiteKingSide ? 'K' : '-');
-        sb.Append(CastlingRights.WhiteQueenSide ? 'Q' : '-');
-        sb.Append(CastlingRights.BlackKingSide ? 'k' : '-');
-        sb.Append(CastlingRights.BlackQueenSide ? 'q' : '-');
+        key += sideToMove == PieceColor.White ? 'w' : 'b';
+        key += CastlingRights.WhiteKingSide ? 'K' : '-';
+        key += CastlingRights.WhiteQueenSide ? 'Q' : '-';
+        key += CastlingRights.BlackKingSide ? 'k' : '-';
+        key += CastlingRights.BlackQueenSide ? 'q' : '-';
+
         if (EnPassantTarget.HasValue)
         {
-            sb.Append((char)('a' + EnPassantTarget.Value.Column));
-            sb.Append((char)('1' + EnPassantTarget.Value.Row));
-        }
-        else
-        {
-            sb.Append('-');
+            var enPassantCol = (char)('a' + EnPassantTarget.Value.Column);
+            var enPassantRow = (char)('1' + EnPassantTarget.Value.Row);
+            key += $"{enPassantCol}{enPassantRow}";
+
+            return key;
         }
 
-        return sb.ToString();
+        key += "-";
+
+        return key;
     }
 
     private GameResult? EvaluateAutomaticResult()
