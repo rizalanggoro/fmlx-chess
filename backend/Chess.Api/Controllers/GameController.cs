@@ -11,12 +11,12 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("rooms/{roomId}/game")]
-public class GameController(IRoomRegistry rooms) : ControllerBase
+public class GameController(IRoomService roomService) : ControllerBase
 {
     [HttpGet]
     public ActionResult<GameStateDto> GetState(string roomId)
     {
-        if (rooms.Find(roomId) is not { } room)
+        if (roomService.FindRoom(roomId) is not { } room)
             return RoomNotFound();
         return Ok(GameStateDto.FromGameRoom(room));
     }
@@ -26,7 +26,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.StartGame();
             return Ok(GameStateDto.FromGameRoom(room));
@@ -42,7 +42,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             room.Manager.ResetGame();
             return Ok(GameStateDto.FromGameRoom(room));
@@ -58,7 +58,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             var tiles = new List<TileDto>();
             for (var c = 0; c < 8; c++)
@@ -80,7 +80,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             var from = new Position(column, row);
             if (!room.Manager.IsInBounds(from))
@@ -98,7 +98,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             if (room.Mode == RoomMode.Online)
             {
@@ -122,7 +122,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             return Ok(color.HasValue ? room.Manager.GetMoveHistory(color.Value) : room.Manager.MoveHistory);
         }
@@ -137,7 +137,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
@@ -155,7 +155,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
@@ -173,7 +173,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
@@ -191,7 +191,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
@@ -210,7 +210,7 @@ public class GameController(IRoomRegistry rooms) : ControllerBase
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();

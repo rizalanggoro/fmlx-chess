@@ -9,7 +9,9 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("rooms")]
-public class RoomsController(IRoomRegistry rooms, IRoomService roomService) : ControllerBase
+public class RoomsController(
+    IRoomService roomService
+) : ControllerBase
 {
     [HttpPost]
     public ActionResult<RoomSessionDto> Create([FromBody] CreateRoomRequest request)
@@ -47,7 +49,7 @@ public class RoomsController(IRoomRegistry rooms, IRoomService roomService) : Co
     {
         try
         {
-            if (rooms.Find(roomId) is not { } room)
+            if (roomService.FindRoom(roomId) is not { } room)
                 return NotFound(new ApiErrorDto("Room not found"));
             if (room.Mode != RoomMode.Online)
                 return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
@@ -70,7 +72,7 @@ public class RoomsController(IRoomRegistry rooms, IRoomService roomService) : Co
     [HttpGet("{roomId}")]
     public ActionResult<RoomStatusDto> Status(string roomId)
     {
-        if (rooms.Find(roomId) is not { } room)
+        if (roomService.FindRoom(roomId) is not { } room)
             return NotFound(new ApiErrorDto("Room not found"));
         return Ok(RoomStatusDto.FromGameRoom(room));
     }

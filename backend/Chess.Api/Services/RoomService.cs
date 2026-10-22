@@ -44,6 +44,11 @@ public class RoomService(
         return room;
     }
 
+    public GameRoom? FindRoom(string roomId)
+    {
+        return registry.Find(roomId);
+    }
+
     public bool Claim(GameRoom room, PieceColor color, string? name = null)
     {
         if (color == PieceColor.White)
