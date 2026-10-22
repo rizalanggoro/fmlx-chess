@@ -22,6 +22,7 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | `Board` menyimpan `CastlingRights` dan en passant target | `Board` hanya menyimpan `Tiles`; `CastlingRights` dan `EnPassantTarget` disimpan di `GameManager` |
 | Nama event `PieceMoved`, `PieceCaptured`, `TurnChanged`, `CheckDeclared`, `GameEnded`, `DrawOffered`, `TimerTick` | Memakai sufiks konvensi .NET: `PieceMovedEventHandler`, `PieceCapturedEventHandler`, `TurnChangedEventHandler`, `CheckDeclaredEventHandler`, `GameEndedEventHandler`, `DrawOfferedEventHandler`, `TimerTickedEventHandler` |
 | Tidak ada `DrawDeclined` | Ada `Events/DrawDeclinedEventArgs.cs` + `DrawDeclinedEventHandler` (jawaban penolakan draw) |
+| `SetupInitialBoardPosition()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `StartGame` dan `ResetGame`, tidak dipakai controller atau service lain |
 
 ## 3. Ditambahkan di luar diagram
 

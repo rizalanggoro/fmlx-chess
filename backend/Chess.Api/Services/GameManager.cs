@@ -22,7 +22,7 @@ public class GameManager : IGameManager
     private readonly List<MoveHistoryEntry> _moveHistory = [];
     private readonly List<string> _positionHistory = [];
     private readonly IPlayer _whitePlayer;
- 
+
     private IPlayer? _drawOfferer;
     private int _halfMoveClock;
 
@@ -281,25 +281,45 @@ public class GameManager : IGameManager
         GameEndedEventHandler?.Invoke(this, new GameEndedEventArgs(result));
     }
 
-    public void SetupInitialBoardPosition()
+    /// <summary>
+    /// Clears the board and places the standard starting position: back-rank
+    /// pieces on rows 0 and 7, pawns on rows 1 and 6, then resets castling
+    /// rights and the en passant target.
+    /// Declared private although the class diagram shows it public, because it
+    /// is only called by <see cref="StartGame"/> and <see cref="ResetGame"/>.
+    /// </summary>
+    private void SetupInitialBoardPosition()
     {
         for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
             GameBoard.Tiles[c, r].Piece = null;
-        var back = new[]
+
+        var backRankPieces = new[]
         {
-            PieceType.Rook, PieceType.Knight, PieceType.Bishop, PieceType.Queen, PieceType.King, PieceType.Bishop,
-            PieceType.Knight, PieceType.Rook
+            PieceType.Rook,
+            PieceType.Knight,
+            PieceType.Bishop,
+            PieceType.Queen,
+            PieceType.King,
+            PieceType.Bishop,
+            PieceType.Knight,
+            PieceType.Rook
         };
+
         for (var c = 0; c < 8; c++)
         {
-            GameBoard.Tiles[c, 0].Piece = new ChessPiece(PieceColor.White, back[c]);
+            GameBoard.Tiles[c, 0].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
             GameBoard.Tiles[c, 1].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
             GameBoard.Tiles[c, 6].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
-            GameBoard.Tiles[c, 7].Piece = new ChessPiece(PieceColor.Black, back[c]);
+            GameBoard.Tiles[c, 7].Piece = new ChessPiece(PieceColor.Black, backRankPieces[c]);
         }
 
-        CastlingRights = new CastlingRights(true, true, true, true);
+        CastlingRights = new CastlingRights(
+            true,
+            true,
+            true,
+            true
+        );
         EnPassantTarget = null;
     }
 
