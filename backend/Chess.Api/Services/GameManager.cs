@@ -73,6 +73,11 @@ public class GameManager : IGameManager
     public event EventHandler<DrawDeclinedEventArgs>? DrawDeclinedEventHandler;
     public event EventHandler<TimerTickEventArgs>? TimerTickedEventHandler;
 
+    /// <summary>
+    ///     Starts a fresh game from the initial position: white to move, clock
+    ///     started for white, history and captured pieces cleared, then the new
+    ///     state is broadcast through <see cref="SnapshotChangedEventHandler" />.
+    /// </summary>
     public void StartGame()
     {
         Result = null;
@@ -90,9 +95,17 @@ public class GameManager : IGameManager
         _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
         PlayerTimeTracker[CurrentPlayer.Color].StartTimer();
 
-        SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
+        SnapshotChangedEventHandler?.Invoke(
+            this,
+            new SnapshotChangedEventArgs(GameBoard, _moveHistory)
+        );
     }
 
+    /// <summary>
+    ///     Puts the game back to <see cref="GameState.NotStarted" /> with a fresh
+    ///     board and stopped timers, without starting a new game — the room waits
+    ///     until <see cref="StartGame" /> is called again.
+    /// </summary>
     public void ResetGame()
     {
         State = GameState.NotStarted;
@@ -110,7 +123,10 @@ public class GameManager : IGameManager
         _captured[PieceColor.White].Clear();
         _captured[PieceColor.Black].Clear();
 
-        SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
+        SnapshotChangedEventHandler?.Invoke(
+            this,
+            new SnapshotChangedEventArgs(GameBoard, _moveHistory)
+        );
     }
 
     public bool TryMakeMove(Move move)
