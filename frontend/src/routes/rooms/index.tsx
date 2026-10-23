@@ -1,4 +1,4 @@
-import {CreateRoomDialog} from '@/components/create-room-dialog'
+import {CreateRoomDialog} from '@/components/rooms/create-room-dialog'
 import {JoinRoomDialog} from '@/components/rooms/join-room-dialog'
 import {Brand, Eyebrow, Shell} from '@/components/room-chrome'
 import {Button} from '@/components/ui/button'
