@@ -2,6 +2,7 @@ import { ChessBoard } from '@/components/chess-board'
 import { CapturedPiecesDialog } from '@/components/game/captured-pieces-dialog'
 import { ConfirmDialog } from '@/components/game/confirm-dialog'
 import { DrawOfferDialog } from '@/components/game/draw-offer-dialog'
+import { MoveHistoryCard } from '@/components/game/move-history-card'
 import { PromotionDialog } from '@/components/game/promotion-dialog'
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
 import { Badge } from '@/components/ui/badge'
@@ -14,15 +15,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import {
   getRoomsByRoomId,
   getRoomsByRoomIdGameBoardOptions,
@@ -42,7 +34,7 @@ import { useDrawOffer } from '@/hooks/use-draw-offer'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { usePieceCapturedToast } from '@/hooks/use-piece-captured-toast'
 import { useTimerTick } from '@/hooks/use-timer-tick'
-import { FILES, GLYPHS, REASONS } from '@/constants/chess'
+import { GLYPHS, REASONS } from '@/constants/chess'
 import type { DrawOfferedDto, PieceColor, PieceType, Position } from '@/lib/api'
 import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, type RoomSession } from '@/lib/room-session'
@@ -65,8 +57,6 @@ const glyphOf = (color: PieceColor) => GLYPHS.King[color]
 
 const same = (a: Position | null, b: Position) =>
   a !== null && a.column === b.column && a.row === b.row
-
-const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
 
 function Room() {
   const { roomId } = Route.useParams()
@@ -208,13 +198,6 @@ function Room() {
   const flip = myColor === 'Black'
 
   const moves = history ?? []
-  const rounds = moves.reduce<(typeof moves)[]>((acc, move, i) => {
-    if (i % 2 === 0) acc.push([move])
-    else acc[acc.length - 1].push(move)
-    return acc
-  }, [])
-  const fmtMove = (h: (typeof moves)[number]) =>
-    `${alg(h.move.from)}→${alg(h.move.to)}${h.move.promotionType ? `=${h.move.promotionType[0]}` : ''}`
 
   const click = (sq: Position) => {
     if (state?.state !== 'InProgress' || isMoving || !myTurn) return
@@ -475,45 +458,7 @@ function Room() {
             onDismiss={() => setPromotion(null)}
           />
 
-          <Card size="sm">
-            <CardHeader>
-              <CardTitle className="font-heading text-xl">Riwayat</CardTitle>
-              <CardAction>
-                <p className="text-xs text-muted-foreground">{moves.length} langkah</p>
-              </CardAction>
-            </CardHeader>
-            <CardContent>
-              {moves.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada langkah.</p>
-              ) : (
-                <ScrollArea className="max-h-64">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="h-8! w-8 px-1 text-xs" />
-                        <TableHead className="h-8! px-1 text-xs">Putih</TableHead>
-                        <TableHead className="h-8! px-1 text-xs">Hitam</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="font-mono">
-                      {rounds.map((round, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="p-1! text-muted-foreground">
-                            {i + 1}.
-                          </TableCell>
-                          {round.map((h, j) => (
-                            <TableCell key={j} className="p-1!">
-                              {fmtMove(h)}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
+          <MoveHistoryCard history={moves} />
         </aside>
       </main>
     </Shell>
