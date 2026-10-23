@@ -404,21 +404,28 @@ public class GameManager : IGameManager
     }
 
     /// <summary>
-    ///     Disabled: no callers, pieces are read directly from the board.
+    ///     Returns every piece of the given colour still on the board. Nothing
+    ///     calls it: clients receive the board as 64 tiles in
+    ///     <c>SnapshotChangedDto</c>, so a per-colour piece list is never needed.
+    ///     Kept public only because the class diagram lists it; the diagram is
+    ///     read-only, so the discrepancy is documented here and in notes.md.
     /// </summary>
-    // public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
-    // {
-    //     var list = new List<IChessPiece>();
-    //     for (var c = 0; c < 8; c++)
-    //     for (var r = 0; r < 8; r++)
-    //     {
-    //         var p = GameBoard.Tiles[c, r].Piece;
-    //         if (p is not null && p.Color == color)
-    //             list.Add(p);
-    //     }
-    //
-    //     return list;
-    // }
+    [Obsolete(
+        "Not used: the board is broadcast as 64 tiles via SnapshotChangedDto."
+    )]
+    public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
+    {
+        var list = new List<IChessPiece>();
+        for (var c = 0; c < 8; c++)
+        for (var r = 0; r < 8; r++)
+        {
+            var p = GameBoard.Tiles[c, r].Piece;
+            if (p is not null && p.Color == color)
+                list.Add(p);
+        }
+
+        return list;
+    }
 
     /// <summary>
     ///     Generates the pseudo-legal moves for the piece on the given square:
