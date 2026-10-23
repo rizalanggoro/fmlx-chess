@@ -849,7 +849,7 @@ public class GameManager : IGameManager
         if (
             movingPiece.Type == PieceType.Pawn &&
             EnPassantTarget.HasValue &&
-            move.To.Equals(EnPassantTarget.Value) &&
+            move.To == EnPassantTarget &&
             capturedPiece is null
         )
         {
