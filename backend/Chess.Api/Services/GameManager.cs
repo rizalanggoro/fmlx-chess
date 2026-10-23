@@ -672,71 +672,83 @@ public class GameManager : IGameManager
         return color == PieceColor.White ? position.Row == 7 : position.Row == 0;
     }
 
+    /// <summary>
+    ///     Tells whether any piece of <paramref name="byColor" /> attacks the given
+    ///     square: pawn capture squares, knight and king offsets, then bishop/queen
+    ///     rays along the diagonals and rook/queen rays along the files and ranks.
+    ///     A ray stops at the first piece, so a blocker makes the square safe. This
+    ///     is a pure board query — it ignores whose turn it is and does not check
+    ///     move legality. Used for king safety, castling, and checkmate detection.
+    /// </summary>
     private bool IsSquareAttacked(IBoard board, Position pos, PieceColor byColor)
     {
         var pawnRow = byColor == PieceColor.White ? pos.Row - 1 : pos.Row + 1;
         foreach (var dc in SquareOffsets.PawnCaptureColumns)
         {
-            var p = new Position(pos.Column + dc, pawnRow);
-            if (!IsInBounds(p))
+            var newPos = new Position(pos.Column + dc, pawnRow);
+            if (!IsInBounds(newPos))
                 continue;
 
-            var piece = board.Tiles[p.Column, p.Row].Piece;
+            var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Pawn)
                 return true;
         }
 
         foreach (var offset in SquareOffsets.Knight)
         {
-            var p = pos + offset;
-            if (!IsInBounds(p))
+            var newPos = pos + offset;
+            if (!IsInBounds(newPos))
                 continue;
-            var piece = board.Tiles[p.Column, p.Row].Piece;
+
+            var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Knight)
                 return true;
         }
 
         foreach (var offset in SquareOffsets.King)
         {
-            var p = pos + offset;
-            if (!IsInBounds(p))
+            var newPos = pos + offset;
+            if (!IsInBounds(newPos))
                 continue;
-            var piece = board.Tiles[p.Column, p.Row].Piece;
+
+            var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.King)
                 return true;
         }
 
         foreach (var offset in SquareOffsets.Diagonal)
         {
-            var p = pos + offset;
-            while (IsInBounds(p))
+            var newPos = pos + offset;
+            while (IsInBounds(newPos))
             {
-                var piece = board.Tiles[p.Column, p.Row].Piece;
+                var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
                 if (piece is not null)
                 {
-                    if (piece.Color == byColor && (piece.Type == PieceType.Bishop || piece.Type == PieceType.Queen))
+                    if (piece.Color == byColor && piece.Type is PieceType.Bishop or PieceType.Queen)
                         return true;
+
                     break;
                 }
 
-                p += offset;
+                newPos += offset;
             }
         }
 
         foreach (var offset in SquareOffsets.Straight)
         {
-            var p = pos + offset;
-            while (IsInBounds(p))
+            var newPos = pos + offset;
+            while (IsInBounds(newPos))
             {
-                var piece = board.Tiles[p.Column, p.Row].Piece;
+                var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
                 if (piece is not null)
                 {
-                    if (piece.Color == byColor && (piece.Type == PieceType.Rook || piece.Type == PieceType.Queen))
+                    if (piece.Color == byColor && piece.Type is PieceType.Rook or PieceType.Queen)
                         return true;
+
                     break;
                 }
 
-                p += offset;
+                newPos += offset;
             }
         }
 
@@ -1143,6 +1155,13 @@ public class GameManager : IGameManager
             StopCountdown(color);
     }
 
+    /// <summary>
+    ///     Handles a clock running out, called from the countdown tick in
+    ///     <see cref="StartCountdown" /> once the expiring side's remaining time
+    ///     reaches zero: the opponent wins with
+    ///     <see cref="GameEndReason.TimeExpired" />. Does nothing when the game
+    ///     is already over, so a late tick cannot overwrite an existing result.
+    /// </summary>
     private void OnTimeExpired(PieceColor color)
     {
         if (State != GameState.InProgress)
