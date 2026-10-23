@@ -130,7 +130,8 @@ function Room() {
     ...getRoomsByRoomIdGameHistoryOptions({ path: { roomId } }),
   })
   const {
-    data: legal
+    data: legal,
+    isPending: legalPending
   } = useQuery({
     ...getRoomsByRoomIdGameLegalMovesOptions({
       path: { roomId },
@@ -194,6 +195,11 @@ function Room() {
 
   const pieces = new Map((board ?? []).map((t) => [`${t.column},${t.row}`, t]))
   const targets = new Set((legal ?? []).map((m) => `${m.to.column},${m.to.row}`))
+  // Bidak yang sedang ditanyakan langkah legalnya: ditampilkan spinner di kotaknya.
+  const loadingSquare =
+    legalPending && activeSquare && pieces.get(`${activeSquare.column},${activeSquare.row}`)?.type
+      ? activeSquare
+      : null
   // Bidak yang dimakan tiap warna, dari tracker backend (GameStateDto), bukan dihitung ulang dari papan.
   const capturedOf = (color: PieceColor) =>
     (color === 'White' ? state?.capturedByWhite : state?.capturedByBlack) ?? []
@@ -319,6 +325,7 @@ function Room() {
         <ChessBoard
           tiles={board ?? []}
           selected={activeSquare}
+          loading={loadingSquare}
           targets={targets}
           flip={flip}
           disabled={state?.state !== 'InProgress' || isMoving || !myTurn}

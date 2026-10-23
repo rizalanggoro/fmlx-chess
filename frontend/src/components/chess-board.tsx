@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner'
 import { FILES, GLYPHS } from '@/constants/chess'
 import type { Move, Position, TileDto } from '@/lib/api'
 import { cn } from 'cn'
@@ -11,6 +12,7 @@ const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
 type ChessBoardProps = {
   tiles: TileDto[]
   selected?: Position | null
+  loading?: Position | null
   targets?: ReadonlySet<string>
   lastMove?: Move | null
   flip?: boolean
@@ -27,6 +29,7 @@ type Animation = {
 export function ChessBoard({
   tiles,
   selected,
+  loading,
   targets,
   lastMove = null,
   flip = false,
@@ -99,6 +102,7 @@ export function ChessBoard({
               const dark = (column + row) % 2 === 1
               const coord = dark ? 'text-amber-100/60' : 'text-amber-900/50'
               const target = targets?.has(key) ?? false
+              const loadingHere = same(loading, sq)
               const animating =
                 animation !== null &&
                 (same(animation.move.from, sq) || same(animation.move.to, sq))
@@ -110,6 +114,7 @@ export function ChessBoard({
                     if (!disabled) onSelect?.(sq)
                   }}
                   aria-disabled={disabled}
+                  aria-busy={loadingHere}
                   aria-label={`${alg(sq)}${piece?.type ? ` ${piece.type}` : ''}`}
                   className={`relative flex aspect-square items-center justify-center ${
                     dark ? 'bg-amber-700' : 'bg-amber-100'
@@ -137,9 +142,19 @@ export function ChessBoard({
                         piece.color === 'White'
                           ? 'text-amber-50 drop-shadow-[0_1px_1px_rgba(80,50,10,0.9)]'
                           : 'text-amber-950'
-                      }`}
+                      } ${loadingHere ? 'opacity-40' : ''}`}
                     >
                       {GLYPHS[piece.type][piece.color]}
+                    </span>
+                  )}
+                  {loadingHere && (
+                    <span className="absolute inset-0 flex items-center justify-center">
+                      <Spinner
+                        aria-label="Memuat langkah legal"
+                        className={`size-[26%] ${
+                          dark ? 'text-amber-100/80' : 'text-amber-900/70'
+                        }`}
+                      />
                     </span>
                   )}
                   {target && !piece?.type && (
