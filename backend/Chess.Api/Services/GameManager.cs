@@ -184,6 +184,8 @@ public class GameManager : IGameManager
                           targetPiece is null;
         var wasCapture = targetPiece is not null || isEnPassant;
         var app = ApplyMove(GameBoard, effective);
+        if (app is null)
+            return false;
         UpdateCastlingRights(GameBoard, effective, piece, app.CapturedPiece);
         UpdateEnPassantTarget(effective, piece);
         if (app.CapturedPiece is not null)
@@ -232,7 +234,7 @@ public class GameManager : IGameManager
         var pseudo = GenerateMovesForPiece(GameBoard, from);
         var legal = new List<Move>();
         foreach (var m in pseudo)
-            if (!WouldLeaveKingInCheck(GameBoard, piece, m))
+            if (!WouldLeaveKingInCheck(GameBoard, m))
                 legal.Add(m);
         return legal;
     }
@@ -786,17 +788,17 @@ public class GameManager : IGameManager
     /// <summary>
     ///     Tells whether playing the given move would leave the mover's own king
     ///     in check. The move is applied to a clone of the board first, so the real
-    ///     board is untouched. The moving piece is passed in rather than looked up,
-    ///     because every caller already holds it. The class diagram lists
-    ///     <c>(IBoard, Move)</c>; the diagram is read-only, so the extra parameter
-    ///     is documented here.
+    ///     board is untouched. A move with no piece on its origin square cannot be
+    ///     played, so it is treated as unsafe.
     /// </summary>
-    private bool WouldLeaveKingInCheck(IBoard board, IChessPiece mover, Move move)
+    private bool WouldLeaveKingInCheck(IBoard board, Move move)
     {
         var cloneBoard = new Board(board);
-        ApplyMove(cloneBoard, move);
+        var applied = ApplyMove(cloneBoard, move);
+        if (applied is null)
+            return true;
 
-        return IsKingInCheck(cloneBoard, mover.Color);
+        return IsKingInCheck(cloneBoard, applied.MovingPiece.Color);
     }
 
     /// <summary>
@@ -819,57 +821,83 @@ public class GameManager : IGameManager
             var moves = GenerateMovesForPiece(board, from);
 
             foreach (var move in moves)
-                if (!WouldLeaveKingInCheck(board, piece, move))
+                if (!WouldLeaveKingInCheck(board, move))
                     return true;
         }
 
         return false;
     }
 
-    private MoveApplicationResult ApplyMove(IBoard board, Move move)
+    /// <summary>
+    ///     Applies the move to the given board and returns what changed: the
+    ///     moving piece, the captured piece if any, and the square it came from.
+    ///     Returns <c>null</c> and leaves the board untouched when the origin
+    ///     square holds no piece.
+    /// </summary>
+    private MoveApplicationResult? ApplyMove(IBoard board, Move move)
     {
         var fromTile = board.Tiles[move.From.Column, move.From.Row];
+        var movingPiece = fromTile.Piece;
+        if (movingPiece is null)
+            return null;
+
         var toTile = board.Tiles[move.To.Column, move.To.Row];
-        var moving = fromTile.Piece!;
-        var captured = toTile.Piece;
-        Position? capturedSquare = captured is not null ? move.To : null;
-        if (moving.Type == PieceType.Pawn && EnPassantTarget.HasValue && move.To.Equals(EnPassantTarget.Value) &&
-            captured is null)
+        var capturedPiece = toTile.Piece;
+
+        Position? capturedPos = capturedPiece is not null ? move.To : null;
+
+        if (
+            movingPiece.Type == PieceType.Pawn &&
+            EnPassantTarget.HasValue &&
+            move.To.Equals(EnPassantTarget.Value) &&
+            capturedPiece is null
+        )
         {
-            var ep = new Position(move.To.Column, move.From.Row);
-            captured = board.Tiles[ep.Column, ep.Row].Piece;
-            capturedSquare = ep;
-            board.Tiles[ep.Column, ep.Row].Piece = null;
+            var capturedPawnPos = new Position(move.To.Column, move.From.Row);
+            capturedPiece = board.Tiles[capturedPawnPos.Column, capturedPawnPos.Row].Piece;
+            capturedPos = capturedPawnPos;
+            board.Tiles[capturedPawnPos.Column, capturedPawnPos.Row].Piece = null;
         }
 
         fromTile.Piece = null;
-        if (moving.Type == PieceType.Pawn && IsOnPromotionRank(move.To, moving.Color))
-        {
-            var promo = move.PromotionType ?? PieceType.Queen;
-            toTile.Piece = new ChessPiece(moving.Color, promo);
-        }
+        if (movingPiece.Type == PieceType.Pawn && IsOnPromotionRank(move.To, movingPiece.Color))
+            toTile.Piece = new ChessPiece(
+                movingPiece.Color,
+                move.PromotionType ?? PieceType.Queen
+            );
         else
-        {
-            toTile.Piece = moving;
-        }
+            toTile.Piece = movingPiece;
 
-        if (moving.Type == PieceType.King && Math.Abs(move.To.Column - move.From.Column) == 2)
+        if (movingPiece.Type != PieceType.King || Math.Abs(move.To.Column - move.From.Column) != 2)
+            return new MoveApplicationResult(
+                movingPiece,
+                capturedPiece,
+                capturedPos
+            );
+
+        switch (move.To.Column)
         {
-            if (move.To.Column == 6)
+            case 6:
             {
                 var rook = board.Tiles[7, move.From.Row].Piece;
                 board.Tiles[7, move.From.Row].Piece = null;
                 board.Tiles[5, move.From.Row].Piece = rook;
+                break;
             }
-            else if (move.To.Column == 2)
+            case 2:
             {
                 var rook = board.Tiles[0, move.From.Row].Piece;
                 board.Tiles[0, move.From.Row].Piece = null;
                 board.Tiles[3, move.From.Row].Piece = rook;
+                break;
             }
         }
 
-        return new MoveApplicationResult(moving, captured, capturedSquare);
+        return new MoveApplicationResult(
+            movingPiece,
+            capturedPiece,
+            capturedPos
+        );
     }
 
     private void UpdateCastlingRights(IBoard board, Move move, IChessPiece movingPiece, IChessPiece? capturedPiece)

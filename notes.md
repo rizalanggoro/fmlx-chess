@@ -27,7 +27,7 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | `IsFiftyMoveRuleClaimAvailable()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `ClaimDrawByFiftyMoveRule`, tidak dipakai controller atau service lain |
 | `IsSeventyFiveMoveRuleAutomatic()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `EvaluateAutomaticResult`, tidak dipakai controller atau service lain |
 | `GeneratePositionKey()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `GameManager` sendiri untuk mencatat dan menghitung pengulangan posisi |
-| `WouldLeaveKingInCheck(IBoard, Move)` | Menambah parameter bidak penggerak: `WouldLeaveKingInCheck(IBoard, IChessPiece, Move)` di `Services/GameManager.cs`; kedua caller sudah memegang bidaknya, jadi lookup petak asal dan guard null tidak perlu diulang di dalam fungsi |
+| `ApplyMove(IBoard, Move)` | Mengembalikan `MoveApplicationResult?`: `null` kalau petak asal kosong dan papan tidak diubah, jadi caller yang memutuskan; tipe parameter tetap sesuai diagram |
 | `Reset()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya clearing riwayat posisi dan half-move clock, dipanggil dari `StartGame` dan `ResetGame`, tidak dipakai controller atau service lain |
 
 ## 3. Ditambahkan di luar diagram
