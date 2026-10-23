@@ -51,6 +51,7 @@ export type GameStateDto = {
     state: GameState;
     currentPlayer: PlayerDto;
     result?: GameResult | null;
+    checkedColor?: PieceColor | null;
     castlingRights: CastlingRights;
     enPassantTarget?: Position | null;
     moveCount: number;

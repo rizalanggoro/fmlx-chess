@@ -1137,6 +1137,14 @@
             ],
             "nullable": true
           },
+          "checkedColor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PieceColor"
+              }
+            ],
+            "nullable": true
+          },
           "castlingRights": {
             "allOf": [
               {

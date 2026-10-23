@@ -11,6 +11,7 @@ public interface IGameManager
     IPlayer CurrentPlayer { get; }
     GameState State { get; }
     GameResult? Result { get; }
+    PieceColor? CheckedColor { get; }
     IReadOnlyList<MoveHistoryEntry> MoveHistory { get; }
     Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; }
     Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker { get; }

@@ -314,6 +314,7 @@ function Room() {
           flip={flip}
           lastMove={moves.at(-1)?.move}
           disabled={state?.state !== 'InProgress' || isMoving || !myTurn}
+          checked={state?.checkedColor}
           onSelect={click}
         />
 

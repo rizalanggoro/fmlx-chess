@@ -56,6 +56,23 @@ public class GameManager : IGameManager
     public IPlayer CurrentPlayer { get; private set; }
     public GameState State { get; private set; }
     public GameResult? Result { get; private set; }
+
+    /// <summary>
+    ///     Colour whose king is currently attacked, or <c>null</c> when neither
+    ///     king is in check. The board is the source of truth, so clients can
+    ///     highlight the king after a reload without replaying check rules.
+    /// </summary>
+    public PieceColor? CheckedColor
+    {
+        get
+        {
+            if (IsKingInCheck(GameBoard, PieceColor.White))
+                return PieceColor.White;
+            if (IsKingInCheck(GameBoard, PieceColor.Black))
+                return PieceColor.Black;
+            return null;
+        }
+    }
     public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
 
     /// <summary>
