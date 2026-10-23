@@ -263,6 +263,11 @@ public class GameManager : IGameManager
         );
     }
 
+    /// <summary>
+    ///     Settles the pending draw offer; ignored when no offer exists or the
+    ///     responder is the offerer. Accepting ends the game as a draw by
+    ///     agreement, declining notifies the room and play continues.
+    /// </summary>
     public void RespondToDrawOffer(IPlayer responder, bool accepted)
     {
         if (_drawOfferer is null || responder.Color == _drawOfferer.Color)
@@ -270,10 +275,19 @@ public class GameManager : IGameManager
 
         var offerer = _drawOfferer;
         _drawOfferer = null;
+
         if (accepted)
-            EndGame(new GameResult(GameEndReason.DrawByAgreement, null));
+            EndGame(
+                new GameResult(
+                    GameEndReason.DrawByAgreement,
+                    null
+                )
+            );
         else
-            DrawDeclinedEventHandler?.Invoke(this, new DrawDeclinedEventArgs(offerer));
+            DrawDeclinedEventHandler?.Invoke(
+                this,
+                new DrawDeclinedEventArgs(offerer)
+            );
     }
 
     public bool ClaimDrawByThreefoldRepetition(IPlayer player)
@@ -296,6 +310,10 @@ public class GameManager : IGameManager
         return true;
     }
 
+    /// <summary>
+    ///     Resigns on behalf of the given player, awarding the win to the
+    ///     opponent; ignored when the game is not in progress.
+    /// </summary>
     public void Resign(IPlayer player)
     {
         if (State != GameState.InProgress)
@@ -311,15 +329,24 @@ public class GameManager : IGameManager
         );
     }
 
+    /// <summary>
+    ///     Marks the game as completed with the given result, stops the clocks,
+    ///     and notifies the room; ignored when the game has already ended.
+    /// </summary>
     private void EndGame(GameResult result)
     {
         if (State == GameState.Completed)
             return;
+
         State = GameState.Completed;
         Result = result;
+
         StopAllCountdowns();
 
-        GameEndedEventHandler?.Invoke(this, new GameEndedEventArgs(result));
+        GameEndedEventHandler?.Invoke(
+            this,
+            new GameEndedEventArgs(result)
+        );
     }
 
     /// <summary>
