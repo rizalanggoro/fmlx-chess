@@ -1,4 +1,5 @@
 import { ChessBoard } from '@/components/chess-board'
+import { CapturedPiecesDialog } from '@/components/game/captured-pieces-dialog'
 import { ConfirmDialog } from '@/components/game/confirm-dialog'
 import { DrawOfferDialog } from '@/components/game/draw-offer-dialog'
 import { PromotionDialog } from '@/components/game/promotion-dialog'
@@ -60,7 +61,6 @@ export const Route = createFileRoute('/rooms/$roomId/')({
 })
 
 const colorName = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
-const opposite = (color: PieceColor): PieceColor => (color === 'White' ? 'Black' : 'White')
 const glyphOf = (color: PieceColor) => GLYPHS.King[color]
 
 const same = (a: Position | null, b: Position) =>
@@ -349,12 +349,16 @@ function Room() {
             <CardContent className="flex flex-col gap-2">
               {(['White', 'Black'] as const).map((color) => {
                 const active = !over && turn === color
+                const captured = capturedOf(color)
                 return (
-                  <div
+                  <CapturedPiecesDialog
                     key={color}
-                    className={`flex items-center gap-3 rounded-xl border px-3 py-2 ${
+                    color={color}
+                    playerName={nameOf(color) ?? colorName(color)}
+                    pieces={captured}
+                    className={
                       active ? 'border-primary/30 bg-primary/10' : 'border-transparent'
-                    }`}
+                    }
                   >
                     <span
                       aria-hidden
@@ -362,29 +366,16 @@ function Room() {
                     >
                       {glyphOf(color)}
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-foreground">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-foreground">
                         {nameOf(color) ?? colorName(color)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
                         {colorName(color)}
                         {myColor === color && ' · kamu'}
-                      </p>
-                      <p className="mt-1 min-h-6 font-heading text-xl leading-none text-muted-foreground">
-                        <span aria-hidden>
-                          {capturedOf(color).map((type, i) => (
-                            <span key={i} className="mr-0.5">
-                              {GLYPHS[type][opposite(color)]}
-                            </span>
-                          ))}
-                        </span>
-                        {capturedOf(color).length > 0 && (
-                          <span className="sr-only">
-                            {`Bidak ${colorName(opposite(color))} yang dimakan: ${capturedOf(color).length}`}
-                          </span>
-                        )}
-                      </p>
-                    </div>
+                      </span>
+                    </span>
+                    <span className="sr-only">Lihat bidak yang dimakan</span>
                     {active && <Badge>Giliran</Badge>}
                     <span
                       className={`font-mono text-sm tabular-nums ${
@@ -393,7 +384,7 @@ function Room() {
                     >
                       {clock(secondsLeft(color))}
                     </span>
-                  </div>
+                  </CapturedPiecesDialog>
                 )
               })}
 
