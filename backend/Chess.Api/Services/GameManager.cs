@@ -228,7 +228,7 @@ public class GameManager : IGameManager
     {
         if (!IsInBounds(from))
             return Array.Empty<Move>();
-        var piece = GameBoard.Tiles[from.Column, from.Row].Piece;
+        var piece = GameBoard.Tiles[from.Row, from.Column].Piece;
         if (piece is null || piece.Color != CurrentPlayer.Color)
             return Array.Empty<Move>();
         var pseudo = GenerateMovesForPiece(GameBoard, from);
@@ -360,9 +360,9 @@ public class GameManager : IGameManager
     /// </summary>
     private void SetupInitialBoardPosition()
     {
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
-            GameBoard.Tiles[c, r].Piece = null;
+        for (var c = 0; c < 8; c++)
+            GameBoard.Tiles[r, c].Piece = null;
 
         var backRankPieces = new[]
         {
@@ -378,10 +378,10 @@ public class GameManager : IGameManager
 
         for (var c = 0; c < 8; c++)
         {
-            GameBoard.Tiles[c, 0].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
-            GameBoard.Tiles[c, 1].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
-            GameBoard.Tiles[c, 6].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
-            GameBoard.Tiles[c, 7].Piece = new ChessPiece(PieceColor.Black, backRankPieces[c]);
+            GameBoard.Tiles[0, c].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
+            GameBoard.Tiles[1, c].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
+            GameBoard.Tiles[6, c].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
+            GameBoard.Tiles[7, c].Piece = new ChessPiece(PieceColor.Black, backRankPieces[c]);
         }
 
         CastlingRights = new CastlingRights(
@@ -397,7 +397,7 @@ public class GameManager : IGameManager
     {
         if (!IsInBounds(pos))
             throw new ArgumentOutOfRangeException(nameof(pos));
-        return GameBoard.Tiles[pos.Column, pos.Row];
+        return GameBoard.Tiles[pos.Row, pos.Column];
     }
 
     public IChessPiece? GetPieceAt(Position pos)
@@ -418,10 +418,10 @@ public class GameManager : IGameManager
     public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
     {
         var list = new List<IChessPiece>();
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var p = GameBoard.Tiles[c, r].Piece;
+            var p = GameBoard.Tiles[r, c].Piece;
             if (p is not null && p.Color == color)
                 list.Add(p);
         }
@@ -437,7 +437,7 @@ public class GameManager : IGameManager
     /// </summary>
     private List<Move> GenerateMovesForPiece(IBoard board, Position from)
     {
-        var piece = board.Tiles[from.Column, from.Row].Piece;
+        var piece = board.Tiles[from.Row, from.Column].Piece;
 
         if (piece is null)
             return [];
@@ -466,26 +466,26 @@ public class GameManager : IGameManager
     private List<Move> GeneratePawnMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Column, from.Row].Piece;
+        var piece = board.Tiles[from.Row, from.Column].Piece;
         if (piece is null)
             return moves;
         var dir = piece.Color == PieceColor.White ? 1 : -1;
         var startRow = piece.Color == PieceColor.White ? 1 : 6;
-        var one = new Position(from.Column, from.Row + dir);
-        if (IsInBounds(one) && board.Tiles[one.Column, one.Row].Piece is null)
+        var one = new Position(from.Row + dir, from.Column);
+        if (IsInBounds(one) && board.Tiles[one.Row, one.Column].Piece is null)
         {
             AddPawnMove(moves, from, one, piece.Color);
-            var two = new Position(from.Column, from.Row + 2 * dir);
-            if (from.Row == startRow && IsInBounds(two) && board.Tiles[two.Column, two.Row].Piece is null)
+            var two = new Position(from.Row + 2 * dir, from.Column);
+            if (from.Row == startRow && IsInBounds(two) && board.Tiles[two.Row, two.Column].Piece is null)
                 moves.Add(new Move(from, two));
         }
 
         foreach (var dc in SquareOffsets.PawnCaptureColumns)
         {
-            var to = new Position(from.Column + dc, from.Row + dir);
+            var to = new Position(from.Row + dir, from.Column + dc);
             if (!IsInBounds(to))
                 continue;
-            var target = board.Tiles[to.Column, to.Row].Piece;
+            var target = board.Tiles[to.Row, to.Column].Piece;
             if (target is not null && target.Color != piece.Color)
                 AddPawnMove(moves, from, to, piece.Color);
             else if (target is null && EnPassantTarget.HasValue && to.Equals(EnPassantTarget.Value))
@@ -518,7 +518,7 @@ public class GameManager : IGameManager
     private List<Move> GenerateKnightMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Column, from.Row].Piece;
+        var piece = board.Tiles[from.Row, from.Column].Piece;
 
         if (piece is null)
             return moves;
@@ -529,7 +529,7 @@ public class GameManager : IGameManager
             if (!IsInBounds(to))
                 continue;
 
-            var targetPiece = board.Tiles[to.Column, to.Row].Piece;
+            var targetPiece = board.Tiles[to.Row, to.Column].Piece;
             if (targetPiece is null || targetPiece.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
@@ -546,7 +546,7 @@ public class GameManager : IGameManager
     private List<Move> GenerateSlidingMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Column, from.Row].Piece;
+        var piece = board.Tiles[from.Row, from.Column].Piece;
         if (piece is null)
             return moves;
 
@@ -562,7 +562,7 @@ public class GameManager : IGameManager
             var to = from + offset;
             while (IsInBounds(to))
             {
-                var targetPiece = board.Tiles[to.Column, to.Row].Piece;
+                var targetPiece = board.Tiles[to.Row, to.Column].Piece;
                 if (targetPiece is null)
                 {
                     moves.Add(new Move(from, to));
@@ -589,7 +589,7 @@ public class GameManager : IGameManager
     private List<Move> GenerateKingMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Column, from.Row].Piece;
+        var piece = board.Tiles[from.Row, from.Column].Piece;
         if (piece is null)
             return moves;
 
@@ -599,7 +599,7 @@ public class GameManager : IGameManager
             if (!IsInBounds(to))
                 continue;
 
-            var targetPiece = board.Tiles[to.Column, to.Row].Piece;
+            var targetPiece = board.Tiles[to.Row, to.Column].Piece;
             if (targetPiece is null || targetPiece.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
@@ -610,56 +610,56 @@ public class GameManager : IGameManager
     private List<Move> GetCastlingMoves(IBoard board, Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Column, from.Row].Piece;
+        var piece = board.Tiles[from.Row, from.Column].Piece;
         if (piece is null || piece.Type != PieceType.King)
             return moves;
         if (IsKingInCheck(board, piece.Color))
             return moves;
         var enemy = piece.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        if (piece.Color == PieceColor.White && from.Equals(new Position(4, 0)))
+        if (piece.Color == PieceColor.White && from.Equals(new Position(0, 4)))
         {
             if (CastlingRights.WhiteKingSide
-                && board.Tiles[5, 0].Piece is null
-                && board.Tiles[6, 0].Piece is null
-                && board.Tiles[7, 0].Piece is not null
-                && board.Tiles[7, 0].Piece!.Type == PieceType.Rook
-                && board.Tiles[7, 0].Piece!.Color == PieceColor.White
-                && !IsSquareAttacked(board, new Position(5, 0), enemy)
-                && !IsSquareAttacked(board, new Position(6, 0), enemy))
-                moves.Add(new Move(from, new Position(6, 0)));
+                && board.Tiles[0, 5].Piece is null
+                && board.Tiles[0, 6].Piece is null
+                && board.Tiles[0, 7].Piece is not null
+                && board.Tiles[0, 7].Piece!.Type == PieceType.Rook
+                && board.Tiles[0, 7].Piece!.Color == PieceColor.White
+                && !IsSquareAttacked(board, new Position(0, 5), enemy)
+                && !IsSquareAttacked(board, new Position(0, 6), enemy))
+                moves.Add(new Move(from, new Position(0, 6)));
             if (CastlingRights.WhiteQueenSide
-                && board.Tiles[1, 0].Piece is null
-                && board.Tiles[2, 0].Piece is null
-                && board.Tiles[3, 0].Piece is null
+                && board.Tiles[0, 1].Piece is null
+                && board.Tiles[0, 2].Piece is null
+                && board.Tiles[0, 3].Piece is null
                 && board.Tiles[0, 0].Piece is not null
                 && board.Tiles[0, 0].Piece!.Type == PieceType.Rook
                 && board.Tiles[0, 0].Piece!.Color == PieceColor.White
-                && !IsSquareAttacked(board, new Position(3, 0), enemy)
-                && !IsSquareAttacked(board, new Position(2, 0), enemy))
-                moves.Add(new Move(from, new Position(2, 0)));
+                && !IsSquareAttacked(board, new Position(0, 3), enemy)
+                && !IsSquareAttacked(board, new Position(0, 2), enemy))
+                moves.Add(new Move(from, new Position(0, 2)));
         }
 
-        if (piece.Color == PieceColor.Black && from.Equals(new Position(4, 7)))
+        if (piece.Color == PieceColor.Black && from.Equals(new Position(7, 4)))
         {
             if (CastlingRights.BlackKingSide
-                && board.Tiles[5, 7].Piece is null
-                && board.Tiles[6, 7].Piece is null
+                && board.Tiles[7, 5].Piece is null
+                && board.Tiles[7, 6].Piece is null
                 && board.Tiles[7, 7].Piece is not null
                 && board.Tiles[7, 7].Piece!.Type == PieceType.Rook
                 && board.Tiles[7, 7].Piece!.Color == PieceColor.Black
-                && !IsSquareAttacked(board, new Position(5, 7), enemy)
-                && !IsSquareAttacked(board, new Position(6, 7), enemy))
-                moves.Add(new Move(from, new Position(6, 7)));
+                && !IsSquareAttacked(board, new Position(7, 5), enemy)
+                && !IsSquareAttacked(board, new Position(7, 6), enemy))
+                moves.Add(new Move(from, new Position(7, 6)));
             if (CastlingRights.BlackQueenSide
-                && board.Tiles[1, 7].Piece is null
-                && board.Tiles[2, 7].Piece is null
-                && board.Tiles[3, 7].Piece is null
-                && board.Tiles[0, 7].Piece is not null
-                && board.Tiles[0, 7].Piece!.Type == PieceType.Rook
-                && board.Tiles[0, 7].Piece!.Color == PieceColor.Black
-                && !IsSquareAttacked(board, new Position(3, 7), enemy)
-                && !IsSquareAttacked(board, new Position(2, 7), enemy))
-                moves.Add(new Move(from, new Position(2, 7)));
+                && board.Tiles[7, 1].Piece is null
+                && board.Tiles[7, 2].Piece is null
+                && board.Tiles[7, 3].Piece is null
+                && board.Tiles[7, 0].Piece is not null
+                && board.Tiles[7, 0].Piece!.Type == PieceType.Rook
+                && board.Tiles[7, 0].Piece!.Color == PieceColor.Black
+                && !IsSquareAttacked(board, new Position(7, 3), enemy)
+                && !IsSquareAttacked(board, new Position(7, 2), enemy))
+                moves.Add(new Move(from, new Position(7, 2)));
         }
 
         return moves;
@@ -687,11 +687,11 @@ public class GameManager : IGameManager
         var pawnRow = byColor == PieceColor.White ? pos.Row - 1 : pos.Row + 1;
         foreach (var dc in SquareOffsets.PawnCaptureColumns)
         {
-            var newPos = new Position(pos.Column + dc, pawnRow);
+            var newPos = new Position(pawnRow, pos.Column + dc);
             if (!IsInBounds(newPos))
                 continue;
 
-            var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
+            var piece = board.Tiles[newPos.Row, newPos.Column].Piece;
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Pawn)
                 return true;
         }
@@ -702,7 +702,7 @@ public class GameManager : IGameManager
             if (!IsInBounds(newPos))
                 continue;
 
-            var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
+            var piece = board.Tiles[newPos.Row, newPos.Column].Piece;
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.Knight)
                 return true;
         }
@@ -713,7 +713,7 @@ public class GameManager : IGameManager
             if (!IsInBounds(newPos))
                 continue;
 
-            var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
+            var piece = board.Tiles[newPos.Row, newPos.Column].Piece;
             if (piece is not null && piece.Color == byColor && piece.Type == PieceType.King)
                 return true;
         }
@@ -723,7 +723,7 @@ public class GameManager : IGameManager
             var newPos = pos + offset;
             while (IsInBounds(newPos))
             {
-                var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
+                var piece = board.Tiles[newPos.Row, newPos.Column].Piece;
                 if (piece is not null)
                 {
                     if (piece.Color == byColor && piece.Type is PieceType.Bishop or PieceType.Queen)
@@ -741,7 +741,7 @@ public class GameManager : IGameManager
             var newPos = pos + offset;
             while (IsInBounds(newPos))
             {
-                var piece = board.Tiles[newPos.Column, newPos.Row].Piece;
+                var piece = board.Tiles[newPos.Row, newPos.Column].Piece;
                 if (piece is not null)
                 {
                     if (piece.Color == byColor && piece.Type is PieceType.Rook or PieceType.Queen)
@@ -766,10 +766,10 @@ public class GameManager : IGameManager
     /// </summary>
     private bool IsKingInCheck(IBoard board, PieceColor color)
     {
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var piece = board.Tiles[c, r].Piece;
+            var piece = board.Tiles[r, c].Piece;
             if (piece is null || piece.Color != color || piece.Type != PieceType.King)
                 continue;
 
@@ -777,7 +777,7 @@ public class GameManager : IGameManager
 
             return IsSquareAttacked(
                 board,
-                new Position(c, r),
+                new Position(r, c),
                 enemyColor
             );
         }
@@ -810,14 +810,14 @@ public class GameManager : IGameManager
     /// </summary>
     private bool HasAnyLegalMove(IBoard board, PieceColor color)
     {
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var piece = board.Tiles[c, r].Piece;
+            var piece = board.Tiles[r, c].Piece;
             if (piece is null || piece.Color != color)
                 continue;
 
-            var from = new Position(c, r);
+            var from = new Position(r, c);
             var moves = GenerateMovesForPiece(board, from);
 
             foreach (var move in moves)
@@ -836,12 +836,12 @@ public class GameManager : IGameManager
     /// </summary>
     private MoveApplicationResult? ApplyMove(IBoard board, Move move)
     {
-        var fromTile = board.Tiles[move.From.Column, move.From.Row];
+        var fromTile = board.Tiles[move.From.Row, move.From.Column];
         var movingPiece = fromTile.Piece;
         if (movingPiece is null)
             return null;
 
-        var toTile = board.Tiles[move.To.Column, move.To.Row];
+        var toTile = board.Tiles[move.To.Row, move.To.Column];
         var capturedPiece = toTile.Piece;
 
         Position? capturedPos = capturedPiece is not null ? move.To : null;
@@ -853,10 +853,10 @@ public class GameManager : IGameManager
             capturedPiece is null
         )
         {
-            var capturedPawnPos = new Position(move.To.Column, move.From.Row);
-            capturedPiece = board.Tiles[capturedPawnPos.Column, capturedPawnPos.Row].Piece;
+            var capturedPawnPos = new Position(move.From.Row, move.To.Column);
+            capturedPiece = board.Tiles[capturedPawnPos.Row, capturedPawnPos.Column].Piece;
             capturedPos = capturedPawnPos;
-            board.Tiles[capturedPawnPos.Column, capturedPawnPos.Row].Piece = null;
+            board.Tiles[capturedPawnPos.Row, capturedPawnPos.Column].Piece = null;
         }
 
         fromTile.Piece = null;
@@ -879,16 +879,16 @@ public class GameManager : IGameManager
         {
             case 6:
             {
-                var rook = board.Tiles[7, move.From.Row].Piece;
-                board.Tiles[7, move.From.Row].Piece = null;
-                board.Tiles[5, move.From.Row].Piece = rook;
+                var rook = board.Tiles[move.From.Row, 7].Piece;
+                board.Tiles[move.From.Row, 7].Piece = null;
+                board.Tiles[move.From.Row, 5].Piece = rook;
                 break;
             }
             case 2:
             {
-                var rook = board.Tiles[0, move.From.Row].Piece;
-                board.Tiles[0, move.From.Row].Piece = null;
-                board.Tiles[3, move.From.Row].Piece = rook;
+                var rook = board.Tiles[move.From.Row, 0].Piece;
+                board.Tiles[move.From.Row, 0].Piece = null;
+                board.Tiles[move.From.Row, 3].Piece = rook;
                 break;
             }
         }
@@ -927,13 +927,13 @@ public class GameManager : IGameManager
                     WhiteQueenSide = false
                 };
 
-            if (move.From == new Position(7, 0))
+            if (move.From == new Position(0, 7))
                 currentCastlingRights = currentCastlingRights with
                 {
                     WhiteKingSide = false
                 };
 
-            if (move.From == new Position(0, 7))
+            if (move.From == new Position(7, 0))
                 currentCastlingRights = currentCastlingRights with
                 {
                     BlackQueenSide = false
@@ -954,13 +954,13 @@ public class GameManager : IGameManager
                     WhiteQueenSide = false
                 };
 
-            if (move.To == new Position(7, 0))
+            if (move.To == new Position(0, 7))
                 currentCastlingRights = currentCastlingRights with
                 {
                     WhiteKingSide = false
                 };
 
-            if (move.To == new Position(0, 7))
+            if (move.To == new Position(7, 0))
                 currentCastlingRights = currentCastlingRights with
                 {
                     BlackQueenSide = false
@@ -1007,7 +1007,7 @@ public class GameManager : IGameManager
         for (var r = 7; r >= 0; r--)
         for (var c = 0; c < 8; c++)
         {
-            var p = board.Tiles[c, r].Piece;
+            var p = board.Tiles[r, c].Piece;
             if (p is null)
             {
                 key += '-';
@@ -1075,10 +1075,10 @@ public class GameManager : IGameManager
         var bishops = 0;
         var bishopColor = -1;
         var mixedBishopColor = false;
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var p = GameBoard.Tiles[c, r].Piece;
+            var p = GameBoard.Tiles[r, c].Piece;
             if (p is null || p.Type == PieceType.King)
                 continue;
             if (p.Type == PieceType.Pawn || p.Type == PieceType.Rook || p.Type == PieceType.Queen)

@@ -5,6 +5,6 @@ namespace Api.ValueObjects;
 ///     The concrete values live in <see cref="Api.Constants.SquareOffsets" />.
 /// </summary>
 public readonly record struct SquareOffset(
-    int Column,
-    int Row
+    int Row,
+    int Column
 );

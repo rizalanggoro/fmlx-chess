@@ -9,10 +9,10 @@ public class Board : IBoard
     {
         Tiles = new IChessTile[8, 8];
 
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
-            Tiles[c, r] = new ChessTile(
-                new Position(c, r)
+        for (var c = 0; c < 8; c++)
+            Tiles[r, c] = new ChessTile(
+                new Position(r, c)
             );
     }
 
@@ -20,10 +20,10 @@ public class Board : IBoard
     {
         Tiles = new IChessTile[8, 8];
 
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var sourceTile = source.Tiles[c, r];
+            var sourceTile = source.Tiles[r, c];
             var tile = new ChessTile(sourceTile.TilePosition);
             if (sourceTile.Piece is not null)
                 tile.Piece = new ChessPiece(
@@ -31,7 +31,7 @@ public class Board : IBoard
                     sourceTile.Piece.Type
                 );
 
-            Tiles[c, r] = tile;
+            Tiles[r, c] = tile;
         }
     }
 

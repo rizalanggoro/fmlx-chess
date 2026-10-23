@@ -61,11 +61,11 @@ public class GameController(IRoomService roomService) : ControllerBase
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             var tiles = new List<TileDto>();
-            for (var c = 0; c < 8; c++)
-                for (var r = 0; r < 8; r++)
+            for (var r = 0; r < 8; r++)
+                for (var c = 0; c < 8; c++)
                 {
-                    var p = room.Manager.GameBoard.Tiles[c, r].Piece;
-                    tiles.Add(new TileDto(c, r, p?.Color, p?.Type));
+                    var p = room.Manager.GameBoard.Tiles[r, c].Piece;
+                    tiles.Add(new TileDto(r, c, p?.Color, p?.Type));
                 }
             return Ok(tiles);
         }
@@ -82,7 +82,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         {
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
-            var from = new Position(column, row);
+            var from = new Position(row, column);
             if (!room.Manager.IsInBounds(from))
                 return BadRequest(new ApiErrorDto("Position out of bounds"));
             return Ok(room.Manager.GetLegalMoves(from));

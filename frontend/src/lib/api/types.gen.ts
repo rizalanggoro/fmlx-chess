@@ -97,8 +97,8 @@ export type PlayerDto = {
 };
 
 export type Position = {
-    column: number;
     row: number;
+    column: number;
 };
 
 export type RoomMode = 'HotSeat' | 'Online';
@@ -127,8 +127,8 @@ export type SnapshotChangedDto = {
 };
 
 export type TileDto = {
-    column: number;
     row: number;
+    column: number;
     color?: PieceColor | null;
     type?: PieceType | null;
 };

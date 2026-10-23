@@ -23,6 +23,7 @@ read-only dan tidak diubah; semua penyimpangan dicatat di sini.
 | `Board` menyimpan `CastlingRights` dan en passant target | `Board` hanya menyimpan `Tiles`; `CastlingRights` dan `EnPassantTarget` disimpan di `GameManager` |
 | Nama event `PieceMoved`, `PieceCaptured`, `TurnChanged`, `CheckDeclared`, `GameEnded`, `DrawOffered`, `TimerTick` | Memakai sufiks konvensi .NET: `PieceMovedEventHandler`, `PieceCapturedEventHandler`, `TurnChangedEventHandler`, `CheckDeclaredEventHandler`, `GameEndedEventHandler`, `DrawOfferedEventHandler`, `TimerTickedEventHandler` |
 | Tidak ada `DrawDeclined` | Ada `Events/DrawDeclinedEventArgs.cs` + `DrawDeclinedEventHandler` (jawaban penolakan draw) |
+| `Position(int column, int row)` | `Position(int row, int column)`: parameter di `ValueObjects/Position.cs` ditukar; properti tetap `Column`/`Row`, sehingga JSON tetap `column`/`row` | Menyamakan urutan dengan `Tiles[row, column]`; urutan parameter konstruktor tidak mengubah kontrak JSON/API |
 | `SetupInitialBoardPosition()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `StartGame` dan `ResetGame`, tidak dipakai controller atau service lain |
 | `IsFiftyMoveRuleClaimAvailable()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `ClaimDrawByFiftyMoveRule`, tidak dipakai controller atau service lain |
 | `IsSeventyFiveMoveRuleAutomatic()` publik | Dibuat `private` di `Services/GameManager.cs`; hanya dipanggil dari `EvaluateAutomaticResult`, tidak dipakai controller atau service lain |

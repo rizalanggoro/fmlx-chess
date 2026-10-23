@@ -1347,11 +1347,11 @@
         ],
         "type": "object",
         "properties": {
-          "column": {
+          "row": {
             "type": "integer",
             "format": "int32"
           },
-          "row": {
+          "column": {
             "type": "integer",
             "format": "int32"
           }
@@ -1478,11 +1478,11 @@
         ],
         "type": "object",
         "properties": {
-          "column": {
+          "row": {
             "type": "integer",
             "format": "int32"
           },
-          "row": {
+          "column": {
             "type": "integer",
             "format": "int32"
           },

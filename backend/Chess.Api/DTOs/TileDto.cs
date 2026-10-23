@@ -4,7 +4,7 @@ using Api.Models;
 namespace Api.DTOs;
 
 public record TileDto(
-    int Column,
     int Row,
+    int Column,
     PieceColor? Color,
     PieceType? Type);

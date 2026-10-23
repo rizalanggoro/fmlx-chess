@@ -88,11 +88,11 @@ public class RoomService(
     private void NotifySnapshot(GameRoom room, SnapshotChangedEventArgs e)
     {
         var board = new List<TileDto>(64);
-        for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var p = e.Board.Tiles[c, r].Piece;
-            board.Add(new TileDto(c, r, p?.Color, p?.Type));
+            var p = e.Board.Tiles[r, c].Piece;
+            board.Add(new TileDto(r, c, p?.Color, p?.Type));
         }
 
         _ = SendSafeAsync(
