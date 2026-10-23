@@ -4,12 +4,9 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { GLYPHS } from '@/constants/chess'
 import type { PieceColor, PieceType } from '@/lib/api'
-import { cn } from 'cn'
-import type { ReactNode } from 'react'
 
 const NAMES: Record<PieceType, string> = {
   King: 'Raja',
@@ -23,17 +20,17 @@ const NAMES: Record<PieceType, string> = {
 const ORDER: PieceType[] = ['Queen', 'Rook', 'Bishop', 'Knight', 'Pawn']
 
 export function CapturedPiecesDialog({
+  open,
+  onOpenChange,
   color,
   playerName,
   pieces,
-  className,
-  children,
 }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   color: PieceColor
   playerName: string
   pieces: PieceType[]
-  className?: string
-  children: ReactNode
 }) {
   const capturedColor: PieceColor = color === 'White' ? 'Black' : 'White'
   const counts = ORDER.map((type) => ({
@@ -42,15 +39,7 @@ export function CapturedPiecesDialog({
   })).filter(({ count }) => count > 0)
 
   return (
-    <Dialog>
-      <DialogTrigger
-        className={cn(
-          'flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/30',
-          className,
-        )}
-      >
-        {children}
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">

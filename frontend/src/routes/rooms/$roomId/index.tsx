@@ -3,13 +3,12 @@ import { CapturedPiecesDialog } from '@/components/game/captured-pieces-dialog'
 import { ConfirmDialog } from '@/components/game/confirm-dialog'
 import { DrawOfferDialog } from '@/components/game/draw-offer-dialog'
 import { MoveHistoryCard } from '@/components/game/move-history-card'
+import { PlayerTurnCard } from '@/components/game/player-turn-card'
 import { PromotionDialog } from '@/components/game/promotion-dialog'
 import { Brand, Eyebrow, Shell, StateScreen } from '@/components/room-chrome'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -33,8 +32,7 @@ import { useCheckToast } from '@/hooks/use-check-toast'
 import { useDrawOffer } from '@/hooks/use-draw-offer'
 import { useGameEnded } from '@/hooks/use-game-ended'
 import { usePieceCapturedToast } from '@/hooks/use-piece-captured-toast'
-import { useTimerTick } from '@/hooks/use-timer-tick'
-import { GLYPHS, REASONS } from '@/constants/chess'
+import { colorName } from '@/constants/chess'
 import type { DrawOfferedDto, PieceColor, PieceType, Position } from '@/lib/api'
 import { joinGroup, leaveGroup, roomGroup } from '@/lib/game-hub'
 import { loadRoomSession, type RoomSession } from '@/lib/room-session'
@@ -51,9 +49,6 @@ export const Route = createFileRoute('/rooms/$roomId/')({
   },
   component: Room,
 })
-
-const colorName = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
-const glyphOf = (color: PieceColor) => GLYPHS.King[color]
 
 const same = (a: Position | null, b: Position) =>
   a !== null && a.column === b.column && a.row === b.row
@@ -72,6 +67,8 @@ function Room() {
     to: Position
     options: PieceType[]
   } | null>(null)
+  const [capturedView, setCapturedView] = useState<PieceColor | null>(null)
+  const [capturedOpen, setCapturedOpen] = useState(false)
 
   useEffect(() => {
     const group = roomGroup(roomId)
@@ -96,7 +93,6 @@ function Room() {
   const { data: state } = useQuery({
     ...getRoomsByRoomIdGameOptions({ path: { roomId } }),
   })
-  const { secondsLeft, clock } = useTimerTick(roomId, state)
 
   const online = room?.mode === 'Online'
   const waiting = online && !(room?.whiteJoined && room?.blackJoined)
@@ -193,6 +189,11 @@ function Room() {
   // Bidak yang dimakan tiap warna, dari tracker backend (GameStateDto), bukan dihitung ulang dari papan.
   const capturedOf = (color: PieceColor) =>
     (color === 'White' ? state?.capturedByWhite : state?.capturedByBlack) ?? []
+
+  const openCaptured = (color: PieceColor) => {
+    setCapturedView(color)
+    setCapturedOpen(true)
+  }
 
   // Black sees the board from Black's side.
   const flip = myColor === 'Black'
@@ -317,74 +318,15 @@ function Room() {
         />
 
         <aside className="flex flex-col gap-4">
-          <Card size="sm">
-            <CardHeader>
-              <Eyebrow>{online ? 'Online' : 'Hotseat'}</Eyebrow>
-              {online && (
-                <CardAction>
-                  <span className="font-mono text-sm font-semibold tracking-[0.2em] text-foreground">
-                    {roomId}
-                  </span>
-                </CardAction>
-              )}
-            </CardHeader>
-
-            <CardContent className="flex flex-col gap-2">
-              {(['White', 'Black'] as const).map((color) => {
-                const active = !over && turn === color
-                const captured = capturedOf(color)
-                return (
-                  <CapturedPiecesDialog
-                    key={color}
-                    color={color}
-                    playerName={nameOf(color) ?? colorName(color)}
-                    pieces={captured}
-                    className={
-                      active ? 'border-primary/30 bg-primary/10' : 'border-transparent'
-                    }
-                  >
-                    <span
-                      aria-hidden
-                      className="font-heading text-2xl leading-none text-foreground"
-                    >
-                      {glyphOf(color)}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-foreground">
-                        {nameOf(color) ?? colorName(color)}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {colorName(color)}
-                        {myColor === color && ' · kamu'}
-                      </span>
-                    </span>
-                    <span className="sr-only">Lihat bidak yang dimakan</span>
-                    {active && <Badge>Giliran</Badge>}
-                    <span
-                      className={`font-mono text-sm tabular-nums ${
-                        active ? 'font-semibold text-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
-                      {clock(secondsLeft(color))}
-                    </span>
-                  </CapturedPiecesDialog>
-                )
-              })}
-
-              {over && state?.result && (
-                <p className="mt-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
-                  {state.result.winner
-                    ? `${label(state.result.winner)} menang — ${REASONS[state.result.reason]}`
-                    : `Seri — ${REASONS[state.result.reason]}`}
-                </p>
-              )}
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                Langkah: {state?.moveCount ?? 0}
-                {online && !myColor && ' · kamu penonton'}
-              </p>
-            </CardContent>
-          </Card>
+          <PlayerTurnCard
+            roomId={roomId}
+            online={online}
+            state={state}
+            whiteName={room?.whiteName}
+            blackName={room?.blackName}
+            myColor={myColor}
+            onPlayerClick={openCaptured}
+          />
 
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
@@ -456,6 +398,14 @@ function Room() {
             pending={isMoving}
             onSelect={promote}
             onDismiss={() => setPromotion(null)}
+          />
+
+          <CapturedPiecesDialog
+            open={capturedOpen}
+            onOpenChange={setCapturedOpen}
+            color={capturedView ?? 'White'}
+            playerName={capturedView ? (nameOf(capturedView) ?? colorName(capturedView)) : ''}
+            pieces={capturedView ? capturedOf(capturedView) : []}
           />
 
           <MoveHistoryCard history={moves} />

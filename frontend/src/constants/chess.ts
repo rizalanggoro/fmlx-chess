@@ -2,6 +2,9 @@ import type { GameEndReason, PieceColor, PieceType } from '@/lib/api'
 
 export const FILES = 'abcdefgh'
 
+export const colorName = (color: PieceColor) =>
+  color === 'White' ? 'Putih' : 'Hitam'
+
 export const GLYPHS: Record<PieceType, Record<PieceColor, string>> = {
   King: { White: '♔', Black: '♚' },
   Queen: { White: '♕', Black: '♛' },
