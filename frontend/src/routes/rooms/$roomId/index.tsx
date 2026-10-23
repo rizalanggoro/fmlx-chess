@@ -328,6 +328,7 @@ function Room() {
           loading={loadingSquare}
           targets={targets}
           flip={flip}
+          lastMove={moves.at(-1)?.move}
           disabled={state?.state !== 'InProgress' || isMoving || !myTurn}
           onSelect={click}
         />
