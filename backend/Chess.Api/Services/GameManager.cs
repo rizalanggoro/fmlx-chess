@@ -232,7 +232,7 @@ public class GameManager : IGameManager
         var pseudo = GenerateMovesForPiece(GameBoard, from);
         var legal = new List<Move>();
         foreach (var m in pseudo)
-            if (!WouldLeaveKingInCheck(GameBoard, m))
+            if (!WouldLeaveKingInCheck(GameBoard, piece, m))
                 legal.Add(m);
         return legal;
     }
@@ -755,32 +755,57 @@ public class GameManager : IGameManager
         return false;
     }
 
+    /// <summary>
+    ///     Tells whether the king of the given colour is attacked: finds that
+    ///     king on <paramref name="board" /> and asks <see cref="IsSquareAttacked" />
+    ///     whether the opposite colour attacks its square. The board may be a
+    ///     clone, so callers can test a hypothetical move before playing it.
+    ///     Returns <c>false</c> when no king of that colour is on the board.
+    /// </summary>
     private bool IsKingInCheck(IBoard board, PieceColor color)
     {
         for (var c = 0; c < 8; c++)
         for (var r = 0; r < 8; r++)
         {
             var piece = board.Tiles[c, r].Piece;
-            if (piece is not null && piece.Color == color && piece.Type == PieceType.King)
-            {
-                var enemy = color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-                return IsSquareAttacked(board, new Position(c, r), enemy);
-            }
+            if (piece is null || piece.Color != color || piece.Type != PieceType.King)
+                continue;
+
+            var enemyColor = color == PieceColor.White ? PieceColor.Black : PieceColor.White;
+
+            return IsSquareAttacked(
+                board,
+                new Position(c, r),
+                enemyColor
+            );
         }
 
         return false;
     }
 
-    private bool WouldLeaveKingInCheck(IBoard board, Move move)
+    /// <summary>
+    ///     Tells whether playing the given move would leave the mover's own king
+    ///     in check. The move is applied to a clone of the board first, so the real
+    ///     board is untouched. The moving piece is passed in rather than looked up,
+    ///     because every caller already holds it. The class diagram lists
+    ///     <c>(IBoard, Move)</c>; the diagram is read-only, so the extra parameter
+    ///     is documented here.
+    /// </summary>
+    private bool WouldLeaveKingInCheck(IBoard board, IChessPiece mover, Move move)
     {
-        var mover = board.Tiles[move.From.Column, move.From.Row].Piece;
-        if (mover is null)
-            return true;
-        var clone = new Board(board);
-        ApplyMove(clone, move);
-        return IsKingInCheck(clone, mover.Color);
+        var cloneBoard = new Board(board);
+        ApplyMove(cloneBoard, move);
+
+        return IsKingInCheck(cloneBoard, mover.Color);
     }
 
+    /// <summary>
+    ///     Tells whether the given colour still has at least one legal move,
+    ///     stopping at the first one found: pseudo-legal moves are generated for
+    ///     each occupied square and filtered by <see cref="WouldLeaveKingInCheck" />.
+    ///     Combined with <see cref="IsKingInCheck" /> it separates checkmate
+    ///     (in check, no moves) from stalemate (not in check, no moves).
+    /// </summary>
     private bool HasAnyLegalMove(IBoard board, PieceColor color)
     {
         for (var c = 0; c < 8; c++)
@@ -789,10 +814,12 @@ public class GameManager : IGameManager
             var piece = board.Tiles[c, r].Piece;
             if (piece is null || piece.Color != color)
                 continue;
+
             var from = new Position(c, r);
-            var pseudo = GenerateMovesForPiece(board, from);
-            foreach (var m in pseudo)
-                if (!WouldLeaveKingInCheck(board, m))
+            var moves = GenerateMovesForPiece(board, from);
+
+            foreach (var move in moves)
+                if (!WouldLeaveKingInCheck(board, piece, move))
                     return true;
         }
 
