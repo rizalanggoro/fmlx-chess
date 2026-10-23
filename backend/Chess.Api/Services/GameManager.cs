@@ -902,40 +902,78 @@ public class GameManager : IGameManager
 
     private void UpdateCastlingRights(IBoard board, Move move, IChessPiece movingPiece, IChessPiece? capturedPiece)
     {
-        var cr = CastlingRights;
+        var currentCastlingRights = CastlingRights;
         if (movingPiece.Type == PieceType.King)
         {
             if (movingPiece.Color == PieceColor.White)
-                cr = new CastlingRights(false, false, cr.BlackKingSide, cr.BlackQueenSide);
+                currentCastlingRights = currentCastlingRights with
+                {
+                    WhiteKingSide = false,
+                    WhiteQueenSide = false
+                };
             else
-                cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, false, false);
+                currentCastlingRights = currentCastlingRights with
+                {
+                    BlackKingSide = false,
+                    BlackQueenSide = false
+                };
         }
 
         if (movingPiece.Type == PieceType.Rook)
         {
-            if (move.From.Equals(new Position(0, 0)))
-                cr = new CastlingRights(cr.WhiteKingSide, false, cr.BlackKingSide, cr.BlackQueenSide);
-            if (move.From.Equals(new Position(7, 0)))
-                cr = new CastlingRights(false, cr.WhiteQueenSide, cr.BlackKingSide, cr.BlackQueenSide);
-            if (move.From.Equals(new Position(0, 7)))
-                cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, cr.BlackKingSide, false);
-            if (move.From.Equals(new Position(7, 7)))
-                cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, false, cr.BlackQueenSide);
+            if (move.From == new Position(0, 0))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    WhiteQueenSide = false
+                };
+
+            if (move.From == new Position(7, 0))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    WhiteKingSide = false
+                };
+
+            if (move.From == new Position(0, 7))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    BlackQueenSide = false
+                };
+
+            if (move.From == new Position(7, 7))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    BlackKingSide = false
+                };
         }
 
         if (capturedPiece is not null && capturedPiece.Type == PieceType.Rook)
         {
-            if (move.To.Equals(new Position(0, 0)))
-                cr = new CastlingRights(cr.WhiteKingSide, false, cr.BlackKingSide, cr.BlackQueenSide);
-            if (move.To.Equals(new Position(7, 0)))
-                cr = new CastlingRights(false, cr.WhiteQueenSide, cr.BlackKingSide, cr.BlackQueenSide);
-            if (move.To.Equals(new Position(0, 7)))
-                cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, cr.BlackKingSide, false);
-            if (move.To.Equals(new Position(7, 7)))
-                cr = new CastlingRights(cr.WhiteKingSide, cr.WhiteQueenSide, false, cr.BlackQueenSide);
+            if (move.To == new Position(0, 0))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    WhiteQueenSide = false
+                };
+
+            if (move.To == new Position(7, 0))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    WhiteKingSide = false
+                };
+
+            if (move.To == new Position(0, 7))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    BlackQueenSide = false
+                };
+
+            if (move.To == new Position(7, 7))
+                currentCastlingRights = currentCastlingRights with
+                {
+                    BlackKingSide = false
+                };
         }
 
-        CastlingRights = cr;
+        CastlingRights = currentCastlingRights;
     }
 
     /// <summary>
