@@ -23,7 +23,7 @@ public class RoomService(
             roomId = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
         } while (registry.Find(roomId) is not null);
 
-        var manager = new GameManager(
+        var manager = new GameService(
             new Board(),
             new Player("White", PieceColor.White),
             new Player("Black", PieceColor.Black),
@@ -89,11 +89,11 @@ public class RoomService(
     {
         var board = new List<TileDto>(64);
         for (var r = 0; r < 8; r++)
-        for (var c = 0; c < 8; c++)
-        {
-            var p = e.Board.Tiles[r, c].Piece;
-            board.Add(new TileDto(r, c, p?.Color, p?.Type));
-        }
+            for (var c = 0; c < 8; c++)
+            {
+                var p = e.Board.Tiles[r, c].Piece;
+                board.Add(new TileDto(r, c, p?.Color, p?.Type));
+            }
 
         _ = SendSafeAsync(
             GameGroups.Room(room.Id),

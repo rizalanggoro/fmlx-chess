@@ -7,4 +7,5 @@ public record TileDto(
     int Row,
     int Column,
     PieceColor? Color,
-    PieceType? Type);
+    PieceType? Type
+);

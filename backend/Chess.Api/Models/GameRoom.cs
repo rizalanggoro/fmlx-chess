@@ -8,7 +8,7 @@ public class GameRoom
     public GameRoom(
         string id,
         RoomMode mode,
-        IGameManager manager
+        IGameService manager
     )
     {
         Id = id;
@@ -19,7 +19,7 @@ public class GameRoom
 
     public string Id { get; }
     public RoomMode Mode { get; }
-    public IGameManager Manager { get; }
+    public IGameService Manager { get; }
     public bool WhiteJoined { get; internal set; }
     public bool BlackJoined { get; internal set; }
     public string? WhiteName { get; internal set; }
