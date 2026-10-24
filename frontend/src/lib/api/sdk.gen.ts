@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesAllData, GetRoomsByRoomIdGameLegalMovesAllResponses, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, GetRoomsData, GetRoomsResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesAllData, GetRoomsByRoomIdGameLegalMovesAllResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, GetRoomsData, GetRoomsResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -18,20 +18,32 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
+export const getRooms = <ThrowOnError extends boolean = false>(options?: Options<GetRoomsData, ThrowOnError>): RequestResult<GetRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetRoomsResponses, unknown, ThrowOnError>({ url: '/rooms', ...options });
+
+export const postRooms = <ThrowOnError extends boolean = false>(options?: Options<PostRoomsData, ThrowOnError>): RequestResult<PostRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostRoomsResponses, unknown, ThrowOnError>({
+    url: '/rooms',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers
+    }
+});
+
+export const postRoomsByRoomIdJoin = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdJoinData, ThrowOnError>): RequestResult<PostRoomsByRoomIdJoinResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdJoinResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/join', ...options });
+
+export const getRoomsByRoomId = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdData, ThrowOnError>): RequestResult<GetRoomsByRoomIdResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}', ...options });
+
 export const getRoomsByRoomIdGame = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game', ...options });
+
+export const getRoomsByRoomIdGameBoard = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameBoardData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/board', ...options });
+
+export const getRoomsByRoomIdGameLegalMovesAll = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameLegalMovesAllData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameLegalMovesAllResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameLegalMovesAllResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/legal-moves/all', ...options });
+
+export const getRoomsByRoomIdGameHistory = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameHistoryData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameHistoryResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameHistoryResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/history', ...options });
 
 export const postRoomsByRoomIdGameStart = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameStartData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameStartResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameStartResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/start', ...options });
 
 export const postRoomsByRoomIdGameReset = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameResetData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameResetResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameResetResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/reset', ...options });
-
-export const getRoomsByRoomIdGameBoard = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameBoardData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/board', ...options });
-
-/**
- * @deprecated
- */
-export const getRoomsByRoomIdGameLegalMoves = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameLegalMovesData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameLegalMovesResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameLegalMovesResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/legal-moves', ...options });
-
-export const getRoomsByRoomIdGameLegalMovesAll = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameLegalMovesAllData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameLegalMovesAllResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameLegalMovesAllResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/legal-moves/all', ...options });
 
 export const postRoomsByRoomIdGameMoves = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameMovesData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameMovesResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameMovesResponses, unknown, ThrowOnError>({
     url: '/rooms/{roomId}/game/moves',
@@ -41,8 +53,6 @@ export const postRoomsByRoomIdGameMoves = <ThrowOnError extends boolean = false>
         ...options.headers
     }
 });
-
-export const getRoomsByRoomIdGameHistory = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameHistoryData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameHistoryResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameHistoryResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/history', ...options });
 
 export const postRoomsByRoomIdGameResign = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameResignData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameResignResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameResignResponses, unknown, ThrowOnError>({
     url: '/rooms/{roomId}/game/resign',
@@ -88,18 +98,3 @@ export const postRoomsByRoomIdGameDrawClaimFifty = <ThrowOnError extends boolean
         ...options.headers
     }
 });
-
-export const getRooms = <ThrowOnError extends boolean = false>(options?: Options<GetRoomsData, ThrowOnError>): RequestResult<GetRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetRoomsResponses, unknown, ThrowOnError>({ url: '/rooms', ...options });
-
-export const postRooms = <ThrowOnError extends boolean = false>(options?: Options<PostRoomsData, ThrowOnError>): RequestResult<PostRoomsResponses, unknown, ThrowOnError> => (options?.client ?? client).post<PostRoomsResponses, unknown, ThrowOnError>({
-    url: '/rooms',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers
-    }
-});
-
-export const postRoomsByRoomIdJoin = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdJoinData, ThrowOnError>): RequestResult<PostRoomsByRoomIdJoinResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdJoinResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/join', ...options });
-
-export const getRoomsByRoomId = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdData, ThrowOnError>): RequestResult<GetRoomsByRoomIdResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}', ...options });

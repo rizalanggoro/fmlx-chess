@@ -3,9 +3,9 @@ using Api.Interfaces.Services;
 
 namespace Api.Models;
 
-public class GameRoom
+public class Room
 {
-    public GameRoom(
+    public Room(
         string id,
         RoomMode mode,
         IChessGameEngine engine

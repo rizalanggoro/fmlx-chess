@@ -4,8 +4,8 @@ namespace Api.Interfaces.Services;
 
 public interface IRoomRegistry
 {
-    IEnumerable<GameRoom> All { get; }
+    IEnumerable<Room> All { get; }
 
-    GameRoom? Find(string id);
-    void Add(GameRoom room);
+    Room? Find(string id);
+    void Add(Room room);
 }

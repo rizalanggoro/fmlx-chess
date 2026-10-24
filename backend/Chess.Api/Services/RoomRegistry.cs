@@ -6,16 +6,16 @@ namespace Api.Services;
 
 public class RoomRegistry : IRoomRegistry
 {
-    private readonly ConcurrentDictionary<string, GameRoom> _rooms = new();
+    private readonly ConcurrentDictionary<string, Room> _rooms = new();
 
-    public IEnumerable<GameRoom> All => _rooms.Values;
+    public IEnumerable<Room> All => _rooms.Values;
 
-    public GameRoom? Find(string id)
+    public Room? Find(string id)
     {
         return _rooms.GetValueOrDefault(id);
     }
 
-    public void Add(GameRoom room)
+    public void Add(Room room)
     {
         _rooms[room.Id] = room;
     }

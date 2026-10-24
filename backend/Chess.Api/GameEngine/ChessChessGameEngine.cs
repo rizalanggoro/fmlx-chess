@@ -165,7 +165,7 @@ public class ChessChessGameEngine : IChessGameEngine
         var piece = GetPieceAt(move.From);
         if (piece is null || piece.Color != CurrentPlayer.Color)
             return false;
-        var legal = GetLegalMovesFrom(move.From);
+        var legal = GetLegalMoves(move.From);
         Move? chosen = null;
         foreach (var m in legal)
         {
@@ -257,23 +257,21 @@ public class ChessChessGameEngine : IChessGameEngine
             var piece = GameBoard.Tiles[row, column].Piece;
             if (piece is null || piece.Color != CurrentPlayer.Color)
                 continue;
-            legal.AddRange(GetLegalMovesFrom(new Position(row, column)));
+            legal.AddRange(GetLegalMoves(new Position(row, column)));
         }
 
         return legal;
     }
 
     /// <summary>
-    ///     Kept for parity with the class diagram. Use
-    ///     <see cref="GetAllLegalMoves" /> and filter by <see cref="Move.From" />.
+    ///     Returns the legal moves of the piece on the given square, or an empty
+    ///     list when the square is off-board or holds no piece of the side to
+    ///     move. Batch callers use <see cref="GetAllLegalMoves" />.
+    ///     Declared private although the class diagram shows it public, because
+    ///     only <see cref="TryMakeMove" /> and <see cref="GetAllLegalMoves" />
+    ///     call it.
     /// </summary>
-    [Obsolete("Use GetAllLegalMoves() and filter by Move.From.")]
-    public IReadOnlyList<Move> GetLegalMoves(Position from)
-    {
-        return GetLegalMovesFrom(from);
-    }
-
-    private IReadOnlyList<Move> GetLegalMovesFrom(Position from)
+    private IReadOnlyList<Move> GetLegalMoves(Position from)
     {
         if (!IsInBounds(from))
             return Array.Empty<Move>();

@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { getRooms, getRoomsByRoomId, getRoomsByRoomIdGame, getRoomsByRoomIdGameBoard, getRoomsByRoomIdGameHistory, getRoomsByRoomIdGameLegalMoves, getRoomsByRoomIdGameLegalMovesAll, type Options, postRooms, postRoomsByRoomIdGameDrawClaimFifty, postRoomsByRoomIdGameDrawClaimThreefold, postRoomsByRoomIdGameDrawOffer, postRoomsByRoomIdGameDrawRespond, postRoomsByRoomIdGameMoves, postRoomsByRoomIdGameReset, postRoomsByRoomIdGameResign, postRoomsByRoomIdGameStart, postRoomsByRoomIdJoin } from '../sdk.gen';
-import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponse, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponse, GetRoomsByRoomIdGameLegalMovesAllData, GetRoomsByRoomIdGameLegalMovesAllResponse, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponse, GetRoomsByRoomIdGameResponse, GetRoomsByRoomIdResponse, GetRoomsData, GetRoomsResponse, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponse, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponse, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponse, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponse, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponse, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponse, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponse, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponse, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponse, PostRoomsData, PostRoomsResponse } from '../types.gen';
+import { getRooms, getRoomsByRoomId, getRoomsByRoomIdGame, getRoomsByRoomIdGameBoard, getRoomsByRoomIdGameHistory, getRoomsByRoomIdGameLegalMovesAll, type Options, postRooms, postRoomsByRoomIdGameDrawClaimFifty, postRoomsByRoomIdGameDrawClaimThreefold, postRoomsByRoomIdGameDrawOffer, postRoomsByRoomIdGameDrawRespond, postRoomsByRoomIdGameMoves, postRoomsByRoomIdGameReset, postRoomsByRoomIdGameResign, postRoomsByRoomIdGameStart, postRoomsByRoomIdJoin } from '../sdk.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponse, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponse, GetRoomsByRoomIdGameLegalMovesAllData, GetRoomsByRoomIdGameLegalMovesAllResponse, GetRoomsByRoomIdGameResponse, GetRoomsByRoomIdResponse, GetRoomsData, GetRoomsResponse, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponse, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponse, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponse, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponse, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponse, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponse, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponse, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponse, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponse, PostRoomsData, PostRoomsResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -39,6 +39,64 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     return [params];
 };
 
+export const getRoomsQueryKey = (options?: Options<GetRoomsData>) => createQueryKey('getRooms', options);
+
+export const getRoomsOptions = (options?: Options<GetRoomsData>) => queryOptions<GetRoomsResponse, DefaultError, GetRoomsResponse, ReturnType<typeof getRoomsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRooms({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsQueryKey(options)
+});
+
+export const postRoomsMutation = (options?: Partial<Options<PostRoomsData>>): UseMutationOptions<PostRoomsResponse, DefaultError, Options<PostRoomsData>> => {
+    const mutationOptions: UseMutationOptions<PostRoomsResponse, DefaultError, Options<PostRoomsData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postRooms({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const postRoomsByRoomIdJoinMutation = (options?: Partial<Options<PostRoomsByRoomIdJoinData>>): UseMutationOptions<PostRoomsByRoomIdJoinResponse, DefaultError, Options<PostRoomsByRoomIdJoinData>> => {
+    const mutationOptions: UseMutationOptions<PostRoomsByRoomIdJoinResponse, DefaultError, Options<PostRoomsByRoomIdJoinData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postRoomsByRoomIdJoin({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getRoomsByRoomIdQueryKey = (options: Options<GetRoomsByRoomIdData>) => createQueryKey('getRoomsByRoomId', options);
+
+export const getRoomsByRoomIdOptions = (options: Options<GetRoomsByRoomIdData>) => queryOptions<GetRoomsByRoomIdResponse, DefaultError, GetRoomsByRoomIdResponse, ReturnType<typeof getRoomsByRoomIdQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRoomsByRoomId({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsByRoomIdQueryKey(options)
+});
+
 export const getRoomsByRoomIdGameQueryKey = (options: Options<GetRoomsByRoomIdGameData>) => createQueryKey('getRoomsByRoomIdGame', options);
 
 export const getRoomsByRoomIdGameOptions = (options: Options<GetRoomsByRoomIdGameData>) => queryOptions<GetRoomsByRoomIdGameResponse, DefaultError, GetRoomsByRoomIdGameResponse, ReturnType<typeof getRoomsByRoomIdGameQueryKey>>({
@@ -52,6 +110,51 @@ export const getRoomsByRoomIdGameOptions = (options: Options<GetRoomsByRoomIdGam
         return data;
     },
     queryKey: getRoomsByRoomIdGameQueryKey(options)
+});
+
+export const getRoomsByRoomIdGameBoardQueryKey = (options: Options<GetRoomsByRoomIdGameBoardData>) => createQueryKey('getRoomsByRoomIdGameBoard', options);
+
+export const getRoomsByRoomIdGameBoardOptions = (options: Options<GetRoomsByRoomIdGameBoardData>) => queryOptions<GetRoomsByRoomIdGameBoardResponse, DefaultError, GetRoomsByRoomIdGameBoardResponse, ReturnType<typeof getRoomsByRoomIdGameBoardQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRoomsByRoomIdGameBoard({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsByRoomIdGameBoardQueryKey(options)
+});
+
+export const getRoomsByRoomIdGameLegalMovesAllQueryKey = (options: Options<GetRoomsByRoomIdGameLegalMovesAllData>) => createQueryKey('getRoomsByRoomIdGameLegalMovesAll', options);
+
+export const getRoomsByRoomIdGameLegalMovesAllOptions = (options: Options<GetRoomsByRoomIdGameLegalMovesAllData>) => queryOptions<GetRoomsByRoomIdGameLegalMovesAllResponse, DefaultError, GetRoomsByRoomIdGameLegalMovesAllResponse, ReturnType<typeof getRoomsByRoomIdGameLegalMovesAllQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRoomsByRoomIdGameLegalMovesAll({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsByRoomIdGameLegalMovesAllQueryKey(options)
+});
+
+export const getRoomsByRoomIdGameHistoryQueryKey = (options: Options<GetRoomsByRoomIdGameHistoryData>) => createQueryKey('getRoomsByRoomIdGameHistory', options);
+
+export const getRoomsByRoomIdGameHistoryOptions = (options: Options<GetRoomsByRoomIdGameHistoryData>) => queryOptions<GetRoomsByRoomIdGameHistoryResponse, DefaultError, GetRoomsByRoomIdGameHistoryResponse, ReturnType<typeof getRoomsByRoomIdGameHistoryQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRoomsByRoomIdGameHistory({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsByRoomIdGameHistoryQueryKey(options)
 });
 
 export const postRoomsByRoomIdGameStartMutation = (options?: Partial<Options<PostRoomsByRoomIdGameStartData>>): UseMutationOptions<PostRoomsByRoomIdGameStartResponse, DefaultError, Options<PostRoomsByRoomIdGameStartData>> => {
@@ -82,54 +185,6 @@ export const postRoomsByRoomIdGameResetMutation = (options?: Partial<Options<Pos
     return mutationOptions;
 };
 
-export const getRoomsByRoomIdGameBoardQueryKey = (options: Options<GetRoomsByRoomIdGameBoardData>) => createQueryKey('getRoomsByRoomIdGameBoard', options);
-
-export const getRoomsByRoomIdGameBoardOptions = (options: Options<GetRoomsByRoomIdGameBoardData>) => queryOptions<GetRoomsByRoomIdGameBoardResponse, DefaultError, GetRoomsByRoomIdGameBoardResponse, ReturnType<typeof getRoomsByRoomIdGameBoardQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRoomsByRoomIdGameBoard({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getRoomsByRoomIdGameBoardQueryKey(options)
-});
-
-export const getRoomsByRoomIdGameLegalMovesQueryKey = (options: Options<GetRoomsByRoomIdGameLegalMovesData>) => createQueryKey('getRoomsByRoomIdGameLegalMoves', options);
-
-/**
- * @deprecated
- */
-export const getRoomsByRoomIdGameLegalMovesOptions = (options: Options<GetRoomsByRoomIdGameLegalMovesData>) => queryOptions<GetRoomsByRoomIdGameLegalMovesResponse, DefaultError, GetRoomsByRoomIdGameLegalMovesResponse, ReturnType<typeof getRoomsByRoomIdGameLegalMovesQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRoomsByRoomIdGameLegalMoves({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getRoomsByRoomIdGameLegalMovesQueryKey(options)
-});
-
-export const getRoomsByRoomIdGameLegalMovesAllQueryKey = (options: Options<GetRoomsByRoomIdGameLegalMovesAllData>) => createQueryKey('getRoomsByRoomIdGameLegalMovesAll', options);
-
-export const getRoomsByRoomIdGameLegalMovesAllOptions = (options: Options<GetRoomsByRoomIdGameLegalMovesAllData>) => queryOptions<GetRoomsByRoomIdGameLegalMovesAllResponse, DefaultError, GetRoomsByRoomIdGameLegalMovesAllResponse, ReturnType<typeof getRoomsByRoomIdGameLegalMovesAllQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRoomsByRoomIdGameLegalMovesAll({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getRoomsByRoomIdGameLegalMovesAllQueryKey(options)
-});
-
 export const postRoomsByRoomIdGameMovesMutation = (options?: Partial<Options<PostRoomsByRoomIdGameMovesData>>): UseMutationOptions<PostRoomsByRoomIdGameMovesResponse, DefaultError, Options<PostRoomsByRoomIdGameMovesData>> => {
     const mutationOptions: UseMutationOptions<PostRoomsByRoomIdGameMovesResponse, DefaultError, Options<PostRoomsByRoomIdGameMovesData>> = {
         mutationFn: async (fnOptions) => {
@@ -143,21 +198,6 @@ export const postRoomsByRoomIdGameMovesMutation = (options?: Partial<Options<Pos
     };
     return mutationOptions;
 };
-
-export const getRoomsByRoomIdGameHistoryQueryKey = (options: Options<GetRoomsByRoomIdGameHistoryData>) => createQueryKey('getRoomsByRoomIdGameHistory', options);
-
-export const getRoomsByRoomIdGameHistoryOptions = (options: Options<GetRoomsByRoomIdGameHistoryData>) => queryOptions<GetRoomsByRoomIdGameHistoryResponse, DefaultError, GetRoomsByRoomIdGameHistoryResponse, ReturnType<typeof getRoomsByRoomIdGameHistoryQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRoomsByRoomIdGameHistory({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getRoomsByRoomIdGameHistoryQueryKey(options)
-});
 
 export const postRoomsByRoomIdGameResignMutation = (options?: Partial<Options<PostRoomsByRoomIdGameResignData>>): UseMutationOptions<PostRoomsByRoomIdGameResignResponse, DefaultError, Options<PostRoomsByRoomIdGameResignData>> => {
     const mutationOptions: UseMutationOptions<PostRoomsByRoomIdGameResignResponse, DefaultError, Options<PostRoomsByRoomIdGameResignData>> = {
@@ -228,61 +268,3 @@ export const postRoomsByRoomIdGameDrawClaimFiftyMutation = (options?: Partial<Op
     };
     return mutationOptions;
 };
-
-export const getRoomsQueryKey = (options?: Options<GetRoomsData>) => createQueryKey('getRooms', options);
-
-export const getRoomsOptions = (options?: Options<GetRoomsData>) => queryOptions<GetRoomsResponse, DefaultError, GetRoomsResponse, ReturnType<typeof getRoomsQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRooms({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getRoomsQueryKey(options)
-});
-
-export const postRoomsMutation = (options?: Partial<Options<PostRoomsData>>): UseMutationOptions<PostRoomsResponse, DefaultError, Options<PostRoomsData>> => {
-    const mutationOptions: UseMutationOptions<PostRoomsResponse, DefaultError, Options<PostRoomsData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await postRooms({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const postRoomsByRoomIdJoinMutation = (options?: Partial<Options<PostRoomsByRoomIdJoinData>>): UseMutationOptions<PostRoomsByRoomIdJoinResponse, DefaultError, Options<PostRoomsByRoomIdJoinData>> => {
-    const mutationOptions: UseMutationOptions<PostRoomsByRoomIdJoinResponse, DefaultError, Options<PostRoomsByRoomIdJoinData>> = {
-        mutationFn: async (fnOptions) => {
-            const { data } = await postRoomsByRoomIdJoin({
-                ...options,
-                ...fnOptions,
-                throwOnError: true
-            });
-            return data;
-        }
-    };
-    return mutationOptions;
-};
-
-export const getRoomsByRoomIdQueryKey = (options: Options<GetRoomsByRoomIdData>) => createQueryKey('getRoomsByRoomId', options);
-
-export const getRoomsByRoomIdOptions = (options: Options<GetRoomsByRoomIdData>) => queryOptions<GetRoomsByRoomIdResponse, DefaultError, GetRoomsByRoomIdResponse, ReturnType<typeof getRoomsByRoomIdQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getRoomsByRoomId({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getRoomsByRoomIdQueryKey(options)
-});

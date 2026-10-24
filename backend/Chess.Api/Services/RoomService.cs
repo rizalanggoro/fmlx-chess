@@ -16,7 +16,7 @@ public class RoomService(
     ILogger<RoomService> logger
 ) : IRoomService
 {
-    public GameRoom Create(RoomMode mode)
+    public Room Create(RoomMode mode)
     {
         string roomId;
         do
@@ -30,7 +30,7 @@ public class RoomService(
             new Player("Black", PieceColor.Black),
             TimeSpan.FromMinutes(10)
         );
-        var room = new GameRoom(roomId, mode, manager);
+        var room = new Room(roomId, mode, manager);
 
         manager.SnapshotChangedEventHandler += (_, e) => NotifySnapshot(room, e);
         manager.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
@@ -45,12 +45,12 @@ public class RoomService(
         return room;
     }
 
-    public GameRoom? FindRoom(string roomId)
+    public Room? FindRoom(string roomId)
     {
         return registry.Find(roomId);
     }
 
-    public bool Claim(GameRoom room, PieceColor color, string? name = null)
+    public bool Claim(Room room, PieceColor color, string? name = null)
     {
         if (color == PieceColor.White)
         {
@@ -86,7 +86,7 @@ public class RoomService(
         _ = SendSafeAsync(GameGroups.Lobby, "LobbyChanged", new LobbyChangedDto(AvailableRooms()));
     }
 
-    private void NotifySnapshot(GameRoom room, SnapshotChangedEventArgs e)
+    private void NotifySnapshot(Room room, SnapshotChangedEventArgs e)
     {
         var board = new List<TileDto>(64);
         for (var r = 0; r < 8; r++)

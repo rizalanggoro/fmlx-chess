@@ -12,7 +12,7 @@ public record RoomStatusDto(
     string? BlackName = null
 )
 {
-    public static RoomStatusDto FromGameRoom(GameRoom room)
+    public static RoomStatusDto FromGameRoom(Room room)
     {
         return new RoomStatusDto(
             room.Id, room.Mode,

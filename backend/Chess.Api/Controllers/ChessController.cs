@@ -110,25 +110,6 @@ public class ChessController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpGet("{roomId}/game/legal-moves")]
-    [Obsolete("Use GET legal-moves/all instead.")]
-    public ActionResult<IEnumerable<Move>> GetLegalMoves(string roomId, [FromQuery] int column, [FromQuery] int row)
-    {
-        try
-        {
-            if (roomService.FindRoom(roomId) is not { } room)
-                return RoomNotFound();
-            var from = new Position(row, column);
-            if (!room.Engine.IsInBounds(from))
-                return BadRequest(new ApiErrorDto("Position out of bounds"));
-            return Ok(room.Engine.GetAllLegalMoves().Where(m => m.From.Equals(from)));
-        }
-        catch (Exception ex)
-        {
-            return Error(ex, "An error occurred while retrieving legal moves");
-        }
-    }
-
     [HttpGet("{roomId}/game/legal-moves/all")]
     public ActionResult<LegalMovesDto> GetAllLegalMoves(string roomId)
     {
@@ -322,7 +303,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
         return string.IsNullOrEmpty(trimmed) ? null : trimmed[..Math.Min(trimmed.Length, 24)];
     }
 
-    private static IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request)
+    private static IPlayer? ResolvePlayer(Room room, PlayerActionRequest request)
     {
         if (room.Mode == RoomMode.Online && !room.IsJoined(request.Color))
             return null;

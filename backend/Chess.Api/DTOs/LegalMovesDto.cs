@@ -8,7 +8,7 @@ public record LegalMovesDto(
     int MoveCount,
     IReadOnlyList<Move> Moves)
 {
-    public static LegalMovesDto FromGameRoom(GameRoom room)
+    public static LegalMovesDto FromGameRoom(Room room)
     {
         var manager = room.Engine;
         var moves = manager.State == GameState.InProgress

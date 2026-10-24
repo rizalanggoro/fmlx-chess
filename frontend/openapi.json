@@ -5,88 +5,202 @@
     "version": "1.0"
   },
   "paths": {
+    "/rooms": {
+      "post": {
+        "tags": [
+          "Chess"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateRoomRequest"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateRoomRequest"
+                  }
+                ]
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/CreateRoomRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSessionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSessionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSessionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Chess"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomStatusDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomStatusDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoomStatusDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/join": {
+      "post": {
+        "tags": [
+          "Chess"
+        ],
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "color",
+            "in": "query",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/PieceColor"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSessionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSessionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomSessionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}": {
+      "get": {
+        "tags": [
+          "Chess"
+        ],
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomStatusDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomStatusDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoomStatusDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/rooms/{roomId}/game": {
       "get": {
         "tags": [
-          "Game"
-        ],
-        "parameters": [
-          {
-            "name": "roomId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameStateDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameStateDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameStateDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/rooms/{roomId}/game/start": {
-      "post": {
-        "tags": [
-          "Game"
-        ],
-        "parameters": [
-          {
-            "name": "roomId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameStateDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameStateDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GameStateDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/rooms/{roomId}/game/reset": {
-      "post": {
-        "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -125,7 +239,7 @@
     "/rooms/{roomId}/game/board": {
       "get": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -170,10 +284,49 @@
         }
       }
     },
-    "/rooms/{roomId}/game/legal-moves": {
+    "/rooms/{roomId}/game/legal-moves/all": {
       "get": {
         "tags": [
-          "Game"
+          "Chess"
+        ],
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalMovesDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalMovesDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalMovesDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/game/history": {
+      "get": {
+        "tags": [
+          "Chess"
         ],
         "parameters": [
           {
@@ -185,19 +338,14 @@
             }
           },
           {
-            "name": "column",
+            "name": "color",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          },
-          {
-            "name": "row",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/PieceColor"
+                }
+              ]
             }
           }
         ],
@@ -209,7 +357,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Move"
+                    "$ref": "#/components/schemas/MoveHistoryEntry"
                   }
                 }
               },
@@ -217,7 +365,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Move"
+                    "$ref": "#/components/schemas/MoveHistoryEntry"
                   }
                 }
               },
@@ -225,20 +373,19 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Move"
+                    "$ref": "#/components/schemas/MoveHistoryEntry"
                   }
                 }
               }
             }
           }
-        },
-        "deprecated": true
+        }
       }
     },
-    "/rooms/{roomId}/game/legal-moves/all": {
-      "get": {
+    "/rooms/{roomId}/game/start": {
+      "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -256,17 +403,56 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/LegalMovesDto"
+                  "$ref": "#/components/schemas/GameStateDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LegalMovesDto"
+                  "$ref": "#/components/schemas/GameStateDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LegalMovesDto"
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rooms/{roomId}/game/reset": {
+      "post": {
+        "tags": [
+          "Chess"
+        ],
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameStateDto"
                 }
               }
             }
@@ -277,7 +463,7 @@
     "/rooms/{roomId}/game/moves": {
       "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -355,69 +541,10 @@
         }
       }
     },
-    "/rooms/{roomId}/game/history": {
-      "get": {
-        "tags": [
-          "Game"
-        ],
-        "parameters": [
-          {
-            "name": "roomId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "color",
-            "in": "query",
-            "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/PieceColor"
-                }
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MoveHistoryEntry"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MoveHistoryEntry"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MoveHistoryEntry"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/rooms/{roomId}/game/resign": {
       "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -487,7 +614,7 @@
     "/rooms/{roomId}/game/draw/offer": {
       "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -557,7 +684,7 @@
     "/rooms/{roomId}/game/draw/respond": {
       "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -627,7 +754,7 @@
     "/rooms/{roomId}/game/draw/claim-threefold": {
       "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -697,7 +824,7 @@
     "/rooms/{roomId}/game/draw/claim-fifty": {
       "post": {
         "tags": [
-          "Game"
+          "Chess"
         ],
         "parameters": [
           {
@@ -757,198 +884,6 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GameStateDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/rooms": {
-      "post": {
-        "tags": [
-          "Rooms"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CreateRoomRequest"
-                  }
-                ]
-              }
-            },
-            "text/json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CreateRoomRequest"
-                  }
-                ]
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "allOf": [
-                  {
-                    "$ref": "#/components/schemas/CreateRoomRequest"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomSessionDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomSessionDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomSessionDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "tags": [
-          "Rooms"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RoomStatusDto"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RoomStatusDto"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/RoomStatusDto"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/rooms/{roomId}/join": {
-      "post": {
-        "tags": [
-          "Rooms"
-        ],
-        "parameters": [
-          {
-            "name": "roomId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "name",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "color",
-            "in": "query",
-            "schema": {
-              "allOf": [
-                {
-                  "$ref": "#/components/schemas/PieceColor"
-                }
-              ]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomSessionDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomSessionDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomSessionDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/rooms/{roomId}": {
-      "get": {
-        "tags": [
-          "Rooms"
-        ],
-        "parameters": [
-          {
-            "name": "roomId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomStatusDto"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomStatusDto"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RoomStatusDto"
                 }
               }
             }

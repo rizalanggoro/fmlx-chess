@@ -39,9 +39,6 @@ public interface IChessGameEngine
     IReadOnlyList<Move> GetAllLegalMoves();
     IReadOnlyList<TileDto> GetBoard();
 
-    [Obsolete("Use GetAllLegalMoves() and filter by Move.From.")]
-    IReadOnlyList<Move> GetLegalMoves(Position from);
-
     IReadOnlyList<MoveHistoryEntry> GetMoveHistory(PieceColor color);
     void OfferDraw(IPlayer offerer);
     void RespondToDrawOffer(IPlayer responder, bool accepted);

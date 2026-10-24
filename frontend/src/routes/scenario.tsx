@@ -15,7 +15,7 @@ import { REASONS } from '@/constants/chess'
 import {
   getRoomsByRoomIdGameBoardOptions,
   getRoomsByRoomIdGameHistoryOptions,
-  getRoomsByRoomIdGameLegalMovesOptions,
+  getRoomsByRoomIdGameLegalMovesAllOptions,
   getRoomsByRoomIdGameOptions,
   postRoomsByRoomIdGameMoves,
   type Move,
@@ -93,10 +93,7 @@ function ScenarioPage() {
     enabled: !!roomId,
   })
   const { data: legal } = useQuery({
-    ...getRoomsByRoomIdGameLegalMovesOptions({
-      path: { roomId: queryRoomId },
-      query: { column: selected?.column, row: selected?.row },
-    }),
+    ...getRoomsByRoomIdGameLegalMovesAllOptions({ path: { roomId: queryRoomId } }),
     enabled: !!roomId && selected !== null,
   })
 
@@ -105,7 +102,11 @@ function ScenarioPage() {
     [activeId],
   )
   const outcome = outcomes[active.id]
-  const targets = new Set((legal ?? []).map((move) => `${move.to.column},${move.to.row}`))
+  const targets = new Set(
+    (legal?.moves ?? [])
+      .filter((move) => same(selected, move.from))
+      .map((move) => `${move.to.column},${move.to.row}`),
+  )
   const passed = Object.values(outcomes).filter((result) => result.pass).length
 
   const refresh = async () => {
