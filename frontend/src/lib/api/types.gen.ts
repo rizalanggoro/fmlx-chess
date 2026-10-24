@@ -61,6 +61,11 @@ export type GameStateDto = {
     capturedByBlack: Array<PieceType>;
 };
 
+export type LegalMovesDto = {
+    moveCount: number;
+    moves: Array<Move>;
+};
+
 export type LobbyChangedDto = {
     rooms: Array<RoomStatusDto>;
 };
@@ -125,6 +130,7 @@ export type SnapshotChangedDto = {
     state: GameStateDto;
     board: Array<TileDto>;
     history: Array<MoveHistoryEntry>;
+    legalMoves: LegalMovesDto;
 };
 
 export type TileDto = {
@@ -232,6 +238,24 @@ export type GetRoomsByRoomIdGameLegalMovesResponses = {
 };
 
 export type GetRoomsByRoomIdGameLegalMovesResponse = GetRoomsByRoomIdGameLegalMovesResponses[keyof GetRoomsByRoomIdGameLegalMovesResponses];
+
+export type GetRoomsByRoomIdGameLegalMovesAllData = {
+    body?: never;
+    path: {
+        roomId: string;
+    };
+    query?: never;
+    url: '/rooms/{roomId}/game/legal-moves/all';
+};
+
+export type GetRoomsByRoomIdGameLegalMovesAllResponses = {
+    /**
+     * OK
+     */
+    200: LegalMovesDto;
+};
+
+export type GetRoomsByRoomIdGameLegalMovesAllResponse = GetRoomsByRoomIdGameLegalMovesAllResponses[keyof GetRoomsByRoomIdGameLegalMovesAllResponses];
 
 export type PostRoomsByRoomIdGameMovesData = {
     body?: Move;

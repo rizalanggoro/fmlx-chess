@@ -163,7 +163,7 @@ public class GameManager : IGameManager
         var piece = GetPieceAt(move.From);
         if (piece is null || piece.Color != CurrentPlayer.Color)
             return false;
-        var legal = GetLegalMoves(move.From);
+        var legal = GetLegalMovesFrom(move.From);
         Move? chosen = null;
         foreach (var m in legal)
         {
@@ -241,7 +241,37 @@ public class GameManager : IGameManager
         return pos.Column is >= 0 and < 8 && pos.Row is >= 0 and < 8;
     }
 
+    /// <summary>
+    ///     Returns every legal move available to the side to move, across all
+    ///     its pieces. The frontend prefetches this once per position so a
+    ///     piece selection can be resolved without another request.
+    /// </summary>
+    public IReadOnlyList<Move> GetAllLegalMoves()
+    {
+        var legal = new List<Move>();
+        for (var row = 0; row < 8; row++)
+        for (var column = 0; column < 8; column++)
+        {
+            var piece = GameBoard.Tiles[row, column].Piece;
+            if (piece is null || piece.Color != CurrentPlayer.Color)
+                continue;
+            legal.AddRange(GetLegalMovesFrom(new Position(row, column)));
+        }
+
+        return legal;
+    }
+
+    /// <summary>
+    ///     Kept for parity with the class diagram. Use
+    ///     <see cref="GetAllLegalMoves" /> and filter by <see cref="Move.From" />.
+    /// </summary>
+    [Obsolete("Use GetAllLegalMoves() and filter by Move.From.")]
     public IReadOnlyList<Move> GetLegalMoves(Position from)
+    {
+        return GetLegalMovesFrom(from);
+    }
+
+    private IReadOnlyList<Move> GetLegalMovesFrom(Position from)
     {
         if (!IsInBounds(from))
             return Array.Empty<Move>();

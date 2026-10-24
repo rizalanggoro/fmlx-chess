@@ -18,7 +18,7 @@ import {
   getRoomsByRoomId,
   getRoomsByRoomIdGameBoardOptions,
   getRoomsByRoomIdGameHistoryOptions,
-  getRoomsByRoomIdGameLegalMovesOptions,
+  getRoomsByRoomIdGameLegalMovesAllOptions,
   getRoomsByRoomIdGameOptions,
   getRoomsByRoomIdOptions,
   postRoomsByRoomIdGameDrawOfferMutation,
@@ -119,11 +119,8 @@ function Room() {
     data: legal,
     isPending: legalPending
   } = useQuery({
-    ...getRoomsByRoomIdGameLegalMovesOptions({
-      path: { roomId },
-      query: { column: activeSquare?.column, row: activeSquare?.row },
-    }),
-    enabled: activeSquare !== null,
+    ...getRoomsByRoomIdGameLegalMovesAllOptions({ path: { roomId } }),
+    enabled: state?.state === 'InProgress',
   })
 
   const {
@@ -180,8 +177,14 @@ function Room() {
     )
 
   const pieces = new Map((board ?? []).map((t) => [`${t.column},${t.row}`, t]))
-  const targets = new Set((legal ?? []).map((m) => `${m.to.column},${m.to.row}`))
-  // Bidak yang sedang ditanyakan langkah legalnya: ditampilkan spinner di kotaknya.
+  // Daftar langkah sisi yang sedang jalan; dipakai hanya kalau versinya cocok dengan state.
+  const allLegalMoves =
+    legal && legal.moveCount === state?.moveCount ? legal.moves : []
+  const selectedMoves = activeSquare
+    ? allLegalMoves.filter((m) => same(m.from, activeSquare))
+    : []
+  const targets = new Set(selectedMoves.map((m) => `${m.to.column},${m.to.row}`))
+  // Spinner hanya saat prefetch awal belum selesai; setelah snapshot masuk daftar sudah ada.
   const loadingSquare =
     legalPending && activeSquare && pieces.get(`${activeSquare.column},${activeSquare.row}`)?.type
       ? activeSquare
@@ -205,7 +208,7 @@ function Room() {
     const key = `${sq.column},${sq.row}`
     if (activeSquare && targets.has(key)) {
       // Server menandai langkah promosi lewat PromotionType; pilih dulu sebelum kirim move.
-      const options = (legal ?? []).flatMap((m) =>
+      const options = selectedMoves.flatMap((m) =>
         same(m.to, sq) && m.promotionType ? [m.promotionType] : [],
       )
       if (options.length > 0) {

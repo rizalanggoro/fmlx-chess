@@ -76,6 +76,7 @@ public class GameController(IRoomService roomService) : ControllerBase
     }
 
     [HttpGet("legal-moves")]
+    [Obsolete("Use GET legal-moves/all instead.")]
     public ActionResult<IEnumerable<Move>> GetLegalMoves(string roomId, [FromQuery] int column, [FromQuery] int row)
     {
         try
@@ -85,7 +86,22 @@ public class GameController(IRoomService roomService) : ControllerBase
             var from = new Position(row, column);
             if (!room.Manager.IsInBounds(from))
                 return BadRequest(new ApiErrorDto("Position out of bounds"));
-            return Ok(room.Manager.GetLegalMoves(from));
+            return Ok(room.Manager.GetAllLegalMoves().Where(m => m.From.Equals(from)));
+        }
+        catch (Exception ex)
+        {
+            return Error(ex, "An error occurred while retrieving legal moves");
+        }
+    }
+
+    [HttpGet("legal-moves/all")]
+    public ActionResult<LegalMovesDto> GetAllLegalMoves(string roomId)
+    {
+        try
+        {
+            if (roomService.FindRoom(roomId) is not { } room)
+                return RoomNotFound();
+            return Ok(LegalMovesDto.FromGameRoom(room));
         }
         catch (Exception ex)
         {

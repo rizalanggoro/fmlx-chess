@@ -7,5 +7,6 @@ public record SnapshotChangedDto(
     RoomStatusDto Room,
     GameStateDto State,
     IReadOnlyList<TileDto> Board,
-    IReadOnlyList<MoveHistoryEntry> History
+    IReadOnlyList<MoveHistoryEntry> History,
+    LegalMovesDto LegalMoves
 );

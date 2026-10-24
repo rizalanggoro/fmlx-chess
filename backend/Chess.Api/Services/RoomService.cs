@@ -103,7 +103,8 @@ public class RoomService(
                 RoomStatusDto.FromGameRoom(room),
                 GameStateDto.FromGameRoom(room),
                 board,
-                e.History)
+                e.History,
+                LegalMovesDto.FromGameRoom(room))
         );
     }
 

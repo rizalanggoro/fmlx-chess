@@ -231,6 +231,46 @@
               }
             }
           }
+        },
+        "deprecated": true
+      }
+    },
+    "/rooms/{roomId}/game/legal-moves/all": {
+      "get": {
+        "tags": [
+          "Game"
+        ],
+        "parameters": [
+          {
+            "name": "roomId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalMovesDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalMovesDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalMovesDto"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1187,6 +1227,26 @@
         },
         "additionalProperties": false
       },
+      "LegalMovesDto": {
+        "required": [
+          "moveCount",
+          "moves"
+        ],
+        "type": "object",
+        "properties": {
+          "moveCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "moves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Move"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "LobbyChangedDto": {
         "required": [
           "rooms"
@@ -1441,6 +1501,7 @@
         "required": [
           "board",
           "history",
+          "legalMoves",
           "room",
           "roomId",
           "state"
@@ -1475,6 +1536,13 @@
             "items": {
               "$ref": "#/components/schemas/MoveHistoryEntry"
             }
+          },
+          "legalMoves": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LegalMovesDto"
+              }
+            ]
           }
         },
         "additionalProperties": false

@@ -1,6 +1,7 @@
 import {
   getRoomsByRoomIdGameBoardQueryKey,
   getRoomsByRoomIdGameHistoryQueryKey,
+  getRoomsByRoomIdGameLegalMovesAllQueryKey,
   getRoomsByRoomIdGameQueryKey,
   getRoomsByRoomIdQueryKey,
   type SnapshotChangedDto,
@@ -20,6 +21,10 @@ export function useRoomSnapshot(roomId: string) {
       qc.setQueryData(getRoomsByRoomIdGameQueryKey({ path: { roomId } }), event.state)
       qc.setQueryData(getRoomsByRoomIdGameBoardQueryKey({ path: { roomId } }), event.board)
       qc.setQueryData(getRoomsByRoomIdGameHistoryQueryKey({ path: { roomId } }), event.history)
+      qc.setQueryData(
+        getRoomsByRoomIdGameLegalMovesAllQueryKey({ path: { roomId } }),
+        event.legalMoves,
+      )
     }
 
     connection.on('SnapshotChanged', onSnapshot)

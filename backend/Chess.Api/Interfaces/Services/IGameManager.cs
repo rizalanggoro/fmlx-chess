@@ -35,6 +35,9 @@ public interface IGameManager
     void ResetGame();
     bool TryMakeMove(Move move);
     bool IsInBounds(Position position);
+    IReadOnlyList<Move> GetAllLegalMoves();
+
+    [Obsolete("Use GetAllLegalMoves() and filter by Move.From.")]
     IReadOnlyList<Move> GetLegalMoves(Position from);
     IReadOnlyList<MoveHistoryEntry> GetMoveHistory(PieceColor color);
     void OfferDraw(IPlayer offerer);

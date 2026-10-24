@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { getRooms, getRoomsByRoomId, getRoomsByRoomIdGame, getRoomsByRoomIdGameBoard, getRoomsByRoomIdGameHistory, getRoomsByRoomIdGameLegalMoves, type Options, postRooms, postRoomsByRoomIdGameDrawClaimFifty, postRoomsByRoomIdGameDrawClaimThreefold, postRoomsByRoomIdGameDrawOffer, postRoomsByRoomIdGameDrawRespond, postRoomsByRoomIdGameMoves, postRoomsByRoomIdGameReset, postRoomsByRoomIdGameResign, postRoomsByRoomIdGameStart, postRoomsByRoomIdJoin } from '../sdk.gen';
-import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponse, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponse, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponse, GetRoomsByRoomIdGameResponse, GetRoomsByRoomIdResponse, GetRoomsData, GetRoomsResponse, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponse, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponse, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponse, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponse, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponse, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponse, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponse, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponse, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponse, PostRoomsData, PostRoomsResponse } from '../types.gen';
+import { getRooms, getRoomsByRoomId, getRoomsByRoomIdGame, getRoomsByRoomIdGameBoard, getRoomsByRoomIdGameHistory, getRoomsByRoomIdGameLegalMoves, getRoomsByRoomIdGameLegalMovesAll, type Options, postRooms, postRoomsByRoomIdGameDrawClaimFifty, postRoomsByRoomIdGameDrawClaimThreefold, postRoomsByRoomIdGameDrawOffer, postRoomsByRoomIdGameDrawRespond, postRoomsByRoomIdGameMoves, postRoomsByRoomIdGameReset, postRoomsByRoomIdGameResign, postRoomsByRoomIdGameStart, postRoomsByRoomIdJoin } from '../sdk.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponse, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponse, GetRoomsByRoomIdGameLegalMovesAllData, GetRoomsByRoomIdGameLegalMovesAllResponse, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponse, GetRoomsByRoomIdGameResponse, GetRoomsByRoomIdResponse, GetRoomsData, GetRoomsResponse, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponse, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponse, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponse, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponse, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponse, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponse, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponse, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponse, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponse, PostRoomsData, PostRoomsResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -99,6 +99,9 @@ export const getRoomsByRoomIdGameBoardOptions = (options: Options<GetRoomsByRoom
 
 export const getRoomsByRoomIdGameLegalMovesQueryKey = (options: Options<GetRoomsByRoomIdGameLegalMovesData>) => createQueryKey('getRoomsByRoomIdGameLegalMoves', options);
 
+/**
+ * @deprecated
+ */
 export const getRoomsByRoomIdGameLegalMovesOptions = (options: Options<GetRoomsByRoomIdGameLegalMovesData>) => queryOptions<GetRoomsByRoomIdGameLegalMovesResponse, DefaultError, GetRoomsByRoomIdGameLegalMovesResponse, ReturnType<typeof getRoomsByRoomIdGameLegalMovesQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
         const { data } = await getRoomsByRoomIdGameLegalMoves({
@@ -110,6 +113,21 @@ export const getRoomsByRoomIdGameLegalMovesOptions = (options: Options<GetRoomsB
         return data;
     },
     queryKey: getRoomsByRoomIdGameLegalMovesQueryKey(options)
+});
+
+export const getRoomsByRoomIdGameLegalMovesAllQueryKey = (options: Options<GetRoomsByRoomIdGameLegalMovesAllData>) => createQueryKey('getRoomsByRoomIdGameLegalMovesAll', options);
+
+export const getRoomsByRoomIdGameLegalMovesAllOptions = (options: Options<GetRoomsByRoomIdGameLegalMovesAllData>) => queryOptions<GetRoomsByRoomIdGameLegalMovesAllResponse, DefaultError, GetRoomsByRoomIdGameLegalMovesAllResponse, ReturnType<typeof getRoomsByRoomIdGameLegalMovesAllQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getRoomsByRoomIdGameLegalMovesAll({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getRoomsByRoomIdGameLegalMovesAllQueryKey(options)
 });
 
 export const postRoomsByRoomIdGameMovesMutation = (options?: Partial<Options<PostRoomsByRoomIdGameMovesData>>): UseMutationOptions<PostRoomsByRoomIdGameMovesResponse, DefaultError, Options<PostRoomsByRoomIdGameMovesData>> => {

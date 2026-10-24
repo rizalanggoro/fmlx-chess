@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, GetRoomsData, GetRoomsResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
+import type { GetRoomsByRoomIdData, GetRoomsByRoomIdGameBoardData, GetRoomsByRoomIdGameBoardResponses, GetRoomsByRoomIdGameData, GetRoomsByRoomIdGameHistoryData, GetRoomsByRoomIdGameHistoryResponses, GetRoomsByRoomIdGameLegalMovesAllData, GetRoomsByRoomIdGameLegalMovesAllResponses, GetRoomsByRoomIdGameLegalMovesData, GetRoomsByRoomIdGameLegalMovesResponses, GetRoomsByRoomIdGameResponses, GetRoomsByRoomIdResponses, GetRoomsData, GetRoomsResponses, PostRoomsByRoomIdGameDrawClaimFiftyData, PostRoomsByRoomIdGameDrawClaimFiftyResponses, PostRoomsByRoomIdGameDrawClaimThreefoldData, PostRoomsByRoomIdGameDrawClaimThreefoldResponses, PostRoomsByRoomIdGameDrawOfferData, PostRoomsByRoomIdGameDrawOfferResponses, PostRoomsByRoomIdGameDrawRespondData, PostRoomsByRoomIdGameDrawRespondResponses, PostRoomsByRoomIdGameMovesData, PostRoomsByRoomIdGameMovesResponses, PostRoomsByRoomIdGameResetData, PostRoomsByRoomIdGameResetResponses, PostRoomsByRoomIdGameResignData, PostRoomsByRoomIdGameResignResponses, PostRoomsByRoomIdGameStartData, PostRoomsByRoomIdGameStartResponses, PostRoomsByRoomIdJoinData, PostRoomsByRoomIdJoinResponses, PostRoomsData, PostRoomsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -26,7 +26,12 @@ export const postRoomsByRoomIdGameReset = <ThrowOnError extends boolean = false>
 
 export const getRoomsByRoomIdGameBoard = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameBoardData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameBoardResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/board', ...options });
 
+/**
+ * @deprecated
+ */
 export const getRoomsByRoomIdGameLegalMoves = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameLegalMovesData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameLegalMovesResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameLegalMovesResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/legal-moves', ...options });
+
+export const getRoomsByRoomIdGameLegalMovesAll = <ThrowOnError extends boolean = false>(options: Options<GetRoomsByRoomIdGameLegalMovesAllData, ThrowOnError>): RequestResult<GetRoomsByRoomIdGameLegalMovesAllResponses, unknown, ThrowOnError> => (options.client ?? client).get<GetRoomsByRoomIdGameLegalMovesAllResponses, unknown, ThrowOnError>({ url: '/rooms/{roomId}/game/legal-moves/all', ...options });
 
 export const postRoomsByRoomIdGameMoves = <ThrowOnError extends boolean = false>(options: Options<PostRoomsByRoomIdGameMovesData, ThrowOnError>): RequestResult<PostRoomsByRoomIdGameMovesResponses, unknown, ThrowOnError> => (options.client ?? client).post<PostRoomsByRoomIdGameMovesResponses, unknown, ThrowOnError>({
     url: '/rooms/{roomId}/game/moves',
