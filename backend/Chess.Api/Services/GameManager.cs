@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Api.Constants;
+using Api.DTOs;
 using Api.Enums;
 using Api.Events;
 using Api.Interfaces.Models;
@@ -73,6 +74,7 @@ public class GameManager : IGameManager
             return null;
         }
     }
+
     public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
 
     /// <summary>
@@ -439,6 +441,24 @@ public class GameManager : IGameManager
         );
         EnPassantTarget = null;
     }
+
+    /// <summary>
+    ///     Returns the board as 64 <see cref="TileDto" /> rows/columns, the shape
+    ///     the HTTP board endpoint and the snapshot payload both send to clients.
+    /// </summary>
+    public IReadOnlyList<TileDto> GetBoard()
+    {
+        var tiles = new List<TileDto>(64);
+        for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
+        {
+            var piece = GameBoard.Tiles[r, c].Piece;
+            tiles.Add(new TileDto(r, c, piece?.Color, piece?.Type));
+        }
+
+        return tiles;
+    }
+
 
     public IChessTile GetTileAt(Position pos)
     {
@@ -1044,9 +1064,9 @@ public class GameManager : IGameManager
     /// <summary>
     ///     Builds a compact key for the current position (piece placement, side
     ///     to move, castling rights, en passant target) used to detect repeated
-    ///     positions. 
+    ///     positions.
     ///     Private because only GameManager itself calls it: it records the key
-    ///     and counts repeats in _positionHistory. 
+    ///     and counts repeats in _positionHistory.
     /// </summary>
     private string GeneratePositionKey(IBoard board, PieceColor sideToMove)
     {

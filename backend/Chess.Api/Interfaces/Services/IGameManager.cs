@@ -1,3 +1,4 @@
+using Api.DTOs;
 using Api.Enums;
 using Api.Events;
 using Api.Interfaces.Models;
@@ -36,6 +37,7 @@ public interface IGameManager
     bool TryMakeMove(Move move);
     bool IsInBounds(Position position);
     IReadOnlyList<Move> GetAllLegalMoves();
+    IReadOnlyList<TileDto> GetBoard();
 
     [Obsolete("Use GetAllLegalMoves() and filter by Move.From.")]
     IReadOnlyList<Move> GetLegalMoves(Position from);

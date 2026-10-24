@@ -60,14 +60,8 @@ public class GameController(IRoomService roomService) : ControllerBase
         {
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
-            var tiles = new List<TileDto>();
-            for (var r = 0; r < 8; r++)
-                for (var c = 0; c < 8; c++)
-                {
-                    var p = room.Manager.GameBoard.Tiles[r, c].Piece;
-                    tiles.Add(new TileDto(r, c, p?.Color, p?.Type));
-                }
-            return Ok(tiles);
+
+            return Ok(room.Manager.GetBoard());
         }
         catch (Exception ex)
         {
@@ -123,6 +117,7 @@ public class GameController(IRoomService roomService) : ControllerBase
                 if (color.Value != room.Manager.CurrentPlayer.Color)
                     return StatusCode(403, new ApiErrorDto("Not your turn"));
             }
+
             if (!room.Manager.TryMakeMove(move))
                 return BadRequest(new ApiErrorDto("Illegal move"));
             return Ok(GameStateDto.FromGameRoom(room));
