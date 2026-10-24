@@ -36,9 +36,9 @@ public record GameStateDto(
             CapturedTypes(manager, PieceColor.Black));
     }
 
-    private static IReadOnlyList<PieceType> CapturedTypes(IGameService manager, PieceColor color) =>
+    private static IReadOnlyList<PieceType> CapturedTypes(IGameManager manager, PieceColor color) =>
         manager.CapturedPiecesTracker[color].Select(p => p.Type).ToList();
 
-    private static int RemainingSeconds(IGameService manager, PieceColor color) =>
+    private static int RemainingSeconds(IGameManager manager, PieceColor color) =>
         (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
 }

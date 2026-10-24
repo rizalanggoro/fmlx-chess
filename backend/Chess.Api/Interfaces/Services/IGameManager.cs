@@ -6,7 +6,7 @@ using Api.ValueObjects;
 
 namespace Api.Interfaces.Services;
 
-public interface IGameService
+public interface IGameManager
 {
     IBoard GameBoard { get; }
     IPlayer CurrentPlayer { get; }

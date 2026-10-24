@@ -10,7 +10,7 @@ using Api.ValueObjects;
 
 namespace Api.Services;
 
-public class GameService : IGameService
+public class GameManager : IGameManager
 {
     private readonly IPlayer _blackPlayer;
 
@@ -30,7 +30,7 @@ public class GameService : IGameService
     private IPlayer? _drawOfferer;
     private int _halfMoveClock;
 
-    public GameService(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
+    public GameManager(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
     {
         GameBoard = board;
         _whitePlayer = whitePlayer;
@@ -79,7 +79,7 @@ public class GameService : IGameService
 
     /// <summary>
     ///     Remaining time per colour, held in a PlayerTimer model. The countdown
-    ///     logic does not live in PlayerTimer: GameService starts, stops, and
+    ///     logic does not live in PlayerTimer: GameManager starts, stops, and
     ///     ticks the clocks and ends the game on timeout. Ticks fire on
     ///     thread-pool threads via System.Threading.Timer.
     /// </summary>
@@ -1065,7 +1065,7 @@ public class GameService : IGameService
     ///     Builds a compact key for the current position (piece placement, side
     ///     to move, castling rights, en passant target) used to detect repeated
     ///     positions.
-    ///     Private because only GameService itself calls it: it records the key
+    ///     Private because only GameManager itself calls it: it records the key
     ///     and counts repeats in _positionHistory.
     /// </summary>
     private string GeneratePositionKey(IBoard board, PieceColor sideToMove)
@@ -1212,7 +1212,7 @@ public class GameService : IGameService
     ///     Tells whether the fifty-move rule can be claimed now, i.e. at least
     ///     fifty moves by each side have passed without a pawn move or capture.
     ///     The class diagram lists this as public, but it is private because
-    ///     only GameService itself consults it.
+    ///     only GameManager itself consults it.
     /// </summary>
     private bool IsFiftyMoveRuleClaimAvailable()
     {
@@ -1223,7 +1223,7 @@ public class GameService : IGameService
     ///     Tells whether the seventy-five-move rule applies automatically, i.e.
     ///     seventy-five moves by each side have passed without a pawn move or
     ///     capture. The class diagram lists this as public, but it is private
-    ///     because only GameService itself consults it.
+    ///     because only GameManager itself consults it.
     /// </summary>
     private bool IsSeventyFiveMoveRuleAutomatic()
     {
@@ -1247,7 +1247,7 @@ public class GameService : IGameService
 
     /// <summary>
     ///     Resets both clocks to the initial time and stops any running timer.
-    ///     PlayerTimer is only a model; restarting the countdown is GameService's
+    ///     PlayerTimer is only a model; restarting the countdown is GameManager's
     ///     job, so no timer logic lives in the model.
     /// </summary>
     private void ResetTimers()

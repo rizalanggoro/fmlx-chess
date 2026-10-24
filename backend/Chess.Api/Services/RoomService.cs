@@ -23,7 +23,7 @@ public class RoomService(
             roomId = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
         } while (registry.Find(roomId) is not null);
 
-        var manager = new GameService(
+        var manager = new GameManager(
             new Board(),
             new Player("White", PieceColor.White),
             new Player("Black", PieceColor.Black),
