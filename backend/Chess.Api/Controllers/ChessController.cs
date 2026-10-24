@@ -1,19 +1,93 @@
-using Api.Enums;
 using Api.DTOs;
 using Api.DTOs.Requests;
+using Api.Enums;
 using Api.Interfaces.Models;
 using Api.Interfaces.Services;
 using Api.Models;
+using Api.Utils;
 using Api.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Route("rooms/{roomId}/game")]
-public class GameController(IRoomService roomService) : ControllerBase
+[Route("rooms")]
+public class ChessController(IRoomService roomService) : ControllerBase
 {
+    #region Rooms
+
+    [HttpPost]
+    public ActionResult<RoomSessionDto> Create([FromBody] CreateRoomRequest request)
+    {
+        try
+        {
+            var room = roomService.Create(request.Mode);
+            if (room.Mode == RoomMode.HotSeat)
+            {
+                room.Manager.StartGame();
+                return Ok(new RoomSessionDto(room.Id, room.Mode, null));
+            }
+
+            var color = request.Color ?? PieceColor.White;
+
+            roomService.Claim(room, color, NameUtils.Normalize(request.PlayerName));
+            roomService.NotifyLobby();
+
+            return Ok(new RoomSessionDto(room.Id, room.Mode, color));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiErrorDto("An error occurred while creating the room", ex.Message));
+        }
+    }
+
     [HttpGet]
+    public ActionResult<IEnumerable<RoomStatusDto>> List()
+    {
+        return Ok(roomService.AvailableRooms());
+    }
+
+    [HttpPost("{roomId}/join")]
+    public ActionResult<RoomSessionDto> Join(string roomId, [FromQuery] string? name, [FromQuery] PieceColor? color)
+    {
+        try
+        {
+            if (roomService.FindRoom(roomId) is not { } room)
+                return NotFound(new ApiErrorDto("Room not found"));
+            if (room.Mode != RoomMode.Online)
+                return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
+            if (color is null)
+                return BadRequest(new ApiErrorDto("Color is required"));
+            if (!roomService.Claim(room, color.Value, NameUtils.Normalize(name)))
+                return Conflict(new ApiErrorDto(
+                    room is { WhiteJoined: true, BlackJoined: true } ? "Room is full" : "Seat is already taken"));
+            if (room.Manager.State == GameState.NotStarted)
+                room.Manager.StartGame();
+
+            roomService.NotifyLobby();
+
+            return Ok(new RoomSessionDto(room.Id, room.Mode, color));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new ApiErrorDto("An error occurred while joining the room", ex.Message));
+        }
+    }
+
+    [HttpGet("{roomId}")]
+    public ActionResult<RoomStatusDto> Status(string roomId)
+    {
+        if (roomService.FindRoom(roomId) is not { } room)
+            return NotFound(new ApiErrorDto("Room not found"));
+
+        return Ok(RoomStatusDto.FromGameRoom(room));
+    }
+
+    #endregion
+
+    #region Game state
+
+    [HttpGet("{roomId}/game")]
     public ActionResult<GameStateDto> GetState(string roomId)
     {
         if (roomService.FindRoom(roomId) is not { } room)
@@ -21,39 +95,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         return Ok(GameStateDto.FromGameRoom(room));
     }
 
-    [HttpPost("start")]
-    public ActionResult<GameStateDto> Start(string roomId)
-    {
-        try
-        {
-            if (roomService.FindRoom(roomId) is not { } room)
-                return RoomNotFound();
-            room.Manager.StartGame();
-            return Ok(GameStateDto.FromGameRoom(room));
-        }
-        catch (Exception ex)
-        {
-            return Error(ex, "An error occurred while starting the game");
-        }
-    }
-
-    [HttpPost("reset")]
-    public ActionResult<GameStateDto> Reset(string roomId)
-    {
-        try
-        {
-            if (roomService.FindRoom(roomId) is not { } room)
-                return RoomNotFound();
-            room.Manager.ResetGame();
-            return Ok(GameStateDto.FromGameRoom(room));
-        }
-        catch (Exception ex)
-        {
-            return Error(ex, "An error occurred while resetting the game");
-        }
-    }
-
-    [HttpGet("board")]
+    [HttpGet("{roomId}/game/board")]
     public ActionResult<IEnumerable<TileDto>> GetBoard(string roomId)
     {
         try
@@ -69,7 +111,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpGet("legal-moves")]
+    [HttpGet("{roomId}/game/legal-moves")]
     [Obsolete("Use GET legal-moves/all instead.")]
     public ActionResult<IEnumerable<Move>> GetLegalMoves(string roomId, [FromQuery] int column, [FromQuery] int row)
     {
@@ -88,7 +130,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpGet("legal-moves/all")]
+    [HttpGet("{roomId}/game/legal-moves/all")]
     public ActionResult<LegalMovesDto> GetAllLegalMoves(string roomId)
     {
         try
@@ -103,7 +145,58 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpPost("moves")]
+    [HttpGet("{roomId}/game/history")]
+    public ActionResult<IEnumerable<MoveHistoryEntry>> GetHistory(string roomId, [FromQuery] PieceColor? color)
+    {
+        try
+        {
+            if (roomService.FindRoom(roomId) is not { } room)
+                return RoomNotFound();
+            return Ok(color.HasValue ? room.Manager.GetMoveHistory(color.Value) : room.Manager.MoveHistory);
+        }
+        catch (Exception ex)
+        {
+            return Error(ex, "An error occurred while retrieving history");
+        }
+    }
+
+    #endregion
+
+    #region Game actions
+
+    [HttpPost("{roomId}/game/start")]
+    public ActionResult<GameStateDto> Start(string roomId)
+    {
+        try
+        {
+            if (roomService.FindRoom(roomId) is not { } room)
+                return RoomNotFound();
+            room.Manager.StartGame();
+            return Ok(GameStateDto.FromGameRoom(room));
+        }
+        catch (Exception ex)
+        {
+            return Error(ex, "An error occurred while starting the game");
+        }
+    }
+
+    [HttpPost("{roomId}/game/reset")]
+    public ActionResult<GameStateDto> Reset(string roomId)
+    {
+        try
+        {
+            if (roomService.FindRoom(roomId) is not { } room)
+                return RoomNotFound();
+            room.Manager.ResetGame();
+            return Ok(GameStateDto.FromGameRoom(room));
+        }
+        catch (Exception ex)
+        {
+            return Error(ex, "An error occurred while resetting the game");
+        }
+    }
+
+    [HttpPost("{roomId}/game/moves")]
     public ActionResult<GameStateDto> MakeMove(string roomId, [FromBody] Move move, [FromQuery] PieceColor? color)
     {
         try
@@ -128,22 +221,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpGet("history")]
-    public ActionResult<IEnumerable<MoveHistoryEntry>> GetHistory(string roomId, [FromQuery] PieceColor? color)
-    {
-        try
-        {
-            if (roomService.FindRoom(roomId) is not { } room)
-                return RoomNotFound();
-            return Ok(color.HasValue ? room.Manager.GetMoveHistory(color.Value) : room.Manager.MoveHistory);
-        }
-        catch (Exception ex)
-        {
-            return Error(ex, "An error occurred while retrieving history");
-        }
-    }
-
-    [HttpPost("resign")]
+    [HttpPost("{roomId}/game/resign")]
     public ActionResult<GameStateDto> Resign(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
@@ -161,7 +239,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpPost("draw/offer")]
+    [HttpPost("{roomId}/game/draw/offer")]
     public ActionResult<GameStateDto> OfferDraw(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
@@ -179,7 +257,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpPost("draw/respond")]
+    [HttpPost("{roomId}/game/draw/respond")]
     public ActionResult<GameStateDto> RespondToDraw(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
@@ -197,7 +275,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpPost("draw/claim-threefold")]
+    [HttpPost("{roomId}/game/draw/claim-threefold")]
     public ActionResult<GameStateDto> ClaimThreefold(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
@@ -216,7 +294,7 @@ public class GameController(IRoomService roomService) : ControllerBase
         }
     }
 
-    [HttpPost("draw/claim-fifty")]
+    [HttpPost("{roomId}/game/draw/claim-fifty")]
     public ActionResult<GameStateDto> ClaimFifty(string roomId, [FromBody] PlayerActionRequest request)
     {
         try
@@ -234,6 +312,10 @@ public class GameController(IRoomService roomService) : ControllerBase
             return Error(ex, "An error occurred while claiming the draw");
         }
     }
+
+    #endregion
+
+    #region Helpers
 
     private static IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request)
     {
@@ -256,4 +338,6 @@ public class GameController(IRoomService roomService) : ControllerBase
     {
         return StatusCode(500, new ApiErrorDto(message, ex.Message));
     }
+
+    #endregion
 }
