@@ -4,7 +4,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Api.Swagger;
 
-public class RequiredSchemaFilter : ISchemaFilter
+public abstract class RequiredSchemaFilter : ISchemaFilter
 {
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
@@ -15,7 +15,8 @@ public class RequiredSchemaFilter : ISchemaFilter
         {
             if (!IsRequired(property, nullability)) continue;
 
-            var match = schema.Properties.Keys.FirstOrDefault(k => string.Equals(k, property.Name, StringComparison.OrdinalIgnoreCase));
+            var match = schema.Properties.Keys.FirstOrDefault(k =>
+                string.Equals(k, property.Name, StringComparison.OrdinalIgnoreCase));
             if (match is null) continue;
             (schema.Required ??= new HashSet<string>()).Add(match);
         }

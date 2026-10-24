@@ -4,7 +4,6 @@ using Api.Enums;
 using Api.Interfaces.Models;
 using Api.Interfaces.Services;
 using Api.Models;
-using Api.Utils;
 using Api.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,13 +23,13 @@ public class ChessController(IRoomService roomService) : ControllerBase
             var room = roomService.Create(request.Mode);
             if (room.Mode == RoomMode.HotSeat)
             {
-                room.Manager.StartGame();
+                room.Engine.StartGame();
                 return Ok(new RoomSessionDto(room.Id, room.Mode, null));
             }
 
             var color = request.Color ?? PieceColor.White;
 
-            roomService.Claim(room, color, NameUtils.Normalize(request.PlayerName));
+            roomService.Claim(room, color, NormalizeName(request.PlayerName));
             roomService.NotifyLobby();
 
             return Ok(new RoomSessionDto(room.Id, room.Mode, color));
@@ -58,11 +57,11 @@ public class ChessController(IRoomService roomService) : ControllerBase
                 return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
             if (color is null)
                 return BadRequest(new ApiErrorDto("Color is required"));
-            if (!roomService.Claim(room, color.Value, NameUtils.Normalize(name)))
+            if (!roomService.Claim(room, color.Value, NormalizeName(name)))
                 return Conflict(new ApiErrorDto(
                     room is { WhiteJoined: true, BlackJoined: true } ? "Room is full" : "Seat is already taken"));
-            if (room.Manager.State == GameState.NotStarted)
-                room.Manager.StartGame();
+            if (room.Engine.State == GameState.NotStarted)
+                room.Engine.StartGame();
 
             roomService.NotifyLobby();
 
@@ -103,7 +102,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
 
-            return Ok(room.Manager.GetBoard());
+            return Ok(room.Engine.GetBoard());
         }
         catch (Exception ex)
         {
@@ -120,9 +119,9 @@ public class ChessController(IRoomService roomService) : ControllerBase
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
             var from = new Position(row, column);
-            if (!room.Manager.IsInBounds(from))
+            if (!room.Engine.IsInBounds(from))
                 return BadRequest(new ApiErrorDto("Position out of bounds"));
-            return Ok(room.Manager.GetAllLegalMoves().Where(m => m.From.Equals(from)));
+            return Ok(room.Engine.GetAllLegalMoves().Where(m => m.From.Equals(from)));
         }
         catch (Exception ex)
         {
@@ -152,7 +151,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
         {
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
-            return Ok(color.HasValue ? room.Manager.GetMoveHistory(color.Value) : room.Manager.MoveHistory);
+            return Ok(color.HasValue ? room.Engine.GetMoveHistory(color.Value) : room.Engine.MoveHistory);
         }
         catch (Exception ex)
         {
@@ -171,7 +170,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
         {
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
-            room.Manager.StartGame();
+            room.Engine.StartGame();
             return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
@@ -187,7 +186,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
         {
             if (roomService.FindRoom(roomId) is not { } room)
                 return RoomNotFound();
-            room.Manager.ResetGame();
+            room.Engine.ResetGame();
             return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
@@ -207,11 +206,11 @@ public class ChessController(IRoomService roomService) : ControllerBase
             {
                 if (color is null || !room.IsJoined(color.Value))
                     return NotAPlayer();
-                if (color.Value != room.Manager.CurrentPlayer.Color)
+                if (color.Value != room.Engine.CurrentPlayer.Color)
                     return StatusCode(403, new ApiErrorDto("Not your turn"));
             }
 
-            if (!room.Manager.TryMakeMove(move))
+            if (!room.Engine.TryMakeMove(move))
                 return BadRequest(new ApiErrorDto("Illegal move"));
             return Ok(GameStateDto.FromGameRoom(room));
         }
@@ -230,7 +229,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
-            room.Manager.Resign(player);
+            room.Engine.Resign(player);
             return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
@@ -248,7 +247,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
-            room.Manager.OfferDraw(player);
+            room.Engine.OfferDraw(player);
             return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
@@ -266,7 +265,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
-            room.Manager.RespondToDrawOffer(player, request.Accepted ?? false);
+            room.Engine.RespondToDrawOffer(player, request.Accepted ?? false);
             return Ok(GameStateDto.FromGameRoom(room));
         }
         catch (Exception ex)
@@ -284,7 +283,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
-            if (!room.Manager.ClaimDrawByThreefoldRepetition(player))
+            if (!room.Engine.ClaimDrawByThreefoldRepetition(player))
                 return BadRequest(new ApiErrorDto("Threefold repetition claim not available"));
             return Ok(GameStateDto.FromGameRoom(room));
         }
@@ -303,7 +302,7 @@ public class ChessController(IRoomService roomService) : ControllerBase
                 return RoomNotFound();
             if (ResolvePlayer(room, request) is not { } player)
                 return NotAPlayer();
-            if (!room.Manager.ClaimDrawByFiftyMoveRule(player))
+            if (!room.Engine.ClaimDrawByFiftyMoveRule(player))
                 return BadRequest(new ApiErrorDto("Fifty-move claim not available"));
             return Ok(GameStateDto.FromGameRoom(room));
         }
@@ -316,6 +315,12 @@ public class ChessController(IRoomService roomService) : ControllerBase
     #endregion
 
     #region Helpers
+
+    private static string? NormalizeName(string? name)
+    {
+        var trimmed = name?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed[..Math.Min(trimmed.Length, 24)];
+    }
 
     private static IPlayer? ResolvePlayer(GameRoom room, PlayerActionRequest request)
     {

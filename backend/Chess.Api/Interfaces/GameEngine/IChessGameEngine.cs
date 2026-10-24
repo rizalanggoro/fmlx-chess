@@ -6,7 +6,7 @@ using Api.ValueObjects;
 
 namespace Api.Interfaces.Services;
 
-public interface IGameManager
+public interface IChessGameEngine
 {
     IBoard GameBoard { get; }
     IPlayer CurrentPlayer { get; }
@@ -41,6 +41,7 @@ public interface IGameManager
 
     [Obsolete("Use GetAllLegalMoves() and filter by Move.From.")]
     IReadOnlyList<Move> GetLegalMoves(Position from);
+
     IReadOnlyList<MoveHistoryEntry> GetMoveHistory(PieceColor color);
     void OfferDraw(IPlayer offerer);
     void RespondToDrawOffer(IPlayer responder, bool accepted);

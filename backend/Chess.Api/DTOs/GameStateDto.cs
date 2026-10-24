@@ -21,7 +21,7 @@ public record GameStateDto(
 {
     public static GameStateDto FromGameRoom(GameRoom room)
     {
-        var manager = room.Manager;
+        var manager = room.Engine;
         return new GameStateDto(
             manager.State,
             new PlayerDto(manager.CurrentPlayer.Name, manager.CurrentPlayer.Color),
@@ -36,9 +36,13 @@ public record GameStateDto(
             CapturedTypes(manager, PieceColor.Black));
     }
 
-    private static IReadOnlyList<PieceType> CapturedTypes(IGameManager manager, PieceColor color) =>
-        manager.CapturedPiecesTracker[color].Select(p => p.Type).ToList();
+    private static IReadOnlyList<PieceType> CapturedTypes(IChessGameEngine engine, PieceColor color)
+    {
+        return engine.CapturedPiecesTracker[color].Select(p => p.Type).ToList();
+    }
 
-    private static int RemainingSeconds(IGameManager manager, PieceColor color) =>
-        (int)manager.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
+    private static int RemainingSeconds(IChessGameEngine engine, PieceColor color)
+    {
+        return (int)engine.PlayerTimeTracker[color].RemainingTime.TotalSeconds;
+    }
 }

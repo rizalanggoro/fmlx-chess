@@ -8,18 +8,18 @@ public class GameRoom
     public GameRoom(
         string id,
         RoomMode mode,
-        IGameManager manager
+        IChessGameEngine engine
     )
     {
         Id = id;
         Mode = mode;
-        Manager = manager;
+        Engine = engine;
         WhiteJoined = BlackJoined = mode == RoomMode.HotSeat;
     }
 
     public string Id { get; }
     public RoomMode Mode { get; }
-    public IGameManager Manager { get; }
+    public IChessGameEngine Engine { get; }
     public bool WhiteJoined { get; internal set; }
     public bool BlackJoined { get; internal set; }
     public string? WhiteName { get; internal set; }

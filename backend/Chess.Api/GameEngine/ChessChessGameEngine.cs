@@ -8,9 +8,9 @@ using Api.Interfaces.Services;
 using Api.Models;
 using Api.ValueObjects;
 
-namespace Api.Services;
+namespace Api.GameEngine;
 
-public class GameManager : IGameManager
+public class ChessChessGameEngine : IChessGameEngine
 {
     private readonly IPlayer _blackPlayer;
 
@@ -30,7 +30,7 @@ public class GameManager : IGameManager
     private IPlayer? _drawOfferer;
     private int _halfMoveClock;
 
-    public GameManager(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
+    public ChessChessGameEngine(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
     {
         GameBoard = board;
         _whitePlayer = whitePlayer;

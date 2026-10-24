@@ -10,7 +10,7 @@ public record LegalMovesDto(
 {
     public static LegalMovesDto FromGameRoom(GameRoom room)
     {
-        var manager = room.Manager;
+        var manager = room.Engine;
         var moves = manager.State == GameState.InProgress
             ? manager.GetAllLegalMoves()
             : Array.Empty<Move>();
