@@ -339,7 +339,7 @@ public class ChessChessGameEngine : IChessGameEngine
         if (piece is null || piece.Color != CurrentPlayer.Color)
             return [];
 
-        var pseudoMoves = GenerateMovesForPiece(Board, from);
+        var pseudoMoves = GenerateMovesForPiece(from);
         var legalMoves = new List<Move>();
         foreach (var pseudoMove in pseudoMoves)
             if (!WouldLeaveKingInCheck(Board, pseudoMove))
@@ -596,9 +596,9 @@ public class ChessChessGameEngine : IChessGameEngine
     ///     steps plus castling. Returns an empty list when the square is empty.
     ///     King safety is checked afterwards by <see cref="GetLegalMoves" />.
     /// </summary>
-    private List<Move> GenerateMovesForPiece(IBoard board, Position from)
+    private List<Move> GenerateMovesForPiece(Position from)
     {
-        var piece = board.Tiles[from.Row, from.Column].Piece;
+        var piece = GetPieceAt(from);
 
         if (piece is null)
             return [];
@@ -606,15 +606,15 @@ public class ChessChessGameEngine : IChessGameEngine
         switch (piece.Type)
         {
             case PieceType.Pawn:
-                return GeneratePawnMoves(board, from);
+                return GeneratePawnMoves(from);
             case PieceType.Knight:
-                return GenerateKnightMoves(board, from);
+                return GenerateKnightMoves(from);
             case PieceType.Bishop or PieceType.Rook or PieceType.Queen:
-                return GenerateSlidingMoves(board, from);
+                return GenerateSlidingMoves(from);
             case PieceType.King:
             {
-                var moves = GenerateKingMoves(board, from);
-                moves.AddRange(GetCastlingMoves(board, from));
+                var moves = GenerateKingMoves(from);
+                moves.AddRange(GetCastlingMoves(from));
 
                 return moves;
             }
@@ -624,50 +624,69 @@ public class ChessChessGameEngine : IChessGameEngine
         }
     }
 
-    private List<Move> GeneratePawnMoves(IBoard board, Position from)
+    /// <summary>
+    ///     Generates the pseudo-legal pawn moves from the given square: one step
+    ///     forward when empty, two steps from the starting rank, diagonal
+    ///     captures of enemy pieces, and en passant. Promotion targets are
+    ///     expanded into the four promotion choices by
+    ///     <see cref="AddPawnMove" />. King safety is checked afterwards by
+    ///     <see cref="GetLegalMoves" />.
+    /// </summary>
+    private List<Move> GeneratePawnMoves(Position fromPos)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Row, from.Column].Piece;
+        var piece = GetPieceAt(fromPos);
         if (piece is null)
             return moves;
+
         var dir = piece.Color == PieceColor.White ? 1 : -1;
         var startRow = piece.Color == PieceColor.White ? 1 : 6;
-        var one = new Position(from.Row + dir, from.Column);
-        if (IsInBounds(one) && board.Tiles[one.Row, one.Column].Piece is null)
+        var one = fromPos with { Row = fromPos.Row + dir };
+        if (IsInBounds(one) && GetPieceAt(one) is null)
         {
-            AddPawnMove(moves, from, one, piece.Color);
-            var two = new Position(from.Row + 2 * dir, from.Column);
-            if (from.Row == startRow && IsInBounds(two) && board.Tiles[two.Row, two.Column].Piece is null)
-                moves.Add(new Move(from, two));
+            AddPawnMove(moves, fromPos, one, piece.Color);
+
+            var two = fromPos with { Row = fromPos.Row + 2 * dir };
+            if (fromPos.Row == startRow && IsInBounds(two) && GetPieceAt(two) is null)
+                moves.Add(new Move(fromPos, two));
         }
 
         foreach (var dc in SquareOffsets.PawnCaptureColumns)
         {
-            var to = new Position(from.Row + dir, from.Column + dc);
-            if (!IsInBounds(to))
+            var toPos = new Position(
+                fromPos.Row + dir,
+                fromPos.Column + dc
+            );
+            if (!IsInBounds(toPos))
                 continue;
-            var target = board.Tiles[to.Row, to.Column].Piece;
-            if (target is not null && target.Color != piece.Color)
-                AddPawnMove(moves, from, to, piece.Color);
-            else if (target is null && EnPassantTarget.HasValue && to.Equals(EnPassantTarget.Value))
-                moves.Add(new Move(from, to));
+
+            var targetPiece = GetPieceAt(toPos);
+            if (targetPiece is not null && targetPiece.Color != piece.Color)
+                AddPawnMove(moves, fromPos, toPos, piece.Color);
+            else if (targetPiece is null && EnPassantTarget.HasValue && toPos == EnPassantTarget.Value)
+                moves.Add(new Move(fromPos, toPos));
         }
 
         return moves;
     }
 
-    private void AddPawnMove(List<Move> moves, Position from, Position to, PieceColor color)
+    /// <summary>
+    ///     Appends the move to <paramref name="moves" />: a plain move normally,
+    ///     or the four promotion choices — queen, rook, bishop, knight — when
+    ///     the target lies on the promotion rank.
+    /// </summary>
+    private void AddPawnMove(List<Move> moves, Position fromPos, Position toPos, PieceColor pieceColor)
     {
-        if (IsOnPromotionRank(to, color))
+        if (IsOnPromotionRank(toPos, pieceColor))
         {
-            moves.Add(new Move(from, to, PieceType.Queen));
-            moves.Add(new Move(from, to, PieceType.Rook));
-            moves.Add(new Move(from, to, PieceType.Bishop));
-            moves.Add(new Move(from, to, PieceType.Knight));
+            moves.Add(new Move(fromPos, toPos, PieceType.Queen));
+            moves.Add(new Move(fromPos, toPos, PieceType.Rook));
+            moves.Add(new Move(fromPos, toPos, PieceType.Bishop));
+            moves.Add(new Move(fromPos, toPos, PieceType.Knight));
         }
         else
         {
-            moves.Add(new Move(from, to));
+            moves.Add(new Move(fromPos, toPos));
         }
     }
 
@@ -676,10 +695,10 @@ public class ChessChessGameEngine : IChessGameEngine
     ///     eight L-shaped targets, keeping only squares that are empty or hold
     ///     an enemy piece.
     /// </summary>
-    private List<Move> GenerateKnightMoves(IBoard board, Position from)
+    private List<Move> GenerateKnightMoves(Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Row, from.Column].Piece;
+        var piece = GetPieceAt(from);
 
         if (piece is null)
             return moves;
@@ -690,7 +709,7 @@ public class ChessChessGameEngine : IChessGameEngine
             if (!IsInBounds(to))
                 continue;
 
-            var targetPiece = board.Tiles[to.Row, to.Column].Piece;
+            var targetPiece = GetPieceAt(to);
             if (targetPiece is null || targetPiece.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
@@ -704,10 +723,10 @@ public class ChessChessGameEngine : IChessGameEngine
     ///     all eight for a queen. Each ray stops after capturing an enemy piece
     ///     or before a friendly one.
     /// </summary>
-    private List<Move> GenerateSlidingMoves(IBoard board, Position from)
+    private List<Move> GenerateSlidingMoves(Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Row, from.Column].Piece;
+        var piece = GetPieceAt(from);
         if (piece is null)
             return moves;
 
@@ -723,7 +742,7 @@ public class ChessChessGameEngine : IChessGameEngine
             var to = from + offset;
             while (IsInBounds(to))
             {
-                var targetPiece = board.Tiles[to.Row, to.Column].Piece;
+                var targetPiece = GetPieceAt(to);
                 if (targetPiece is null)
                 {
                     moves.Add(new Move(from, to));
@@ -747,10 +766,10 @@ public class ChessChessGameEngine : IChessGameEngine
     ///     neighbouring squares that are empty or hold an enemy piece. Castling
     ///     is handled separately by <see cref="GetCastlingMoves" />.
     /// </summary>
-    private List<Move> GenerateKingMoves(IBoard board, Position from)
+    private List<Move> GenerateKingMoves(Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Row, from.Column].Piece;
+        var piece = GetPieceAt(from);
         if (piece is null)
             return moves;
 
@@ -760,7 +779,7 @@ public class ChessChessGameEngine : IChessGameEngine
             if (!IsInBounds(to))
                 continue;
 
-            var targetPiece = board.Tiles[to.Row, to.Column].Piece;
+            var targetPiece = GetPieceAt(to);
             if (targetPiece is null || targetPiece.Color != piece.Color)
                 moves.Add(new Move(from, to));
         }
@@ -768,58 +787,50 @@ public class ChessChessGameEngine : IChessGameEngine
         return moves;
     }
 
-    private List<Move> GetCastlingMoves(IBoard board, Position from)
+    private List<Move> GetCastlingMoves(Position from)
     {
         var moves = new List<Move>();
-        var piece = board.Tiles[from.Row, from.Column].Piece;
+        var piece = GetPieceAt(from);
         if (piece is null || piece.Type != PieceType.King)
             return moves;
-        if (IsKingInCheck(board, piece.Color))
+        if (IsKingInCheck(Board, piece.Color))
             return moves;
         var enemy = piece.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
         if (piece.Color == PieceColor.White && from.Equals(new Position(0, 4)))
         {
             if (CastlingRights.WhiteKingSide
-                && board.Tiles[0, 5].Piece is null
-                && board.Tiles[0, 6].Piece is null
-                && board.Tiles[0, 7].Piece is not null
-                && board.Tiles[0, 7].Piece!.Type == PieceType.Rook
-                && board.Tiles[0, 7].Piece!.Color == PieceColor.White
-                && !IsSquareAttacked(board, new Position(0, 5), enemy)
-                && !IsSquareAttacked(board, new Position(0, 6), enemy))
+                && GetPieceAt(new Position(0, 5)) is null
+                && GetPieceAt(new Position(0, 6)) is null
+                && GetPieceAt(new Position(0, 7)) is { Type: PieceType.Rook, Color: PieceColor.White }
+                && !IsSquareAttacked(Board, new Position(0, 5), enemy)
+                && !IsSquareAttacked(Board, new Position(0, 6), enemy))
                 moves.Add(new Move(from, new Position(0, 6)));
             if (CastlingRights.WhiteQueenSide
-                && board.Tiles[0, 1].Piece is null
-                && board.Tiles[0, 2].Piece is null
-                && board.Tiles[0, 3].Piece is null
-                && board.Tiles[0, 0].Piece is not null
-                && board.Tiles[0, 0].Piece!.Type == PieceType.Rook
-                && board.Tiles[0, 0].Piece!.Color == PieceColor.White
-                && !IsSquareAttacked(board, new Position(0, 3), enemy)
-                && !IsSquareAttacked(board, new Position(0, 2), enemy))
+                && GetPieceAt(new Position(0, 1)) is null
+                && GetPieceAt(new Position(0, 2)) is null
+                && GetPieceAt(new Position(0, 3)) is null
+                && GetPieceAt(new Position(0, 0)) is { Type: PieceType.Rook, Color: PieceColor.White }
+                && !IsSquareAttacked(Board, new Position(0, 3), enemy)
+                && !IsSquareAttacked(Board, new Position(0, 2), enemy))
                 moves.Add(new Move(from, new Position(0, 2)));
         }
 
         if (piece.Color == PieceColor.Black && from.Equals(new Position(7, 4)))
         {
             if (CastlingRights.BlackKingSide
-                && board.Tiles[7, 5].Piece is null
-                && board.Tiles[7, 6].Piece is null
-                && board.Tiles[7, 7].Piece is not null
-                && board.Tiles[7, 7].Piece!.Type == PieceType.Rook
-                && board.Tiles[7, 7].Piece!.Color == PieceColor.Black
-                && !IsSquareAttacked(board, new Position(7, 5), enemy)
-                && !IsSquareAttacked(board, new Position(7, 6), enemy))
+                && GetPieceAt(new Position(7, 5)) is null
+                && GetPieceAt(new Position(7, 6)) is null
+                && GetPieceAt(new Position(7, 7)) is { Type: PieceType.Rook, Color: PieceColor.Black }
+                && !IsSquareAttacked(Board, new Position(7, 5), enemy)
+                && !IsSquareAttacked(Board, new Position(7, 6), enemy))
                 moves.Add(new Move(from, new Position(7, 6)));
             if (CastlingRights.BlackQueenSide
-                && board.Tiles[7, 1].Piece is null
-                && board.Tiles[7, 2].Piece is null
-                && board.Tiles[7, 3].Piece is null
-                && board.Tiles[7, 0].Piece is not null
-                && board.Tiles[7, 0].Piece!.Type == PieceType.Rook
-                && board.Tiles[7, 0].Piece!.Color == PieceColor.Black
-                && !IsSquareAttacked(board, new Position(7, 3), enemy)
-                && !IsSquareAttacked(board, new Position(7, 2), enemy))
+                && GetPieceAt(new Position(7, 1)) is null
+                && GetPieceAt(new Position(7, 2)) is null
+                && GetPieceAt(new Position(7, 3)) is null
+                && GetPieceAt(new Position(7, 0)) is { Type: PieceType.Rook, Color: PieceColor.Black }
+                && !IsSquareAttacked(Board, new Position(7, 3), enemy)
+                && !IsSquareAttacked(Board, new Position(7, 2), enemy))
                 moves.Add(new Move(from, new Position(7, 2)));
         }
 
@@ -983,7 +994,7 @@ public class ChessChessGameEngine : IChessGameEngine
                 continue;
 
             var from = new Position(r, c);
-            var moves = GenerateMovesForPiece(board, from);
+            var moves = GenerateMovesForPiece(from);
 
             foreach (var move in moves)
                 if (!WouldLeaveKingInCheck(board, move))
