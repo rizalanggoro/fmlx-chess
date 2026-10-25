@@ -32,7 +32,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-export const Route = createFileRoute('/scenario')({ component: ScenarioPage })
+export const Route = createFileRoute('/scenario/')({ component: ScenarioPage })
 
 const errorText = (error: unknown) => {
   if (error instanceof Error) return error.message
@@ -319,7 +319,7 @@ function ScenarioPage() {
               </CardAction>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="max-h-40">
+              <ScrollArea className="h-40">
                 <ol className="flex flex-col gap-1 font-mono text-xs">
                   {(history ?? []).map((entry, index) => (
                     <li key={index} className="flex gap-2">
@@ -380,7 +380,7 @@ function ScenarioPage() {
                 position, dan timeout belum tercakup.
               </p>
 
-              <ScrollArea className="max-h-[30rem]">
+              <ScrollArea className="h-[30rem]">
                 <div className="flex flex-col gap-3 pr-2">
                   {SCENARIO_GROUPS.map((group) => {
                     const scenarios = SCENARIOS.filter((scenario) => scenario.group === group)
