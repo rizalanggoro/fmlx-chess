@@ -6,15 +6,5 @@ namespace Api.DTOs;
 
 public record LegalMovesDto(
     int MoveCount,
-    IReadOnlyList<Move> Moves)
-{
-    public static LegalMovesDto FromGameRoom(Room room)
-    {
-        var manager = room.Engine;
-        var moves = manager.State == GameState.InProgress
-            ? manager.GetAllLegalMoves()
-            : Array.Empty<Move>();
-
-        return new LegalMovesDto(manager.MoveHistory.Count, moves);
-    }
-}
+    IReadOnlyList<Move> Moves
+);

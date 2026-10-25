@@ -1,11 +1,14 @@
 using Api.DTOs;
 using Api.DTOs.Events;
+using Api.DTOs.Factories;
 using Api.Enums;
 using Api.Events;
 using Api.GameEngine;
 using Api.Hubs;
+using Api.Interfaces.Models;
 using Api.Interfaces.Services;
 using Api.Models;
+using Api.ValueObjects;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Api.Services;
@@ -16,7 +19,7 @@ public class RoomService(
     ILogger<RoomService> logger
 ) : IRoomService
 {
-    public Room Create(RoomMode mode)
+    public Room CreateRoom(RoomMode mode)
     {
         string roomId;
         do
@@ -45,12 +48,12 @@ public class RoomService(
         return room;
     }
 
-    public Room? FindRoom(string roomId)
+    public Room? GetRoom(string roomId)
     {
         return registry.Find(roomId);
     }
 
-    public bool Claim(Room room, PieceColor color, string? name = null)
+    public bool ClaimRoom(Room room, PieceColor color, string? name = null)
     {
         if (color == PieceColor.White)
         {
@@ -72,12 +75,103 @@ public class RoomService(
         return true;
     }
 
+    public void StartGame(Room room)
+    {
+        room.Engine.StartGame();
+    }
+
+    public void StartGameIfNotStarted(Room room)
+    {
+        if (room.Engine.State == GameState.NotStarted)
+            room.Engine.StartGame();
+    }
+
+    public void ResetGame(Room room)
+    {
+        room.Engine.ResetGame();
+    }
+
+    public IReadOnlyList<TileDto> GetBoard(Room room)
+    {
+        return room.Engine.GetBoard();
+    }
+
+    public IReadOnlyList<MoveHistoryEntry> GetHistory(Room room, PieceColor? color)
+    {
+        return color.HasValue ? room.Engine.GetMoveHistory(color.Value) : room.Engine.MoveHistory;
+    }
+
+    public GameActionResult MakeMove(Room room, Move move, PieceColor? color)
+    {
+        if (room.Mode == RoomMode.Online)
+        {
+            if (color is null || !room.IsJoined(color.Value))
+                return GameActionResult.NotAPlayer;
+            if (color.Value != room.Engine.CurrentPlayer.Color)
+                return GameActionResult.NotYourTurn;
+        }
+
+        return room.Engine.TryMakeMove(move) ? GameActionResult.Ok : GameActionResult.Invalid;
+    }
+
+    public GameActionResult Resign(Room room, IPlayer player)
+    {
+        if (!IsPlayer(room, player))
+            return GameActionResult.NotAPlayer;
+
+        room.Engine.Resign(player);
+        return GameActionResult.Ok;
+    }
+
+    public GameActionResult OfferDraw(Room room, IPlayer player)
+    {
+        if (!IsPlayer(room, player))
+            return GameActionResult.NotAPlayer;
+
+        room.Engine.OfferDraw(player);
+        return GameActionResult.Ok;
+    }
+
+    public GameActionResult RespondToDrawOffer(Room room, IPlayer player, bool accepted)
+    {
+        if (!IsPlayer(room, player))
+            return GameActionResult.NotAPlayer;
+
+        room.Engine.RespondToDrawOffer(player, accepted);
+        return GameActionResult.Ok;
+    }
+
+    public GameActionResult ClaimThreefoldRepetition(Room room, IPlayer player)
+    {
+        if (!IsPlayer(room, player))
+            return GameActionResult.NotAPlayer;
+
+        return room.Engine.ClaimDrawByThreefoldRepetition(player)
+            ? GameActionResult.Ok
+            : GameActionResult.Invalid;
+    }
+
+    public GameActionResult ClaimFiftyMoveRule(Room room, IPlayer player)
+    {
+        if (!IsPlayer(room, player))
+            return GameActionResult.NotAPlayer;
+
+        return room.Engine.ClaimDrawByFiftyMoveRule(player)
+            ? GameActionResult.Ok
+            : GameActionResult.Invalid;
+    }
+
+    private static bool IsPlayer(Room room, IPlayer player)
+    {
+        return room.Mode != RoomMode.Online || room.IsJoined(player.Color);
+    }
+
     public IReadOnlyList<RoomStatusDto> AvailableRooms()
     {
         return registry.All
             .Where(room => room.Mode == RoomMode.Online && room.WhiteJoined != room.BlackJoined)
             .OrderBy(room => room.Id)
-            .Select(RoomStatusDto.FromGameRoom)
+            .Select(RoomStatusDtoFactory.FromRoom)
             .ToList();
     }
 
@@ -101,11 +195,12 @@ public class RoomService(
             "SnapshotChanged",
             new SnapshotChangedDto(
                 room.Id,
-                RoomStatusDto.FromGameRoom(room),
-                GameStateDto.FromGameRoom(room),
+                RoomStatusDtoFactory.FromRoom(room),
+                GameStateDtoFactory.FromRoom(room),
                 board,
                 e.History,
-                LegalMovesDto.FromGameRoom(room))
+                LegalMovesDtoFactory.FromRoom(room)
+            )
         );
     }
 
@@ -178,3 +273,4 @@ public class RoomService(
         }
     }
 }
+

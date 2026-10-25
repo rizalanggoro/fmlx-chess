@@ -7,4 +7,5 @@ namespace Api.DTOs.Requests;
 public record PlayerActionRequest(
     [property: JsonRequired] PieceColor Color,
     string? Name = null,
-    bool? Accepted = null);
+    bool? Accepted = null
+);
