@@ -18,6 +18,8 @@ public interface IChessGameEngine
     Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker { get; }
     CastlingRights CastlingRights { get; }
     Position? EnPassantTarget { get; }
+    bool CanClaimThreefoldRepetition { get; }
+    bool CanClaimFiftyMoveRule { get; }
 
     // Dinonaktifkan: state room disiarkan lewat SnapshotChangedEventHandler. Lihat notes.md.
     // event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;

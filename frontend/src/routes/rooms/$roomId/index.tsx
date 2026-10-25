@@ -21,6 +21,8 @@ import {
   getRoomsByRoomIdGameLegalMovesAllOptions,
   getRoomsByRoomIdGameOptions,
   getRoomsByRoomIdOptions,
+  postRoomsByRoomIdGameDrawClaimFiftyMutation,
+  postRoomsByRoomIdGameDrawClaimThreefoldMutation,
   postRoomsByRoomIdGameDrawOfferMutation,
   postRoomsByRoomIdGameDrawRespondMutation,
   postRoomsByRoomIdGameMovesMutation,
@@ -152,6 +154,18 @@ function Room() {
     isPending: isRespondingDraw
   } = useMutation({
     ...postRoomsByRoomIdGameDrawRespondMutation(),
+  })
+  const {
+    mutate: claimThreefold,
+    isPending: isClaimingThreefold
+  } = useMutation({
+    ...postRoomsByRoomIdGameDrawClaimThreefoldMutation(),
+  })
+  const {
+    mutate: claimFifty,
+    isPending: isClaimingFifty
+  } = useMutation({
+    ...postRoomsByRoomIdGameDrawClaimFiftyMutation(),
   })
 
   const nameOf = (color: PieceColor) =>
@@ -383,6 +397,32 @@ function Room() {
                 description="Lawan bisa menerima untuk mengakhiri game seri, atau menolak."
                 confirmLabel="Ya, tawarkan"
                 onConfirm={() => offerDraw({ path: { roomId }, body: { color: myColor } })}
+              />
+            )}
+            {!over && canAct && myTurn && resignColor && state?.canClaimThreefoldRepetition && (
+              <ConfirmDialog
+                className="w-full"
+                label="Klaim repetisi 3×"
+                variant="outline"
+                disabled={isClaimingThreefold}
+                title="Klaim seri (repetisi 3×)?"
+                description="Posisi yang sama sudah muncul tiga kali. Game akan berakhir seri."
+                confirmLabel="Ya, klaim seri"
+                onConfirm={() =>
+                  claimThreefold({ path: { roomId }, body: { color: resignColor } })
+                }
+              />
+            )}
+            {!over && canAct && myTurn && resignColor && state?.canClaimFiftyMoveRule && (
+              <ConfirmDialog
+                className="w-full"
+                label="Klaim 50 langkah"
+                variant="outline"
+                disabled={isClaimingFifty}
+                title="Klaim seri (aturan 50 langkah)?"
+                description="Lima puluh langkah tiap sisi telah berjalan tanpa langkah bidak atau tangkapan. Game akan berakhir seri."
+                confirmLabel="Ya, klaim seri"
+                onConfirm={() => claimFifty({ path: { roomId }, body: { color: resignColor } })}
               />
             )}
           </div>

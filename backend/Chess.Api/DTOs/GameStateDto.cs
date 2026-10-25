@@ -17,7 +17,9 @@ public record GameStateDto(
     int WhiteRemainingSeconds,
     int BlackRemainingSeconds,
     IReadOnlyList<PieceType> CapturedByWhite,
-    IReadOnlyList<PieceType> CapturedByBlack)
+    IReadOnlyList<PieceType> CapturedByBlack,
+    bool CanClaimThreefoldRepetition,
+    bool CanClaimFiftyMoveRule)
 {
     public static GameStateDto FromGameRoom(Room room)
     {
@@ -33,7 +35,9 @@ public record GameStateDto(
             RemainingSeconds(manager, PieceColor.White),
             RemainingSeconds(manager, PieceColor.Black),
             CapturedTypes(manager, PieceColor.White),
-            CapturedTypes(manager, PieceColor.Black));
+            CapturedTypes(manager, PieceColor.Black),
+            manager.CanClaimThreefoldRepetition,
+            manager.CanClaimFiftyMoveRule);
     }
 
     private static IReadOnlyList<PieceType> CapturedTypes(IChessGameEngine engine, PieceColor color)

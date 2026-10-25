@@ -93,6 +93,20 @@ public class ChessChessGameEngine : IChessGameEngine
     public CastlingRights CastlingRights { get; private set; }
     public Position? EnPassantTarget { get; private set; }
 
+    /// <summary>
+    ///     Tells whether the side to move may claim a draw by threefold
+    ///     repetition right now. Exposed so the API can offer the claim.
+    /// </summary>
+    public bool CanClaimThreefoldRepetition =>
+        State == GameState.InProgress && IsThreefoldRepetitionClaimAvailable();
+
+    /// <summary>
+    ///     Tells whether the side to move may claim a draw by the fifty-move
+    ///     rule right now. Exposed so the API can offer the claim.
+    /// </summary>
+    public bool CanClaimFiftyMoveRule =>
+        State == GameState.InProgress && IsFiftyMoveRuleClaimAvailable();
+
     #endregion
 
     #region Events

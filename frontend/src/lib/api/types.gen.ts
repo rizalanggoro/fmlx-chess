@@ -59,6 +59,8 @@ export type GameStateDto = {
     blackRemainingSeconds: number;
     capturedByWhite: Array<PieceType>;
     capturedByBlack: Array<PieceType>;
+    canClaimThreefoldRepetition: boolean;
+    canClaimFiftyMoveRule: boolean;
 };
 
 export type LegalMovesDto = {

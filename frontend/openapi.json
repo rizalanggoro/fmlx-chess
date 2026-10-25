@@ -1080,6 +1080,8 @@
       "GameStateDto": {
         "required": [
           "blackRemainingSeconds",
+          "canClaimFiftyMoveRule",
+          "canClaimThreefoldRepetition",
           "capturedByBlack",
           "capturedByWhite",
           "castlingRights",
@@ -1158,6 +1160,12 @@
             "items": {
               "$ref": "#/components/schemas/PieceType"
             }
+          },
+          "canClaimThreefoldRepetition": {
+            "type": "boolean"
+          },
+          "canClaimFiftyMoveRule": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
