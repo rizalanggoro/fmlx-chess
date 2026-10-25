@@ -7,7 +7,7 @@ import {Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle} from '@/co
 import {Skeleton} from '@/components/ui/skeleton'
 import {Spinner} from '@/components/ui/spinner'
 import {getRoomsOptions, type RoomStatusDto} from '@/lib/api'
-import {useLobbyChanged} from '@/hooks/use-lobby-changed'
+import {useLobbyChanged} from '@/hooks'
 import {useQuery} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import {RiDoorOpenLine, RiErrorWarningLine} from '@remixicon/react'

@@ -4,7 +4,7 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {createRouter, RouterProvider} from '@tanstack/react-router'
 import {Toaster} from './components/ui/toast'
 import {client} from './lib/api'
-import {connection, joinGroup, LOBBY_GROUP, rejoinGroups, startHub} from './lib/game-hub'
+import {connection, joinGroup, rejoinGroups, startHub} from './lib/game-hub'
 import './index.css'
 import {routeTree} from './routeTree.gen'
 
@@ -19,7 +19,7 @@ connection.onreconnected(() => {
   void rejoinGroups().then(() => queryClient.invalidateQueries())
 })
 void startHub()
-  .then(() => joinGroup(LOBBY_GROUP))
+  .then(() => joinGroup('lobby'))
   .catch(() => {
     console.warn('Hub realtime tidak terhubung. Pastikan backend jalan.')
   })

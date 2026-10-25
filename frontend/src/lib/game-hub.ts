@@ -7,9 +7,6 @@ export const connection = new HubConnectionBuilder()
   .withAutomaticReconnect()
   .build()
 
-export const LOBBY_GROUP = 'lobby'
-export const roomGroup = (roomId: string) => `room:${roomId}`
-
 const groups = new Set<string>()
 let startPromise: Promise<void> | null = null
 

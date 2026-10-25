@@ -7,7 +7,7 @@ import {
   CardHeader,
 } from '@/components/ui/card'
 import { colorName, GLYPHS, REASONS } from '@/constants/chess'
-import { useTimerTick } from '@/hooks/use-timer-tick'
+import { useTimerTick } from '@/hooks'
 import type { GameStateDto, PieceColor } from '@/lib/api'
 
 export function PlayerTurnCard({
