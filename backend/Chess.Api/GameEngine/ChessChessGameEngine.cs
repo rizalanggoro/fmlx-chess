@@ -12,7 +12,10 @@ namespace Api.GameEngine;
 
 public class ChessChessGameEngine : IChessGameEngine
 {
-    private readonly IPlayer _blackPlayer;
+    #region Fields
+
+    private readonly IPlayer _blackPlayer, _whitePlayer;
+    private IPlayer? _drawOfferer;
 
     private readonly Dictionary<PieceColor, List<IChessPiece>> _captured = new()
     {
@@ -20,19 +23,28 @@ public class ChessChessGameEngine : IChessGameEngine
         [PieceColor.Black] = []
     };
 
-    private readonly TimeSpan _initialTime;
-    private readonly List<MoveHistoryEntry> _moveHistory = [];
-    private readonly List<string> _positionHistory = [];
-    private readonly IPlayer _whitePlayer;
-
     private readonly ConcurrentDictionary<PieceColor, Timer> _countdownTimers = new();
 
-    private IPlayer? _drawOfferer;
+    private readonly List<MoveHistoryEntry> _moveHistory = [];
+    private readonly List<string> _positionHistory = [];
+    private readonly TimeSpan _initialTime;
+
     private int _halfMoveClock;
 
+    #endregion
+
+    #region Constructor
+
+    /// <summary>
+    ///     Wires the engine to the room's board and players, stores the clock
+    ///     length, and leaves the game in <see cref="GameState.NotStarted" />:
+    ///     white to move, full castling rights, and both clocks set to
+    ///     <paramref name="initialTime" />. Nothing is broadcast until
+    ///     <see cref="StartGame" /> is called.
+    /// </summary>
     public ChessChessGameEngine(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
     {
-        GameBoard = board;
+        Board = board;
         _whitePlayer = whitePlayer;
         _blackPlayer = blackPlayer;
         _initialTime = initialTime;
@@ -41,8 +53,13 @@ public class ChessChessGameEngine : IChessGameEngine
         // Dinonaktifkan: promosi selalu default Queen dari langkah legal. Lihat notes.md.
         // PromotionSelector = _ => PieceType.Queen;
         CastlingRights = new CastlingRights(true, true, true, true);
+
         ResetTimers();
     }
+
+    #endregion
+
+    #region Properties
 
     // Dinonaktifkan: promosi memakai PromotionType dari langkah legal (Queen/Rook/Bishop/Knight). Lihat notes.md.
     // public PromotionSelectionHandler PromotionSelector { get; set; }
@@ -53,40 +70,32 @@ public class ChessChessGameEngine : IChessGameEngine
         [PieceColor.Black] = _captured[PieceColor.Black]
     };
 
-    public IBoard GameBoard { get; }
+    public IBoard Board { get; }
     public IPlayer CurrentPlayer { get; private set; }
     public GameState State { get; private set; }
     public GameResult? Result { get; private set; }
 
-    /// <summary>
-    ///     Colour whose king is currently attacked, or <c>null</c> when neither
-    ///     king is in check. The board is the source of truth, so clients can
-    ///     highlight the king after a reload without replaying check rules.
-    /// </summary>
     public PieceColor? CheckedColor
     {
         get
         {
-            if (IsKingInCheck(GameBoard, PieceColor.White))
+            if (IsKingInCheck(Board, PieceColor.White))
                 return PieceColor.White;
-            if (IsKingInCheck(GameBoard, PieceColor.Black))
+            if (IsKingInCheck(Board, PieceColor.Black))
                 return PieceColor.Black;
+
             return null;
         }
     }
 
     public IReadOnlyList<MoveHistoryEntry> MoveHistory => _moveHistory;
-
-    /// <summary>
-    ///     Remaining time per colour, held in a PlayerTimer model. The countdown
-    ///     logic does not live in PlayerTimer: GameManager starts, stops, and
-    ///     ticks the clocks and ends the game on timeout. Ticks fire on
-    ///     thread-pool threads via System.Threading.Timer.
-    /// </summary>
     public Dictionary<PieceColor, IPlayerTimer> PlayerTimeTracker { get; } = new();
-
     public CastlingRights CastlingRights { get; private set; }
     public Position? EnPassantTarget { get; private set; }
+
+    #endregion
+
+    #region Events
 
     // Dinonaktifkan: state room disiarkan lewat SnapshotChangedEventHandler. Lihat notes.md.
     // public event EventHandler<PieceMovedEventArgs>? PieceMovedEventHandler;
@@ -100,6 +109,10 @@ public class ChessChessGameEngine : IChessGameEngine
     public event EventHandler<DrawOfferedEventArgs>? DrawOfferedEventHandler;
     public event EventHandler<DrawDeclinedEventArgs>? DrawDeclinedEventHandler;
     public event EventHandler<TimerTickEventArgs>? TimerTickedEventHandler;
+
+    #endregion
+
+    #region Game Lifecycle
 
     /// <summary>
     ///     Starts a fresh game from the initial position: white to move, clock
@@ -120,12 +133,12 @@ public class ChessChessGameEngine : IChessGameEngine
         _moveHistory.Clear();
         _captured[PieceColor.White].Clear();
         _captured[PieceColor.Black].Clear();
-        _positionHistory.Add(GeneratePositionKey(GameBoard, CurrentPlayer.Color));
+        _positionHistory.Add(GeneratePositionKey(Board, CurrentPlayer.Color));
         StartCountdown(CurrentPlayer.Color);
 
         SnapshotChangedEventHandler?.Invoke(
             this,
-            new SnapshotChangedEventArgs(GameBoard, _moveHistory)
+            new SnapshotChangedEventArgs(Board, _moveHistory)
         );
     }
 
@@ -152,85 +165,128 @@ public class ChessChessGameEngine : IChessGameEngine
 
         SnapshotChangedEventHandler?.Invoke(
             this,
-            new SnapshotChangedEventArgs(GameBoard, _moveHistory)
+            new SnapshotChangedEventArgs(Board, _moveHistory)
         );
     }
 
+    #endregion
+
+    #region Move Handling
+
+    /// <summary>
+    ///     Validates <paramref name="move" /> against the legal moves of the
+    ///     current player — a promotion move must match the requested
+    ///     <see cref="Move.PromotionType" /> — then plays it: updates castling
+    ///     rights, the en passant target, captured pieces, and the move history,
+    ///     raises the capture and check events, and either ends the game on an
+    ///     automatic result or hands the turn over before broadcasting the new
+    ///     snapshot. Returns <c>false</c> when the game is not in progress or the
+    ///     move is not legal.
+    /// </summary>
     public bool TryMakeMove(Move move)
     {
         if (State != GameState.InProgress)
             return false;
+
         if (!IsInBounds(move.From) || !IsInBounds(move.To))
             return false;
+
         var piece = GetPieceAt(move.From);
         if (piece is null || piece.Color != CurrentPlayer.Color)
             return false;
-        var legal = GetLegalMoves(move.From);
-        Move? chosen = null;
-        foreach (var m in legal)
+
+        var legalMoves = GetLegalMoves(move.From);
+        Move? chosenMove = null;
+        foreach (var legalMove in legalMoves)
         {
-            if (!m.From.Equals(move.From) || !m.To.Equals(move.To))
+            if (legalMove.From != move.From || legalMove.To != move.To)
                 continue;
+
             if (move.PromotionType is not null)
             {
-                if (m.PromotionType == move.PromotionType)
-                {
-                    chosen = m;
-                    break;
-                }
-            }
-            else
-            {
-                if (m.PromotionType is null)
-                {
-                    chosen = m;
-                    break;
-                }
+                if (move.PromotionType != legalMove.PromotionType)
+                    continue;
 
-                chosen ??= m;
+                chosenMove = legalMove;
+                break;
             }
+
+            if (legalMove.PromotionType is null)
+            {
+                chosenMove = legalMove;
+                break;
+            }
+
+            chosenMove ??= legalMove;
         }
 
-        if (chosen is null)
+        if (chosenMove is null)
             return false;
-        var effective = chosen;
-        if (effective.PromotionType is null && piece.Type == PieceType.Pawn &&
-            IsOnPromotionRank(effective.To, piece.Color))
-            effective = effective with { PromotionType = PieceType.Queen };
-        var wasPawn = piece.Type == PieceType.Pawn;
-        var targetPiece = GetPieceAt(effective.To);
-        var isEnPassant = wasPawn && EnPassantTarget.HasValue && effective.To.Equals(EnPassantTarget.Value) &&
-                          targetPiece is null;
-        var wasCapture = targetPiece is not null || isEnPassant;
-        var app = ApplyMove(GameBoard, effective);
-        if (app is null)
-            return false;
-        UpdateCastlingRights(GameBoard, effective, piece, app.CapturedPiece);
-        UpdateEnPassantTarget(effective, piece);
-        if (app.CapturedPiece is not null)
-            _captured[piece.Color].Add(app.CapturedPiece);
+
+        var effective = chosenMove;
+        var isPawn = piece.Type == PieceType.Pawn;
         var moverColor = piece.Color;
-        _moveHistory.Add(new MoveHistoryEntry(effective, moverColor));
         var opponent = moverColor == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        RecordCompletedMove(GameBoard, opponent, wasPawn, wasCapture);
+
+        if (
+            effective.PromotionType is null && isPawn &&
+            IsOnPromotionRank(effective.To, piece.Color)
+        )
+            effective = effective with { PromotionType = PieceType.Queen };
+
+        var targetPiece = GetPieceAt(effective.To);
+        var isEnPassant = isPawn && EnPassantTarget.HasValue &&
+                          effective.To == EnPassantTarget && targetPiece is null;
+        var isCapture = targetPiece is not null || isEnPassant;
+
+        var applyMoveResult = ApplyMove(Board, effective);
+        if (applyMoveResult is null)
+            return false;
+
+        UpdateCastlingRights(Board, effective, piece, applyMoveResult.CapturedPiece);
+        UpdateEnPassantTarget(effective, piece);
+
+        if (applyMoveResult.CapturedPiece is not null)
+            _captured[piece.Color].Add(applyMoveResult.CapturedPiece);
+
+
+        _moveHistory.Add(new MoveHistoryEntry(effective, moverColor));
         _drawOfferer = null;
-        // Dinonaktifkan: state room disiarkan lewat SnapshotChangedEventHandler. Lihat notes.md.
-        // PieceMovedEventHandler?.Invoke(this, new PieceMovedEventArgs(effective));
-        if (app.CapturedPiece is not null && app.CapturedSquare.HasValue)
-            PieceCapturedEventHandler?.Invoke(this,
-                new PieceCapturedEventArgs(app.CapturedPiece, app.CapturedSquare.Value));
-        if (IsKingInCheck(GameBoard, opponent))
-            CheckDeclaredEventHandler?.Invoke(this, new CheckEventArgs(opponent));
-        var auto = EvaluateAutomaticResult();
-        if (auto is not null)
+
+        RecordCompletedMove(Board, opponent, isPawn, isCapture);
+
+        if (applyMoveResult.CapturedPiece is not null && applyMoveResult.CapturedSquare.HasValue)
+            PieceCapturedEventHandler?.Invoke(
+                this,
+                new PieceCapturedEventArgs(
+                    applyMoveResult.CapturedPiece,
+                    applyMoveResult.CapturedSquare.Value
+                )
+            );
+
+        if (IsKingInCheck(Board, opponent))
+            CheckDeclaredEventHandler?.Invoke(
+                this,
+                new CheckEventArgs(opponent)
+            );
+
+        if (EvaluateAutomaticResult() is { } automaticResult)
         {
-            EndGame(auto);
-            SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
+            EndGame(automaticResult);
+            SnapshotChangedEventHandler?.Invoke(
+                this,
+                new SnapshotChangedEventArgs(Board, _moveHistory)
+            );
+
             return true;
         }
 
         ChangeTurn();
-        SnapshotChangedEventHandler?.Invoke(this, new SnapshotChangedEventArgs(GameBoard, _moveHistory));
+        SnapshotChangedEventHandler?.Invoke(
+            this,
+            new SnapshotChangedEventArgs(Board, _moveHistory)
+        );
+
         return true;
     }
 
@@ -254,7 +310,7 @@ public class ChessChessGameEngine : IChessGameEngine
         for (var row = 0; row < 8; row++)
         for (var column = 0; column < 8; column++)
         {
-            var piece = GameBoard.Tiles[row, column].Piece;
+            var piece = Board.Tiles[row, column].Piece;
             if (piece is null || piece.Color != CurrentPlayer.Color)
                 continue;
             legal.AddRange(GetLegalMoves(new Position(row, column)));
@@ -275,13 +331,13 @@ public class ChessChessGameEngine : IChessGameEngine
     {
         if (!IsInBounds(from))
             return Array.Empty<Move>();
-        var piece = GameBoard.Tiles[from.Row, from.Column].Piece;
+        var piece = Board.Tiles[from.Row, from.Column].Piece;
         if (piece is null || piece.Color != CurrentPlayer.Color)
             return Array.Empty<Move>();
-        var pseudo = GenerateMovesForPiece(GameBoard, from);
+        var pseudo = GenerateMovesForPiece(Board, from);
         var legal = new List<Move>();
         foreach (var m in pseudo)
-            if (!WouldLeaveKingInCheck(GameBoard, m))
+            if (!WouldLeaveKingInCheck(Board, m))
                 legal.Add(m);
         return legal;
     }
@@ -295,6 +351,10 @@ public class ChessChessGameEngine : IChessGameEngine
             .Where(e => e.PlayedBy == color)
             .ToList();
     }
+
+    #endregion
+
+    #region Draw & Resign
 
     /// <summary>
     ///     Records the given player as the one offering a draw and notifies the
@@ -378,6 +438,10 @@ public class ChessChessGameEngine : IChessGameEngine
         );
     }
 
+    #endregion
+
+    #region Game End & Board Setup
+
     /// <summary>
     ///     Marks the game as completed with the given result, stops the clocks,
     ///     and notifies the room; ignored when the game has already ended.
@@ -409,7 +473,7 @@ public class ChessChessGameEngine : IChessGameEngine
     {
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
-            GameBoard.Tiles[r, c].Piece = null;
+            Board.Tiles[r, c].Piece = null;
 
         var backRankPieces = new[]
         {
@@ -425,10 +489,10 @@ public class ChessChessGameEngine : IChessGameEngine
 
         for (var c = 0; c < 8; c++)
         {
-            GameBoard.Tiles[0, c].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
-            GameBoard.Tiles[1, c].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
-            GameBoard.Tiles[6, c].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
-            GameBoard.Tiles[7, c].Piece = new ChessPiece(PieceColor.Black, backRankPieces[c]);
+            Board.Tiles[0, c].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
+            Board.Tiles[1, c].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
+            Board.Tiles[6, c].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
+            Board.Tiles[7, c].Piece = new ChessPiece(PieceColor.Black, backRankPieces[c]);
         }
 
         CastlingRights = new CastlingRights(
@@ -440,6 +504,10 @@ public class ChessChessGameEngine : IChessGameEngine
         EnPassantTarget = null;
     }
 
+    #endregion
+
+    #region Board Access
+
     /// <summary>
     ///     Returns the board as 64 <see cref="TileDto" /> rows/columns, the shape
     ///     the HTTP board endpoint and the snapshot payload both send to clients.
@@ -450,7 +518,7 @@ public class ChessChessGameEngine : IChessGameEngine
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
         {
-            var piece = GameBoard.Tiles[r, c].Piece;
+            var piece = Board.Tiles[r, c].Piece;
             tiles.Add(new TileDto(r, c, piece?.Color, piece?.Type));
         }
 
@@ -458,16 +526,14 @@ public class ChessChessGameEngine : IChessGameEngine
     }
 
 
-    public IChessTile GetTileAt(Position pos)
+    public IChessTile? GetTileAt(Position pos)
     {
-        if (!IsInBounds(pos))
-            throw new ArgumentOutOfRangeException(nameof(pos));
-        return GameBoard.Tiles[pos.Row, pos.Column];
+        return !IsInBounds(pos) ? null : Board.Tiles[pos.Row, pos.Column];
     }
 
     public IChessPiece? GetPieceAt(Position pos)
     {
-        return GetTileAt(pos).Piece;
+        return GetTileAt(pos)?.Piece ?? null;
     }
 
     /// <summary>
@@ -486,13 +552,17 @@ public class ChessChessGameEngine : IChessGameEngine
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
         {
-            var p = GameBoard.Tiles[r, c].Piece;
+            var p = Board.Tiles[r, c].Piece;
             if (p is not null && p.Color == color)
                 list.Add(p);
         }
 
         return list;
     }
+
+    #endregion
+
+    #region Move Generation
 
     /// <summary>
     ///     Generates the pseudo-legal moves for the piece on the given square:
@@ -739,6 +809,10 @@ public class ChessChessGameEngine : IChessGameEngine
         return color == PieceColor.White ? position.Row == 7 : position.Row == 0;
     }
 
+    #endregion
+
+    #region Check Detection
+
     /// <summary>
     ///     Tells whether any piece of <paramref name="byColor" /> attacks the given
     ///     square: pawn capture squares, knight and king offsets, then bishop/queen
@@ -892,6 +966,10 @@ public class ChessChessGameEngine : IChessGameEngine
 
         return false;
     }
+
+    #endregion
+
+    #region Move Application
 
     /// <summary>
     ///     Applies the move to the given board and returns what changed: the
@@ -1059,6 +1137,10 @@ public class ChessChessGameEngine : IChessGameEngine
             EnPassantTarget = null;
     }
 
+    #endregion
+
+    #region Position, Result & Turn
+
     /// <summary>
     ///     Builds a compact key for the current position (piece placement, side
     ///     to move, castling rights, en passant target) used to detect repeated
@@ -1123,8 +1205,8 @@ public class ChessChessGameEngine : IChessGameEngine
             return new GameResult(GameEndReason.DrawBy75MoveRule, null);
         var mover = CurrentPlayer.Color;
         var opponent = mover == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        var inCheck = IsKingInCheck(GameBoard, opponent);
-        var hasMoves = HasAnyLegalMove(GameBoard, opponent);
+        var inCheck = IsKingInCheck(Board, opponent);
+        var hasMoves = HasAnyLegalMove(Board, opponent);
         if (inCheck && !hasMoves)
             return new GameResult(GameEndReason.Checkmate, mover);
         if (!inCheck && !hasMoves)
@@ -1143,7 +1225,7 @@ public class ChessChessGameEngine : IChessGameEngine
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
         {
-            var p = GameBoard.Tiles[r, c].Piece;
+            var p = Board.Tiles[r, c].Piece;
             if (p is null || p.Type == PieceType.King)
                 continue;
             if (p.Type == PieceType.Pawn || p.Type == PieceType.Rook || p.Type == PieceType.Queen)
@@ -1188,6 +1270,10 @@ public class ChessChessGameEngine : IChessGameEngine
         );
     }
 
+    #endregion
+
+    #region Draw Rule Bookkeeping
+
     public void RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture)
     {
         _halfMoveClock = wasPawnMove || wasCapture ? 0 : _halfMoveClock + 1;
@@ -1196,13 +1282,13 @@ public class ChessChessGameEngine : IChessGameEngine
 
     public bool IsThreefoldRepetitionClaimAvailable()
     {
-        var key = GeneratePositionKey(GameBoard, CurrentPlayer.Color);
+        var key = GeneratePositionKey(Board, CurrentPlayer.Color);
         return _positionHistory.Count(k => k == key) >= 3;
     }
 
     public bool IsFivefoldRepetitionAutomatic()
     {
-        var key = GeneratePositionKey(GameBoard, CurrentPlayer.Color);
+        var key = GeneratePositionKey(Board, CurrentPlayer.Color);
         return _positionHistory.Count(k => k == key) >= 5;
     }
 
@@ -1227,6 +1313,10 @@ public class ChessChessGameEngine : IChessGameEngine
     {
         return _halfMoveClock >= 150;
     }
+
+    #endregion
+
+    #region Reset & Clocks
 
     /// <summary>
     ///     Clears the draw-tracking bookkeeping: the position history used to
@@ -1334,4 +1424,6 @@ public class ChessChessGameEngine : IChessGameEngine
             )
         );
     }
+
+    #endregion
 }

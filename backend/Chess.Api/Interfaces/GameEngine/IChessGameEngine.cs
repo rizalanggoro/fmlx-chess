@@ -8,7 +8,7 @@ namespace Api.Interfaces.Services;
 
 public interface IChessGameEngine
 {
-    IBoard GameBoard { get; }
+    IBoard Board { get; }
     IPlayer CurrentPlayer { get; }
     GameState State { get; }
     GameResult? Result { get; }
