@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
 } from '@/components/ui/card'
-import { colorName, GLYPHS, REASONS } from '@/constants/chess'
+import { colorName, GLYPHS, playerLabel, playerName, REASONS } from '@/constants/chess'
 import { useTimerTick } from '@/hooks'
 import type { GameStateDto, PieceColor } from '@/lib/api'
 
@@ -30,10 +30,6 @@ export function PlayerTurnCard({
   const { secondsLeft, clock } = useTimerTick(roomId, state)
   const turn = state?.currentPlayer.color
   const over = state?.state === 'Completed'
-  const nameOf = (color: PieceColor) =>
-    color === 'White' ? whiteName : blackName
-  const label = (color: PieceColor) =>
-    nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color)
 
   return (
     <Card size="sm">
@@ -55,28 +51,25 @@ export function PlayerTurnCard({
             <button
               key={color}
               type="button"
-              aria-haspopup="dialog"
               onClick={() => onPlayerClick(color)}
               className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 text-left outline-none transition-colors hover:bg-muted/40 focus-visible:ring-3 focus-visible:ring-ring/30 ${
                 active ? 'border-primary/30 bg-primary/10' : 'border-transparent'
               }`}
             >
               <span
-                aria-hidden
                 className="font-heading text-2xl leading-none text-foreground"
               >
                 {GLYPHS.King[color]}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-foreground">
-                  {nameOf(color) ?? colorName(color)}
+                  {playerName(color, whiteName, blackName) ?? colorName(color)}
                 </span>
                 <span className="block text-xs text-muted-foreground">
                   {colorName(color)}
                   {myColor === color && ' · kamu'}
                 </span>
               </span>
-              <span className="sr-only">Lihat bidak yang dimakan</span>
               {active && <Badge>Giliran</Badge>}
               <span
                 className={`font-mono text-sm tabular-nums ${
@@ -92,7 +85,7 @@ export function PlayerTurnCard({
         {over && state?.result && (
           <p className="mt-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
             {state.result.winner
-              ? `${label(state.result.winner)} menang — ${REASONS[state.result.reason]}`
+              ? `${playerLabel(state.result.winner, whiteName, blackName)} menang — ${REASONS[state.result.reason]}`
               : `Seri — ${REASONS[state.result.reason]}`}
           </p>
         )}

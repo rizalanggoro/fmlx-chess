@@ -12,7 +12,6 @@ const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:5004'
 
 client.setConfig({baseUrl: apiUrl})
 
-// Semua data room diisi dari payload event; refetch penuh hanya saat reconnect.
 const queryClient = new QueryClient()
 
 connection.onreconnected(() => {

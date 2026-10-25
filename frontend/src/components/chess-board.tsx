@@ -1,25 +1,20 @@
-import { Spinner } from '@/components/ui/spinner'
-import { FILES, GLYPHS } from '@/constants/chess'
-import type { Move, PieceColor, Position, TileDto } from '@/lib/api'
-import { cn } from 'cn'
-import { useEffect, useState, type CSSProperties } from 'react'
-
-const same = (a: Position | null | undefined, b: Position) =>
-  a !== null && a !== undefined && a.column === b.column && a.row === b.row
-
-const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
+import {Spinner} from '@/components/ui/spinner'
+import {FILES, GLYPHS, sameSquare} from '@/constants/chess'
+import type {Move, PieceColor, Position, TileDto} from '@/lib/api'
+import {cn} from 'cn'
+import {useEffect, useState, type CSSProperties} from 'react'
 
 type ChessBoardProps = {
   tiles: TileDto[]
-  selected?: Position | null
-  loading?: Position | null
-  targets?: ReadonlySet<string>
+  selectedSquare?: Position | null
+  pendingSquare?: Position | null
+  legalTargets?: ReadonlySet<string>
   lastMove?: Move | null
-  flip?: boolean
+  flipped?: boolean
   disabled?: boolean
-  checked?: PieceColor | null
+  checkedColor?: PieceColor | null
   className?: string
-  onSelect?: (position: Position) => void
+  onSquareSelect?: (position: Position) => void
 }
 
 type Animation = {
@@ -27,24 +22,25 @@ type Animation = {
   piece: TileDto
 }
 
-export function ChessBoard({
-  tiles,
-  selected,
-  loading,
-  targets,
-  lastMove = null,
-  flip = false,
-  disabled = false,
-  checked = null,
-  className,
-  onSelect,
-}: ChessBoardProps) {
+export function ChessBoard(
+  {
+    tiles,
+    selectedSquare,
+    pendingSquare,
+    legalTargets,
+    lastMove = null,
+    flipped = false,
+    disabled = false,
+    checkedColor = null,
+    className,
+    onSquareSelect,
+  }: ChessBoardProps) {
   const pieces = new Map(tiles.map((t) => [`${t.column},${t.row}`, t]))
-  const checkedKing = checked
-    ? tiles.find((tile) => tile.color === checked && tile.type === 'King')
+  const checkedKing = checkedColor
+    ? tiles.find((tile) => tile.color === checkedColor && tile.type === 'King')
     : undefined
-  const rows = flip ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
-  const cols = flip ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
+  const rows = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
+  const cols = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
   const [animation, setAnimation] = useState<Animation | null>(null)
   const [seenMove, setSeenMove] = useState<Move | null>(lastMove)
   const [previousTiles, setPreviousTiles] = useState(tiles)
@@ -58,7 +54,7 @@ export function ChessBoard({
         (tile) =>
           tile.column === lastMove.from.column && tile.row === lastMove.from.row,
       )
-      setAnimation(piece ? { move: lastMove, piece } : null)
+      setAnimation(piece ? {move: lastMove, piece} : null)
     }
   }
 
@@ -74,20 +70,20 @@ export function ChessBoard({
 
   const from = animation?.move.from
   const to = animation?.move.to
-  const fromColumn = from ? (flip ? 7 - from.column : from.column) : 0
-  const fromRow = from ? (flip ? from.row : 7 - from.row) : 0
-  const toColumn = to ? (flip ? 7 - to.column : to.column) : 0
-  const toRow = to ? (flip ? to.row : 7 - to.row) : 0
+  const fromColumn = from ? (flipped ? 7 - from.column : from.column) : 0
+  const fromRow = from ? (flipped ? from.row : 7 - from.row) : 0
+  const toColumn = to ? (flipped ? 7 - to.column : to.column) : 0
+  const toRow = to ? (flipped ? to.row : 7 - to.row) : 0
   const moveStyle =
     animation && from && to
       ? ({
-          left: `${fromColumn * 12.5}%`,
-          top: `${fromRow * 12.5}%`,
-          width: '12.5%',
-          height: '12.5%',
-          '--move-x': `${(toColumn - fromColumn) * 100}%`,
-          '--move-y': `${(toRow - fromRow) * 100}%`,
-        } as CSSProperties)
+        left: `${fromColumn * 12.5}%`,
+        top: `${fromRow * 12.5}%`,
+        width: '12.5%',
+        height: '12.5%',
+        '--move-x': `${(toColumn - fromColumn) * 100}%`,
+        '--move-y': `${(toRow - fromRow) * 100}%`,
+      } as CSSProperties)
       : undefined
 
   return (
@@ -101,36 +97,32 @@ export function ChessBoard({
         <div className="grid grid-cols-8 overflow-hidden rounded-[3px] border border-amber-950/40">
           {rows.map((row) =>
             cols.map((column) => {
-              const sq = { column, row }
+              const sq = {column, row}
               const key = `${column},${row}`
               const piece = pieces.get(key)
               const dark = (column + row) % 2 === 1
               const coord = dark ? 'text-amber-100/60' : 'text-amber-900/50'
-              const target = targets?.has(key) ?? false
-              const loadingHere = same(loading, sq)
-              const inCheck = checkedKing !== undefined && same(checkedKing, sq)
-              const animating =
-                animation !== null &&
-                (same(animation.move.from, sq) || same(animation.move.to, sq))
+              const target = legalTargets?.has(key) ?? false
+              const pendingHere = sameSquare(pendingSquare, sq)
+              const inCheck = checkedKing !== undefined && sameSquare(checkedKing, sq)
+              const animating = animation !== null &&
+                (sameSquare(animation.move.from, sq) || sameSquare(animation.move.to, sq))
+
               return (
                 <button
                   key={key}
                   type="button"
                   onClick={() => {
-                    if (!disabled) onSelect?.(sq)
+                    if (!disabled) onSquareSelect?.(sq)
                   }}
-                  aria-disabled={disabled}
-                  aria-busy={loadingHere}
-                  aria-label={`${alg(sq)}${piece?.type ? ` ${piece.type}` : ''}${inCheck ? ' skak' : ''}`}
                   className={`relative flex aspect-square items-center justify-center ${
                     dark ? 'bg-amber-700' : 'bg-amber-100'
-                  } ${same(selected, sq) ? 'ring-4 ring-inset ring-sky-500' : ''} ${
+                  } ${sameSquare(selectedSquare, sq) ? 'ring-4 ring-inset ring-sky-500' : ''} ${
                     disabled ? 'cursor-default' : ''
                   }`}
                 >
                   {inCheck && (
                     <span
-                      aria-hidden
                       className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(139,92,246,0.95)_0%,rgba(139,92,246,0.8)_40%,rgba(139,92,246,0.25)_70%,transparent_100%)]"
                     />
                   )}
@@ -154,15 +146,14 @@ export function ChessBoard({
                         piece.color === 'White'
                           ? 'text-amber-50 drop-shadow-[0_1px_1px_rgba(80,50,10,0.9)]'
                           : 'text-amber-950'
-                      } ${loadingHere ? 'opacity-40' : ''}`}
+                      } ${pendingHere ? 'opacity-40' : ''}`}
                     >
                       {GLYPHS[piece.type][piece.color]}
                     </span>
                   )}
-                  {loadingHere && (
+                  {pendingHere && (
                     <span className="absolute inset-0 flex items-center justify-center">
                       <Spinner
-                        aria-label="Memuat langkah legal"
                         className={`size-[26%] ${
                           dark ? 'text-amber-100/80' : 'text-amber-900/70'
                         }`}
@@ -170,10 +161,10 @@ export function ChessBoard({
                     </span>
                   )}
                   {target && !piece?.type && (
-                    <span className="absolute h-3 w-3 rounded-full bg-sky-500/70" />
+                    <span className="absolute h-3 w-3 rounded-full bg-sky-500/70"/>
                   )}
                   {target && piece?.type && (
-                    <span className="absolute inset-0 rounded-full ring-4 ring-inset ring-sky-500/70" />
+                    <span className="absolute inset-0 rounded-full ring-4 ring-inset ring-sky-500/70"/>
                   )}
                 </button>
               )
@@ -182,7 +173,6 @@ export function ChessBoard({
         </div>
         {animation?.piece.color && animation.piece.type && (
           <span
-            aria-hidden
             className="chess-move pointer-events-none absolute z-10 flex items-center justify-center"
             style={moveStyle}
           >

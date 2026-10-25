@@ -34,7 +34,7 @@ import {
   useRoomGroup,
   useRoomSnapshot,
 } from '@/hooks'
-import {colorName} from '@/constants/chess'
+import {colorName, playerLabel, playerName, sameSquare} from '@/constants/chess'
 import type {DrawOfferedDto, PieceColor, PieceType, Position} from '@/lib/api'
 import {loadRoomSession, type RoomSession} from '@/lib/room-session'
 import {useMutation, useQuery} from '@tanstack/react-query'
@@ -58,9 +58,6 @@ export const Route = createFileRoute('/rooms/$roomId/')({
   component: Page,
 })
 
-const same = (a: Position | null, b: Position) =>
-  a !== null && a.column === b.column && a.row === b.row
-
 function Page() {
   const {roomId} = Route.useParams()
 
@@ -73,8 +70,13 @@ function Page() {
     to: Position
     options: PieceType[]
   } | null>(null)
-  const [capturedColor, setCapturedColor] = useState<PieceColor | null>(null)
-  const [capturedDialogOpen, setCapturedDialogOpen] = useState(false)
+  const [capturedDialog, setCapturedDialog] = useState<{
+    open: boolean;
+    color: PieceColor
+  }>({
+    open: false,
+    color: 'White',
+  })
 
   useRoomGroup(roomId)
   useGameEnded(roomId)
@@ -150,6 +152,7 @@ function Page() {
     isPending: isRespondingDraw
   } = useMutation({
     ...postRoomsByRoomIdGameDrawRespondMutation(),
+    onSuccess: () => setDrawOffer(null),
   })
   const {
     mutate: claimThreefold,
@@ -164,76 +167,82 @@ function Page() {
     ...postRoomsByRoomIdGameDrawClaimFiftyMutation(),
   })
 
-  const nameOf = (color: PieceColor) =>
-    color === 'White' ? room?.whiteName : room?.blackName
-  const label = (color: PieceColor) =>
-    nameOf(color) ? `${colorName(color)} (${nameOf(color)})` : colorName(color)
+  const handleRespondDrawOffer = (isAccepted: boolean) => {
+    if (!myColor)
+      return
 
-  const respond = (accepted: boolean) => {
-    if (!myColor) return
-    respondDraw(
-      {path: {roomId}, body: {color: myColor, accepted}},
-      {onSuccess: () => setDrawOffer(null)},
-    )
+    respondDraw({
+      path: {roomId},
+      body: {
+        color: myColor,
+        accepted: isAccepted
+      }
+    })
   }
 
-  const pieces = new Map((board ?? []).map((t) => [`${t.column},${t.row}`, t]))
-  // Daftar langkah sisi yang sedang jalan; dipakai hanya kalau versinya cocok dengan state.
-  const allLegalMoves =
-    legal && legal.moveCount === state?.moveCount ? legal.moves : []
-  const selectedMoves = activeSquare
-    ? allLegalMoves.filter((m) => same(m.from, activeSquare))
+  const pieces = new Map((board ?? []).map((item) => [`${item.column},${item.row}`, item]))
+  const currentLegalMoves = legal && legal.moveCount === state?.moveCount ? legal.moves : []
+  const legalMovesFromSelectedSquare = activeSquare
+    ? currentLegalMoves.filter((m) => sameSquare(m.from, activeSquare))
     : []
-  const targets = new Set(selectedMoves.map((m) => `${m.to.column},${m.to.row}`))
-  // Spinner hanya saat prefetch awal belum selesai; setelah snapshot masuk daftar sudah ada.
-  const loadingSquare =
-    legalPending && activeSquare && pieces.get(`${activeSquare.column},${activeSquare.row}`)?.type
-      ? activeSquare
-      : null
-  // Bidak yang dimakan tiap warna, dari tracker backend (GameStateDto), bukan dihitung ulang dari papan.
+  const legalTargetKeys = new Set(
+    legalMovesFromSelectedSquare.map((m) => `${m.to.column},${m.to.row}`),
+  )
+  const loadingSquare = legalPending && activeSquare && pieces.get(`${activeSquare.column},${activeSquare.row}`)?.type
+    ? activeSquare
+    : null
+
   const capturedOf = (color: PieceColor) =>
     (color === 'White' ? state?.capturedByWhite : state?.capturedByBlack) ?? []
 
-  const openCaptured = (color: PieceColor) => {
-    setCapturedColor(color)
-    setCapturedDialogOpen(true)
-  }
-
-  // Black sees the board from Black's side.
   const flip = myColor === 'Black'
-
   const moves = history ?? []
 
-  const click = (sq: Position) => {
-    if (state?.state !== 'InProgress' || isMoving || !myTurn) return
-    const key = `${sq.column},${sq.row}`
-    if (activeSquare && targets.has(key)) {
-      // Server menandai langkah promosi lewat PromotionType; pilih dulu sebelum kirim move.
-      const options = selectedMoves.flatMap((m) =>
-        same(m.to, sq) && m.promotionType ? [m.promotionType] : [],
+  const handleSquareClick = (position: Position) => {
+    if (state?.state !== 'InProgress' || isMoving || !myTurn)
+      return
+
+    const key = `${position.column},${position.row}`
+    if (activeSquare && legalTargetKeys.has(key)) {
+      const promoteOptions = legalMovesFromSelectedSquare.flatMap((move) =>
+        sameSquare(move.to, position) && move.promotionType ? [move.promotionType] : [],
       )
-      if (options.length > 0) {
-        setPendingPromotion({from: activeSquare, to: sq, options})
+      if (promoteOptions.length > 0) {
+        setPendingPromotion({
+          from: activeSquare,
+          to: position,
+          options: promoteOptions
+        })
+
         return
       }
+
       makeMove({
         path: {roomId},
-        body: {from: activeSquare, to: sq, promotionType: null},
+        body: {
+          from: activeSquare,
+          to: position,
+          promotionType: null
+        },
         query: myColor ? {color: myColor} : undefined,
       })
       setSelectedSquare(null)
+
       return
     }
+
     const piece = pieces.get(key)
     if (piece?.color && piece.color === turn) {
-      setSelectedSquare(same(selectedSquare, sq) ? null : sq)
+      setSelectedSquare(sameSquare(selectedSquare, position) ? null : position)
     } else {
       setSelectedSquare(null)
     }
   }
 
-  const promote = (type: PieceType) => {
-    if (!pendingPromotion) return
+  const handlePromote = (type: PieceType) => {
+    if (!pendingPromotion)
+      return
+
     makeMove({
       path: {roomId},
       body: {
@@ -243,14 +252,14 @@ function Page() {
       },
       query: myColor ? {color: myColor} : undefined,
     })
+
     setPendingPromotion(null)
     setSelectedSquare(null)
   }
 
-  const toLobby = () => void navigate({to: '/'})
 
   if (roomError) {
-    return <RoomNotFound onBack={toLobby}/>
+    return <RoomNotFound onBack={() => void navigate({to: '/'})}/>
   }
 
   if (!room) {
@@ -261,8 +270,8 @@ function Page() {
     return (
       <RoomWaiting
         roomId={roomId}
-        playerLabel={myColor ? label(myColor) : undefined}
-        onBack={toLobby}
+        playerLabel={myColor ? playerLabel(myColor, room.whiteName, room.blackName) : undefined}
+        onBack={() => void navigate({to: '/'})}
       />
     )
   }
@@ -277,14 +286,14 @@ function Page() {
         className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_18rem] md:items-start lg:grid-cols-[minmax(0,1fr)_20rem]">
         <ChessBoard
           tiles={board ?? []}
-          selected={activeSquare}
-          loading={loadingSquare}
-          targets={targets}
-          flip={flip}
+          selectedSquare={activeSquare}
+          pendingSquare={loadingSquare}
+          legalTargets={legalTargetKeys}
+          flipped={flip}
           lastMove={moves.at(-1)?.move}
           disabled={state?.state !== 'InProgress' || isMoving || !myTurn}
-          checked={state?.checkedColor}
-          onSelect={click}
+          checkedColor={state?.checkedColor}
+          onSquareSelect={handleSquareClick}
         />
 
         <aside className="flex flex-col gap-4">
@@ -295,7 +304,10 @@ function Page() {
             whiteName={room?.whiteName}
             blackName={room?.blackName}
             myColor={myColor}
-            onPlayerClick={openCaptured}
+            onPlayerClick={(color) => setCapturedDialog({
+              open: true,
+              color: color
+            })}
           />
 
           <div className="flex flex-col gap-2">
@@ -318,7 +330,7 @@ function Page() {
                 title="Keluar ke lobby?"
                 description="Room ini tetap hidup — kamu bisa masuk lagi pakai kode room."
                 confirmLabel="Keluar ke lobby"
-                onConfirm={toLobby}
+                onConfirm={() => void navigate({to: '/'})}
               />
             </div>
             {!over && canAct && resignColor && (
@@ -381,9 +393,9 @@ function Page() {
 
           <DrawOfferDialog
             open={!!drawOffer && !over}
-            offerer={drawOffer ? label(drawOffer.color) : 'Lawan'}
+            offerer={drawOffer ? playerLabel(drawOffer.color, room.whiteName, room.blackName) : 'Lawan'}
             pending={isRespondingDraw}
-            onRespond={respond}
+            onRespond={handleRespondDrawOffer}
             onDismiss={() => setDrawOffer(null)}
           />
 
@@ -392,16 +404,19 @@ function Page() {
             color={turn ?? 'White'}
             options={pendingPromotion?.options ?? []}
             pending={isMoving}
-            onSelect={promote}
+            onSelect={handlePromote}
             onDismiss={() => setPendingPromotion(null)}
           />
 
           <CapturedPiecesDialog
-            open={capturedDialogOpen}
-            onOpenChange={setCapturedDialogOpen}
-            color={capturedColor ?? 'White'}
-            playerName={capturedColor ? (nameOf(capturedColor) ?? colorName(capturedColor)) : ''}
-            pieces={capturedColor ? capturedOf(capturedColor) : []}
+            open={capturedDialog.open}
+            onOpenChange={(open) => setCapturedDialog({
+              open: open,
+              color: capturedDialog.color
+            })}
+            color={capturedDialog.color}
+            playerName={playerName(capturedDialog.color, room.whiteName, room.blackName) ?? colorName(capturedDialog.color)}
+            pieces={capturedDialog.color ? capturedOf(capturedDialog.color) : []}
           />
 
           <MoveHistoryCard history={moves}/>

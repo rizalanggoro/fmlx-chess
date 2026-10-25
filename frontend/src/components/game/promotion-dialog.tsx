@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button'
+import {Button} from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -6,33 +6,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { GLYPHS } from '@/constants/chess'
-import type { PieceColor, PieceType } from '@/lib/api'
+import {GLYPHS, PIECE_NAMES} from '@/constants/chess'
+import type {PieceColor, PieceType} from '@/lib/api'
 
-const NAMES: Record<PieceType, string> = {
-  King: 'Raja',
-  Queen: 'Ratu',
-  Rook: 'Benteng',
-  Bishop: 'Uskup',
-  Knight: 'Kuda',
-  Pawn: 'Pion',
-}
-
-export function PromotionDialog({
-  open,
-  color,
-  options,
-  pending,
-  onSelect,
-  onDismiss,
-}: {
-  open: boolean
-  color: PieceColor
-  options: PieceType[]
-  pending: boolean
-  onSelect: (type: PieceType) => void
-  onDismiss: () => void
-}) {
+export function PromotionDialog(
+  {
+    open,
+    color,
+    options,
+    pending,
+    onSelect,
+    onDismiss,
+  }: {
+    open: boolean
+    color: PieceColor
+    options: PieceType[]
+    pending: boolean
+    onSelect: (type: PieceType) => void
+    onDismiss: () => void
+  }
+) {
   return (
     <Dialog
       open={open}
@@ -60,7 +53,7 @@ export function PromotionDialog({
               <span aria-hidden className="font-heading text-2xl leading-none">
                 {GLYPHS[type][color]}
               </span>
-              {NAMES[type]}
+              {PIECE_NAMES[type]}
             </Button>
           ))}
         </div>

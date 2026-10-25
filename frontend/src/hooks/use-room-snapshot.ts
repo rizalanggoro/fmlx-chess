@@ -10,7 +10,6 @@ import { connection } from '@/lib/game-hub'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
-// Satu event berisi seluruh state room; semua cache diisi dari payload yang sama.
 export function useRoomSnapshot(roomId: string) {
   const qc = useQueryClient()
 

@@ -1,18 +1,15 @@
 import { toast } from '@/components/ui/toast'
-import { REASONS } from '@/constants/chess'
+import { playerLabel, REASONS } from '@/constants/chess'
 import {
   getRoomsByRoomIdGameQueryKey,
   getRoomsByRoomIdQueryKey,
   type GameEndedDto,
   type GameStateDto,
-  type PieceColor,
   type RoomStatusDto,
 } from '@/lib/api'
 import { connection } from '@/lib/game-hub'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-
-const colorLabel = (color: PieceColor) => (color === 'White' ? 'Putih' : 'Hitam')
 
 export function useGameEnded(roomId: string) {
   const qc = useQueryClient()
@@ -30,11 +27,7 @@ export function useGameEnded(roomId: string) {
       )
       const reason = REASONS[event.result.reason]
       if (event.result.winner) {
-        const name =
-          event.result.winner === 'White' ? room?.whiteName : room?.blackName
-        const player = name?.trim()
-          ? `${colorLabel(event.result.winner)} (${name.trim()})`
-          : colorLabel(event.result.winner)
+        const player = playerLabel(event.result.winner, room?.whiteName, room?.blackName)
         toast.add({
           type: 'success',
           title: `${player} menang!`,

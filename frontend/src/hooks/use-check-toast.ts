@@ -1,4 +1,5 @@
 import { toast } from '@/components/ui/toast'
+import { playerLabel } from '@/constants/chess'
 import {
   getRoomsByRoomIdQueryKey,
   type CheckDeclaredDto,
@@ -8,9 +9,6 @@ import {
 import { connection } from '@/lib/game-hub'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
-
-const colorLabel = (color: PieceColor) =>
-  color === 'White' ? 'Putih' : 'Hitam'
 
 const opponent = (color: PieceColor): PieceColor =>
   color === 'White' ? 'Black' : 'White'
@@ -28,10 +26,7 @@ export function useCheckToast(roomId: string, myColor?: PieceColor) {
         getRoomsByRoomIdQueryKey({ path: { roomId } }),
       )
       const byColor = opponent(event.color)
-      const name = byColor === 'White' ? room?.whiteName : room?.blackName
-      const by = name?.trim()
-        ? `${colorLabel(byColor)} (${name.trim()})`
-        : colorLabel(byColor)
+      const by = playerLabel(byColor, room?.whiteName, room?.blackName)
 
       toast.add({
         type: 'error',

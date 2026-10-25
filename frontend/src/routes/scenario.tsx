@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { REASONS } from '@/constants/chess'
+import { REASONS, sameSquare } from '@/constants/chess'
 import {
   getRoomsByRoomIdGameBoardOptions,
   getRoomsByRoomIdGameHistoryOptions,
@@ -33,9 +33,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export const Route = createFileRoute('/scenario')({ component: ScenarioPage })
-
-const same = (a: Position | null, b: Position) =>
-  a !== null && a.column === b.column && a.row === b.row
 
 const errorText = (error: unknown) => {
   if (error instanceof Error) return error.message
@@ -104,7 +101,7 @@ function ScenarioPage() {
   const outcome = outcomes[active.id]
   const targets = new Set(
     (legal?.moves ?? [])
-      .filter((move) => same(selected, move.from))
+      .filter((move) => sameSquare(selected, move.from))
       .map((move) => `${move.to.column},${move.to.row}`),
   )
   const passed = Object.values(outcomes).filter((result) => result.pass).length
@@ -232,7 +229,7 @@ function ScenarioPage() {
       (tile) => tile.column === position.column && tile.row === position.row,
     )
     if (piece?.color === state.currentPlayer.color) {
-      setSelected(same(selected, position) ? null : position)
+      setSelected(sameSquare(selected, position) ? null : position)
     } else {
       setSelected(null)
     }
@@ -260,12 +257,12 @@ function ScenarioPage() {
         <div className="flex flex-col gap-4">
           <ChessBoard
             tiles={board ?? []}
-            selected={selected}
-            targets={targets}
+            selectedSquare={selected}
+            legalTargets={targets}
             lastMove={lastMove}
-            flip={false}
+            flipped={false}
             disabled={busy || state?.state !== 'InProgress'}
-            onSelect={click}
+            onSquareSelect={click}
           />
 
           <Card size="sm">

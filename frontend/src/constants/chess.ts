@@ -1,9 +1,36 @@
-import type { GameEndReason, PieceColor, PieceType } from '@/lib/api'
+import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
 
 export const FILES = 'abcdefgh'
 
+export const sameSquare = (a: Position | null | undefined, b: Position) =>
+  a != null && a.column === b.column && a.row === b.row
+
 export const colorName = (color: PieceColor) =>
   color === 'White' ? 'Putih' : 'Hitam'
+
+export const playerName = (
+  color: PieceColor,
+  white?: string | null,
+  black?: string | null,
+) => (color === 'White' ? white : black)
+
+export const playerLabel = (
+  color: PieceColor,
+  white?: string | null,
+  black?: string | null,
+) => {
+  const name = playerName(color, white, black)?.trim()
+  return name ? `${colorName(color)} (${name})` : colorName(color)
+}
+
+export const PIECE_NAMES: Record<PieceType, string> = {
+  King: 'Raja',
+  Queen: 'Ratu',
+  Rook: 'Benteng',
+  Bishop: 'Menteri',
+  Knight: 'Kuda',
+  Pawn: 'Pion',
+}
 
 export const GLYPHS: Record<PieceType, Record<PieceColor, string>> = {
   King: { White: '♔', Black: '♚' },
