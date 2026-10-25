@@ -61,9 +61,6 @@ public class ChessChessGameEngine : IChessGameEngine
 
     #region Properties
 
-    // Dinonaktifkan: promosi memakai PromotionType dari langkah legal (Queen/Rook/Bishop/Knight). Lihat notes.md.
-    // public PromotionSelectionHandler PromotionSelector { get; set; }
-
     public Dictionary<PieceColor, IReadOnlyList<IChessPiece>> CapturedPiecesTracker => new()
     {
         [PieceColor.White] = _captured[PieceColor.White],
