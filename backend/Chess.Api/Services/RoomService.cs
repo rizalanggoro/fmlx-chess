@@ -19,38 +19,40 @@ public class RoomService(
     ILogger<RoomService> logger
 ) : IRoomService
 {
+    #region Rooms
+
     public Room CreateRoom(RoomMode mode)
     {
         string roomId;
         do
         {
             roomId = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
-        } while (registry.Find(roomId) is not null);
+        } while (registry.Get(roomId) is not null);
 
-        var manager = new ChessChessGameEngine(
+        var engine = new ChessChessGameEngine(
             new Board(),
             new Player("White", PieceColor.White),
             new Player("Black", PieceColor.Black),
             TimeSpan.FromMinutes(10)
         );
-        var room = new Room(roomId, mode, manager);
+        var room = new Room(roomId, mode, engine);
 
-        manager.SnapshotChangedEventHandler += (_, e) => NotifySnapshot(room, e);
-        manager.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
-        manager.CheckDeclaredEventHandler += (_, e) => NotifyCheck(room.Id, e);
-        manager.GameEndedEventHandler += (_, e) => NotifyGameEnded(room.Id, e);
-        manager.DrawOfferedEventHandler += (_, e) => NotifyDrawOffered(room.Id, e);
-        manager.DrawDeclinedEventHandler += (_, e) => NotifyDrawDeclined(room.Id, e);
-        manager.TimerTickedEventHandler += (_, e) => NotifyTimerTick(room.Id, e);
+        engine.SnapshotChangedEventHandler += (_, e) => NotifySnapshot(room, e);
+        engine.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
+        engine.CheckDeclaredEventHandler += (_, e) => NotifyCheck(room.Id, e);
+        engine.GameEndedEventHandler += (_, e) => NotifyGameEnded(room.Id, e);
+        engine.DrawOfferedEventHandler += (_, e) => NotifyDrawOffered(room.Id, e);
+        engine.DrawDeclinedEventHandler += (_, e) => NotifyDrawDeclined(room.Id, e);
+        engine.TimerTickedEventHandler += (_, e) => NotifyTimerTick(room.Id, e);
 
-        registry.Add(room);
+        registry.Create(room);
 
         return room;
     }
 
     public Room? GetRoom(string roomId)
     {
-        return registry.Find(roomId);
+        return registry.Get(roomId);
     }
 
     public bool ClaimRoom(Room room, PieceColor color, string? name = null)
@@ -75,6 +77,10 @@ public class RoomService(
         return true;
     }
 
+    #endregion
+
+    #region Game actions
+
     public void StartGame(Room room)
     {
         room.Engine.StartGame();
@@ -91,25 +97,16 @@ public class RoomService(
         room.Engine.ResetGame();
     }
 
-    public IReadOnlyList<TileDto> GetBoard(Room room)
-    {
-        return room.Engine.GetBoard();
-    }
-
-    public IReadOnlyList<MoveHistoryEntry> GetHistory(Room room, PieceColor? color)
-    {
-        return color.HasValue ? room.Engine.GetMoveHistory(color.Value) : room.Engine.MoveHistory;
-    }
-
     public GameActionResult MakeMove(Room room, Move move, PieceColor? color)
     {
-        if (room.Mode == RoomMode.Online)
-        {
-            if (color is null || !room.IsJoined(color.Value))
-                return GameActionResult.NotAPlayer;
-            if (color.Value != room.Engine.CurrentPlayer.Color)
-                return GameActionResult.NotYourTurn;
-        }
+        if (room.Mode != RoomMode.Online)
+            return room.Engine.TryMakeMove(move) ? GameActionResult.Ok : GameActionResult.Invalid;
+
+        if (color is null || !room.IsJoined(color.Value))
+            return GameActionResult.NotAPlayer;
+
+        if (color.Value != room.Engine.CurrentPlayer.Color)
+            return GameActionResult.NotYourTurn;
 
         return room.Engine.TryMakeMove(move) ? GameActionResult.Ok : GameActionResult.Invalid;
     }
@@ -138,6 +135,7 @@ public class RoomService(
             return GameActionResult.NotAPlayer;
 
         room.Engine.RespondToDrawOffer(player, accepted);
+        
         return GameActionResult.Ok;
     }
 
@@ -166,6 +164,24 @@ public class RoomService(
         return room.Mode != RoomMode.Online || room.IsJoined(player.Color);
     }
 
+    #endregion
+
+    #region Game state
+
+    public IReadOnlyList<TileDto> GetBoard(Room room)
+    {
+        return room.Engine.GetBoard();
+    }
+
+    public IReadOnlyList<MoveHistoryEntry> GetHistory(Room room, PieceColor? color)
+    {
+        return color.HasValue ? room.Engine.GetMoveHistory(color.Value) : room.Engine.MoveHistory;
+    }
+
+    #endregion
+
+    #region Lobby
+
     public IReadOnlyList<RoomStatusDto> AvailableRooms()
     {
         return registry.All
@@ -179,6 +195,10 @@ public class RoomService(
     {
         _ = SendSafeAsync(GameGroups.Lobby, "LobbyChanged", new LobbyChangedDto(AvailableRooms()));
     }
+
+    #endregion
+
+    #region Broadcast
 
     private void NotifySnapshot(Room room, SnapshotChangedEventArgs e)
     {
@@ -272,5 +292,6 @@ public class RoomService(
             logger.LogWarning(ex, "Failed to broadcast {Method} to {Group}", method, group);
         }
     }
-}
 
+    #endregion
+}

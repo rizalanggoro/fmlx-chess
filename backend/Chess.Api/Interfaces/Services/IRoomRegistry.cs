@@ -6,6 +6,6 @@ public interface IRoomRegistry
 {
     IEnumerable<Room> All { get; }
 
-    Room? Find(string id);
-    void Add(Room room);
+    Room? Get(string id);
+    void Create(Room room);
 }

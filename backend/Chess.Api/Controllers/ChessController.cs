@@ -166,7 +166,7 @@ public class ChessController(IRoomService service) : ControllerBase
         {
             if (service.GetRoom(roomId) is not { } room)
                 return RoomNotFound();
-            
+
             return Ok(LegalMovesDtoFactory.FromRoom(room));
         }
         catch (Exception ex)
@@ -186,7 +186,7 @@ public class ChessController(IRoomService service) : ControllerBase
         {
             if (service.GetRoom(roomId) is not { } room)
                 return RoomNotFound();
-            
+
             return Ok(service.GetHistory(room, color));
         }
         catch (Exception ex)
@@ -210,9 +210,9 @@ public class ChessController(IRoomService service) : ControllerBase
         {
             if (service.GetRoom(roomId) is not { } room)
                 return RoomNotFound();
-            
+
             service.StartGame(room);
-            
+
             return Ok(GameStateDtoFactory.FromRoom(room));
         }
         catch (Exception ex)
@@ -232,9 +232,9 @@ public class ChessController(IRoomService service) : ControllerBase
         {
             if (service.GetRoom(roomId) is not { } room)
                 return RoomNotFound();
-            
+
             service.ResetGame(room);
-            
+
             return Ok(GameStateDtoFactory.FromRoom(room));
         }
         catch (Exception ex)

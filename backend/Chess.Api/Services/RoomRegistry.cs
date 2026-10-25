@@ -10,12 +10,12 @@ public class RoomRegistry : IRoomRegistry
 
     public IEnumerable<Room> All => _rooms.Values;
 
-    public Room? Find(string id)
+    public Room? Get(string id)
     {
         return _rooms.GetValueOrDefault(id);
     }
 
-    public void Add(Room room)
+    public void Create(Room room)
     {
         _rooms[room.Id] = room;
     }
