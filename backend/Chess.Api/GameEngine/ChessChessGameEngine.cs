@@ -243,7 +243,7 @@ public class ChessChessGameEngine : IChessGameEngine
         if (applyMoveResult is null)
             return false;
 
-        UpdateCastlingRights(Board, effective, piece, applyMoveResult.CapturedPiece);
+        UpdateCastlingRights(effective, piece, applyMoveResult.CapturedPiece);
         UpdateEnPassantTarget(effective, piece);
 
         if (applyMoveResult.CapturedPiece is not null)
@@ -787,51 +787,67 @@ public class ChessChessGameEngine : IChessGameEngine
         return moves;
     }
 
+    /// <summary>
+    ///     Generates the castling moves available to the king on its starting
+    ///     square: the right must still be held, the squares between king and
+    ///     rook must be empty, the rook must sit on its home square, and neither
+    ///     the king's square nor the squares it crosses may be attacked. Returns
+    ///     an empty list for any other piece or square; the destination square
+    ///     is validated afterwards by <see cref="GetLegalMoves" />.
+    /// </summary>
     private List<Move> GetCastlingMoves(Position from)
     {
         var moves = new List<Move>();
         var piece = GetPieceAt(from);
         if (piece is null || piece.Type != PieceType.King)
             return moves;
+
         if (IsKingInCheck(Board, piece.Color))
             return moves;
-        var enemy = piece.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        if (piece.Color == PieceColor.White && from.Equals(new Position(0, 4)))
+
+        var enemyColor = piece.Color == PieceColor.White ? PieceColor.Black : PieceColor.White;
+        if (piece.Color == PieceColor.White && from == new Position(0, 4))
         {
-            if (CastlingRights.WhiteKingSide
-                && GetPieceAt(new Position(0, 5)) is null
-                && GetPieceAt(new Position(0, 6)) is null
-                && GetPieceAt(new Position(0, 7)) is { Type: PieceType.Rook, Color: PieceColor.White }
-                && !IsSquareAttacked(Board, new Position(0, 5), enemy)
-                && !IsSquareAttacked(Board, new Position(0, 6), enemy))
-                moves.Add(new Move(from, new Position(0, 6)));
-            if (CastlingRights.WhiteQueenSide
-                && GetPieceAt(new Position(0, 1)) is null
-                && GetPieceAt(new Position(0, 2)) is null
-                && GetPieceAt(new Position(0, 3)) is null
-                && GetPieceAt(new Position(0, 0)) is { Type: PieceType.Rook, Color: PieceColor.White }
-                && !IsSquareAttacked(Board, new Position(0, 3), enemy)
-                && !IsSquareAttacked(Board, new Position(0, 2), enemy))
-                moves.Add(new Move(from, new Position(0, 2)));
+            if (
+                CastlingRights.WhiteKingSide &&
+                GetPieceAt(new Position(0, 5)) is null &&
+                GetPieceAt(new Position(0, 6)) is null &&
+                GetPieceAt(new Position(0, 7)) is { Type: PieceType.Rook, Color: PieceColor.White } &&
+                !IsSquareAttacked(Board, new Position(0, 5), enemyColor) &&
+                !IsSquareAttacked(Board, new Position(0, 6), enemyColor)
+            ) moves.Add(new Move(from, new Position(0, 6)));
+
+            if (
+                CastlingRights.WhiteQueenSide &&
+                GetPieceAt(new Position(0, 1)) is null &&
+                GetPieceAt(new Position(0, 2)) is null &&
+                GetPieceAt(new Position(0, 3)) is null &&
+                GetPieceAt(new Position(0, 0)) is { Type: PieceType.Rook, Color: PieceColor.White } &&
+                !IsSquareAttacked(Board, new Position(0, 3), enemyColor) &&
+                !IsSquareAttacked(Board, new Position(0, 2), enemyColor)
+            ) moves.Add(new Move(from, new Position(0, 2)));
         }
 
-        if (piece.Color == PieceColor.Black && from.Equals(new Position(7, 4)))
+        if (piece.Color == PieceColor.Black && from == new Position(7, 4))
         {
-            if (CastlingRights.BlackKingSide
-                && GetPieceAt(new Position(7, 5)) is null
-                && GetPieceAt(new Position(7, 6)) is null
-                && GetPieceAt(new Position(7, 7)) is { Type: PieceType.Rook, Color: PieceColor.Black }
-                && !IsSquareAttacked(Board, new Position(7, 5), enemy)
-                && !IsSquareAttacked(Board, new Position(7, 6), enemy))
-                moves.Add(new Move(from, new Position(7, 6)));
-            if (CastlingRights.BlackQueenSide
-                && GetPieceAt(new Position(7, 1)) is null
-                && GetPieceAt(new Position(7, 2)) is null
-                && GetPieceAt(new Position(7, 3)) is null
-                && GetPieceAt(new Position(7, 0)) is { Type: PieceType.Rook, Color: PieceColor.Black }
-                && !IsSquareAttacked(Board, new Position(7, 3), enemy)
-                && !IsSquareAttacked(Board, new Position(7, 2), enemy))
-                moves.Add(new Move(from, new Position(7, 2)));
+            if (
+                CastlingRights.BlackKingSide &&
+                GetPieceAt(new Position(7, 5)) is null &&
+                GetPieceAt(new Position(7, 6)) is null &&
+                GetPieceAt(new Position(7, 7)) is { Type: PieceType.Rook, Color: PieceColor.Black } &&
+                !IsSquareAttacked(Board, new Position(7, 5), enemyColor) &&
+                !IsSquareAttacked(Board, new Position(7, 6), enemyColor)
+            ) moves.Add(new Move(from, new Position(7, 6)));
+
+            if (
+                CastlingRights.BlackQueenSide &&
+                GetPieceAt(new Position(7, 1)) is null &&
+                GetPieceAt(new Position(7, 2)) is null &&
+                GetPieceAt(new Position(7, 3)) is null &&
+                GetPieceAt(new Position(7, 0)) is { Type: PieceType.Rook, Color: PieceColor.Black } &&
+                !IsSquareAttacked(Board, new Position(7, 3), enemyColor) &&
+                !IsSquareAttacked(Board, new Position(7, 2), enemyColor)
+            ) moves.Add(new Move(from, new Position(7, 2)));
         }
 
         return moves;
@@ -1080,7 +1096,13 @@ public class ChessChessGameEngine : IChessGameEngine
         );
     }
 
-    private void UpdateCastlingRights(IBoard board, Move move, IChessPiece movingPiece, IChessPiece? capturedPiece)
+    /// <summary>
+    ///     Revokes the castling rights that the just-played move invalidated:
+    ///     both rights of a side whose king moved, the matching side when a rook
+    ///     leaves its home square, and the matching side when a rook is captured
+    ///     on its home square. Everything else is left untouched.
+    /// </summary>
+    private void UpdateCastlingRights(Move move, IChessPiece movingPiece, IChessPiece? capturedPiece)
     {
         var currentCastlingRights = CastlingRights;
         if (movingPiece.Type == PieceType.King)
@@ -1234,56 +1256,100 @@ public class ChessChessGameEngine : IChessGameEngine
         return key;
     }
 
+    /// <summary>
+    ///     Evaluates the position left by the just-played move and returns the
+    ///     result that applies automatically, or <c>null</c> when play goes on.
+    ///     Checks, in order: fivefold repetition, the seventy-five-move rule,
+    ///     checkmate or stalemate of the opponent, and a dead position.
+    ///     <see cref="CurrentPlayer" /> is still the mover here because the turn
+    ///     is changed afterwards.
+    /// </summary>
     private GameResult? EvaluateAutomaticResult()
     {
         if (IsFivefoldRepetitionAutomatic())
-            return new GameResult(GameEndReason.DrawByFivefoldRepetition, null);
+            return new GameResult(
+                GameEndReason.DrawByFivefoldRepetition,
+                null
+            );
+
         if (IsSeventyFiveMoveRuleAutomatic())
-            return new GameResult(GameEndReason.DrawBy75MoveRule, null);
+            return new GameResult(
+                GameEndReason.DrawBy75MoveRule,
+                null
+            );
+
         var mover = CurrentPlayer.Color;
-        var opponent = mover == PieceColor.White ? PieceColor.Black : PieceColor.White;
-        var inCheck = IsKingInCheck(Board, opponent);
-        var hasMoves = HasAnyLegalMove(Board, opponent);
+        var opponentColor = mover == PieceColor.White ? PieceColor.Black : PieceColor.White;
+        var inCheck = IsKingInCheck(Board, opponentColor);
+        var hasMoves = HasAnyLegalMove(Board, opponentColor);
+
         if (inCheck && !hasMoves)
             return new GameResult(GameEndReason.Checkmate, mover);
+
         if (!inCheck && !hasMoves)
             return new GameResult(GameEndReason.DrawByStalemate, null);
+
         if (IsDeadPosition())
             return new GameResult(GameEndReason.DrawByDeadPosition, null);
+
         return null;
     }
 
+    /// <summary>
+    ///     Tells whether checkmate is impossible for both sides given the
+    ///     material on the board: bare kings, a lone bishop or knight, or only
+    ///     bishops standing on squares of a single colour. Any pawn, rook, or
+    ///     queen, or any other combination of minor pieces, returns
+    ///     <c>false</c>.
+    /// </summary>
     private bool IsDeadPosition()
     {
+        // K vs K                  → dead
+        // K+B vs K                → dead
+        // K+N vs K                → dead
+        // K+B vs K+B (same color) → dead
+
+        // K+R vs K
+        // K+Q vs K
+        // K+P vs K
+        // K+B vs K+B (diff color)
+        // K+N vs K+N
+
         var knights = 0;
         var bishops = 0;
         var bishopColor = -1;
         var mixedBishopColor = false;
+
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
         {
-            var p = Board.Tiles[r, c].Piece;
-            if (p is null || p.Type == PieceType.King)
+            var piece = GetPieceAt(new Position(r, c));
+            if (piece is null || piece.Type == PieceType.King)
                 continue;
-            if (p.Type == PieceType.Pawn || p.Type == PieceType.Rook || p.Type == PieceType.Queen)
+
+            if (piece.Type is PieceType.Pawn or PieceType.Rook or PieceType.Queen)
                 return false;
-            if (p.Type == PieceType.Knight)
+
+            if (piece.Type == PieceType.Knight)
                 knights++;
-            if (p.Type == PieceType.Bishop)
+
+            if (piece.Type == PieceType.Bishop)
             {
                 bishops++;
-                var sq = (c + r) % 2;
+                var square = (c + r) % 2;
                 if (bishopColor == -1)
-                    bishopColor = sq;
-                else if (bishopColor != sq)
+                    bishopColor = square;
+                else if (bishopColor != square)
                     mixedBishopColor = true;
             }
         }
 
         if (knights + bishops <= 1)
             return true;
+
         if (knights == 0 && !mixedBishopColor)
             return true;
+
         return false;
     }
 
@@ -1311,19 +1377,32 @@ public class ChessChessGameEngine : IChessGameEngine
 
     #region Draw Rule Bookkeeping
 
-    public void RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture)
+    /// <summary>
+    ///     Updates the draw bookkeeping after a move: resets the half-move clock
+    ///     on a pawn move or capture and otherwise advances it, then records the
+    ///     position key for the side now to move.
+    /// </summary>
+    private void RecordCompletedMove(IBoard board, PieceColor sideToMove, bool wasPawnMove, bool wasCapture)
     {
         _halfMoveClock = wasPawnMove || wasCapture ? 0 : _halfMoveClock + 1;
         _positionHistory.Add(GeneratePositionKey(board, sideToMove));
     }
 
-    public bool IsThreefoldRepetitionClaimAvailable()
+    /// <summary>
+    ///     Tells whether the side to move may claim a draw because the current
+    ///     position has occurred at least three times.
+    /// </summary>
+    private bool IsThreefoldRepetitionClaimAvailable()
     {
         var key = GeneratePositionKey(Board, CurrentPlayer.Color);
         return _positionHistory.Count(k => k == key) >= 3;
     }
 
-    public bool IsFivefoldRepetitionAutomatic()
+    /// <summary>
+    ///     Tells whether the current position has occurred at least five times,
+    ///     in which case the game is drawn automatically without a claim.
+    /// </summary>
+    private bool IsFivefoldRepetitionAutomatic()
     {
         var key = GeneratePositionKey(Board, CurrentPlayer.Color);
         return _positionHistory.Count(k => k == key) >= 5;
