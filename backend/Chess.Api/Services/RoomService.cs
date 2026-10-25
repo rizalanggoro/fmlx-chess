@@ -193,7 +193,7 @@ public class RoomService(
 
     public void NotifyLobby()
     {
-        _ = SendSafeAsync(GameGroups.Lobby, "LobbyChanged", new LobbyChangedDto(AvailableRooms()));
+        _ = SendSafeAsync("lobby", "LobbyChanged", new LobbyChangedDto(AvailableRooms()));
     }
 
     #endregion
@@ -211,7 +211,7 @@ public class RoomService(
         }
 
         _ = SendSafeAsync(
-            GameGroups.Room(room.Id),
+            $"room:{room.Id}",
             "SnapshotChanged",
             new SnapshotChangedDto(
                 room.Id,
@@ -227,7 +227,7 @@ public class RoomService(
     private void NotifyCheck(string roomId, CheckEventArgs e)
     {
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
+            $"room:{roomId}",
             "CheckDeclared",
             new CheckDeclaredDto(roomId, e.CheckedColor)
         );
@@ -236,7 +236,7 @@ public class RoomService(
     private void NotifyPieceCaptured(string roomId, PieceCapturedEventArgs e)
     {
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
+            $"room:{roomId}",
             "PieceCaptured",
             new PieceCapturedDto(roomId, e.CapturedPiece.Color, e.CapturedPiece.Type)
         );
@@ -245,7 +245,7 @@ public class RoomService(
     private void NotifyTimerTick(string roomId, TimerTickEventArgs e)
     {
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
+            $"room:{roomId}",
             "TimerTick",
             new TimerTickDto(roomId, e.Color, (int)e.TimeRemaining.TotalSeconds)
         );
@@ -254,7 +254,7 @@ public class RoomService(
     private void NotifyGameEnded(string roomId, GameEndedEventArgs e)
     {
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
+            $"room:{roomId}",
             "GameEnded",
             new GameEndedDto(roomId, e.Result)
         );
@@ -263,7 +263,7 @@ public class RoomService(
     private void NotifyDrawOffered(string roomId, DrawOfferedEventArgs e)
     {
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
+            $"room:{roomId}",
             "DrawOffered",
             new DrawOfferedDto(roomId, e.Offerer.Color, e.Offerer.Name)
         );
@@ -272,7 +272,7 @@ public class RoomService(
     private void NotifyDrawDeclined(string roomId, DrawDeclinedEventArgs e)
     {
         _ = SendSafeAsync(
-            GameGroups.Room(roomId),
+            $"room:{roomId}",
             "DrawDeclined",
             new DrawDeclinedDto(roomId, e.Offerer.Color)
         );
