@@ -1410,12 +1410,17 @@ public class ChessChessGameEngine : IChessGameEngine
     }
 
     /// <summary>
-    ///     Tells whether the current position has occurred at least five times,
-    ///     in which case the game is drawn automatically without a claim.
+    ///     Tells whether the position left by the just-played move has occurred at
+    ///     least five times, in which case the game is drawn automatically without a
+    ///     claim. Called before the turn flips, so the side to move recorded in the
+    ///     position key is the opponent of <see cref="CurrentPlayer" />.
     /// </summary>
     private bool IsFivefoldRepetitionAutomatic()
     {
-        var key = GeneratePositionKey(Board, CurrentPlayer.Color);
+        var sideToMove = CurrentPlayer.Color == PieceColor.White
+            ? PieceColor.Black
+            : PieceColor.White;
+        var key = GeneratePositionKey(Board, sideToMove);
         return _positionHistory.Count(k => k == key) >= 5;
     }
 
