@@ -6,7 +6,7 @@ namespace Api.Swagger;
 
 // SignalR payloads are not HTTP operations, so register them as schema-only
 // components. This keeps the generated frontend event types in sync with the DTOs.
-public abstract class SignalRContractSchemaFilter : IDocumentFilter
+public class SignalRContractSchemaFilter : IDocumentFilter
 {
     private static readonly Type[] Contracts =
     [

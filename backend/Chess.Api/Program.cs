@@ -28,6 +28,7 @@ builder.Services
         o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter())
     );
 builder.Services.AddSingleton<IRoomRegistry, RoomRegistry>();
+builder.Services.AddSingleton<IRoomService, RoomService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
