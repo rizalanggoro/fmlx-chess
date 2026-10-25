@@ -306,17 +306,19 @@ public class ChessChessGameEngine : IChessGameEngine
     /// </summary>
     public IReadOnlyList<Move> GetAllLegalMoves()
     {
-        var legal = new List<Move>();
-        for (var row = 0; row < 8; row++)
-        for (var column = 0; column < 8; column++)
+        var legalMoves = new List<Move>();
+        for (var r = 0; r < 8; r++)
+        for (var c = 0; c < 8; c++)
         {
-            var piece = Board.Tiles[row, column].Piece;
+            var pos = new Position(r, c);
+            var piece = GetPieceAt(pos);
             if (piece is null || piece.Color != CurrentPlayer.Color)
                 continue;
-            legal.AddRange(GetLegalMoves(new Position(row, column)));
+
+            legalMoves.AddRange(GetLegalMoves(pos));
         }
 
-        return legal;
+        return legalMoves;
     }
 
     /// <summary>
@@ -330,16 +332,20 @@ public class ChessChessGameEngine : IChessGameEngine
     private IReadOnlyList<Move> GetLegalMoves(Position from)
     {
         if (!IsInBounds(from))
-            return Array.Empty<Move>();
-        var piece = Board.Tiles[from.Row, from.Column].Piece;
+            return [];
+
+        var pos = new Position(from.Row, from.Column);
+        var piece = GetPieceAt(pos);
         if (piece is null || piece.Color != CurrentPlayer.Color)
-            return Array.Empty<Move>();
-        var pseudo = GenerateMovesForPiece(Board, from);
-        var legal = new List<Move>();
-        foreach (var m in pseudo)
-            if (!WouldLeaveKingInCheck(Board, m))
-                legal.Add(m);
-        return legal;
+            return [];
+
+        var pseudoMoves = GenerateMovesForPiece(Board, from);
+        var legalMoves = new List<Move>();
+        foreach (var pseudoMove in pseudoMoves)
+            if (!WouldLeaveKingInCheck(Board, pseudoMove))
+                legalMoves.Add(pseudoMove);
+
+        return legalMoves;
     }
 
     /// <summary>
@@ -382,9 +388,6 @@ public class ChessChessGameEngine : IChessGameEngine
         if (_drawOfferer is null || responder.Color == _drawOfferer.Color)
             return;
 
-        var offerer = _drawOfferer;
-        _drawOfferer = null;
-
         if (accepted)
             EndGame(
                 new GameResult(
@@ -395,27 +398,58 @@ public class ChessChessGameEngine : IChessGameEngine
         else
             DrawDeclinedEventHandler?.Invoke(
                 this,
-                new DrawDeclinedEventArgs(offerer)
+                new DrawDeclinedEventArgs(_drawOfferer)
             );
+
+        _drawOfferer = null;
     }
 
+    /// <summary>
+    ///     Ends the game as a draw by threefold repetition when the current
+    ///     position has occurred three times and the claiming side asks for it.
+    ///     Returns <c>false</c>, leaving the game untouched, when the game is
+    ///     not in progress or the claim is not available.
+    /// </summary>
     public bool ClaimDrawByThreefoldRepetition(IPlayer player)
     {
         if (State != GameState.InProgress)
             return false;
+
         if (!IsThreefoldRepetitionClaimAvailable())
             return false;
-        EndGame(new GameResult(GameEndReason.DrawByThreefoldRepetition, null));
+
+        EndGame(
+            new GameResult(
+                GameEndReason.DrawByThreefoldRepetition,
+                null
+            )
+        );
+
         return true;
     }
 
+    /// <summary>
+    ///     Ends the game as a draw by the fifty-move rule when fifty moves by
+    ///     each side have passed without a pawn move or a capture, and the
+    ///     claiming side asks for it. Returns <c>false</c>, leaving the game
+    ///     untouched, when the game is not in progress or the claim is not
+    ///     available.
+    /// </summary>
     public bool ClaimDrawByFiftyMoveRule(IPlayer player)
     {
         if (State != GameState.InProgress)
             return false;
+
         if (!IsFiftyMoveRuleClaimAvailable())
             return false;
-        EndGame(new GameResult(GameEndReason.DrawBy50MoveRule, null));
+
+        EndGame(
+            new GameResult(
+                GameEndReason.DrawBy50MoveRule,
+                null
+            )
+        );
+
         return true;
     }
 
@@ -518,46 +552,38 @@ public class ChessChessGameEngine : IChessGameEngine
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
         {
-            var piece = Board.Tiles[r, c].Piece;
-            tiles.Add(new TileDto(r, c, piece?.Color, piece?.Type));
+            var pos = new Position(r, c);
+            var piece = GetPieceAt(pos);
+            tiles.Add(
+                new TileDto(
+                    r,
+                    c,
+                    piece?.Color,
+                    piece?.Type
+                )
+            );
         }
 
         return tiles;
     }
 
 
-    public IChessTile? GetTileAt(Position pos)
+    /// <summary>
+    ///     Returns the tile at the given square, or <c>null</c> when the
+    ///     position lies off the board.
+    /// </summary>
+    private IChessTile? GetTileAt(Position pos)
     {
         return !IsInBounds(pos) ? null : Board.Tiles[pos.Row, pos.Column];
     }
 
-    public IChessPiece? GetPieceAt(Position pos)
+    /// <summary>
+    ///     Returns the piece standing on the given square, or <c>null</c> when
+    ///     the square is empty or lies off the board.
+    /// </summary>
+    private IChessPiece? GetPieceAt(Position pos)
     {
         return GetTileAt(pos)?.Piece ?? null;
-    }
-
-    /// <summary>
-    ///     Returns every piece of the given colour still on the board. Nothing
-    ///     calls it: clients receive the board as 64 tiles in
-    ///     <c>SnapshotChangedDto</c>, so a per-colour piece list is never needed.
-    ///     Kept public only because the class diagram lists it; the diagram is
-    ///     read-only, so the discrepancy is documented here and in notes.md.
-    /// </summary>
-    [Obsolete(
-        "Not used: the board is broadcast as 64 tiles via SnapshotChangedDto."
-    )]
-    public IReadOnlyList<IChessPiece> GetPieces(PieceColor color)
-    {
-        var list = new List<IChessPiece>();
-        for (var r = 0; r < 8; r++)
-        for (var c = 0; c < 8; c++)
-        {
-            var p = Board.Tiles[r, c].Piece;
-            if (p is not null && p.Color == color)
-                list.Add(p);
-        }
-
-        return list;
     }
 
     #endregion
