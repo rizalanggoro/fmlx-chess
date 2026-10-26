@@ -46,7 +46,8 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     are filled. Returns 409 when the requested seat is already taken.
     /// </summary>
     [HttpPost("{roomId}/join")]
-    public async Task<ActionResult<RoomSessionDto>> Join(string roomId, [FromQuery] string? name, [FromQuery] PieceColor? color)
+    public async Task<ActionResult<RoomSessionDto>> Join(string roomId, [FromQuery] string? name,
+        [FromQuery] PieceColor? color)
     {
         try
         {
@@ -298,7 +299,10 @@ public class ChessController(IRoomService service) : ControllerBase
     /// </summary>
     private ObjectResult Error(Exception ex, string message)
     {
-        return StatusCode(500, new ApiErrorDto(message, ex.Message));
+        return StatusCode(
+            StatusCodes.Status500InternalServerError,
+            new ApiErrorDto(message, ex.Message)
+        );
     }
 
     #endregion

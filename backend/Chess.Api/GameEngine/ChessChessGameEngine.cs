@@ -260,7 +260,6 @@ public class ChessChessGameEngine : IChessGameEngine
         if (applyMoveResult.CapturedPiece is not null)
             _captured[piece.Color].Add(applyMoveResult.CapturedPiece);
 
-
         _moveHistory.Add(new MoveHistoryEntry(effective, moverColor));
         _drawOfferer = null;
 
@@ -534,6 +533,7 @@ public class ChessChessGameEngine : IChessGameEngine
 
         for (var c = 0; c < 8; c++)
         {
+            // todo: inject piece dari luar bukan langsung di sini 
             Board.Tiles[0, c].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
             Board.Tiles[1, c].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
             Board.Tiles[6, c].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
