@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {GLYPHS, PIECE_NAMES} from '@/constants/chess'
+import {PIECE_IMAGE, PIECE_NAMES} from '@/constants/chess'
 import type {PieceColor, PieceType} from '@/lib/api'
 
 export function PromotionDialog(
@@ -50,9 +50,11 @@ export function PromotionDialog(
               className="justify-start gap-3"
               onClick={() => onSelect(type)}
             >
-              <span aria-hidden className="font-heading text-2xl leading-none">
-                {GLYPHS[type][color]}
-              </span>
+              <img
+                src={PIECE_IMAGE[type][color]}
+                alt=""
+                className="size-7 select-none"
+              />
               {PIECE_NAMES[type]}
             </Button>
           ))}

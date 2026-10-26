@@ -1,5 +1,5 @@
 import {Spinner} from '@/components/ui/spinner'
-import {FILES, GLYPHS, sameSquare} from '@/constants/chess'
+import {FILES, PIECE_IMAGE, sameSquare} from '@/constants/chess'
 import type {Move, PieceColor, Position, TileDto} from '@/lib/api'
 import {cn} from 'cn'
 import {useEffect, useState, type CSSProperties} from 'react'
@@ -141,15 +141,14 @@ export function ChessBoard(
                     </span>
                   )}
                   {piece?.color && piece.type && !animating && (
-                    <span
-                      className={`relative z-10 text-[8.5cqw] leading-none ${
-                        piece.color === 'White'
-                          ? 'text-amber-50 drop-shadow-[0_1px_1px_rgba(80,50,10,0.9)]'
-                          : 'text-amber-950'
-                      } ${pendingHere ? 'opacity-40' : ''}`}
-                    >
-                      {GLYPHS[piece.type][piece.color]}
-                    </span>
+                    <img
+                      src={PIECE_IMAGE[piece.type][piece.color]}
+                      alt=""
+                      draggable={false}
+                      className={`relative z-10 size-[8.5cqw] select-none ${
+                        pendingHere ? 'opacity-40' : ''
+                      }`}
+                    />
                   )}
                   {pendingHere && (
                     <span className="absolute inset-0 flex items-center justify-center">
@@ -161,7 +160,7 @@ export function ChessBoard(
                     </span>
                   )}
                   {target && !piece?.type && (
-                    <span className="absolute h-3 w-3 rounded-full bg-sky-500/70"/>
+                    <span className="absolute h-3 w-3 animate-pulse rounded-full bg-sky-500/70 motion-reduce:animate-none"/>
                   )}
                   {target && piece?.type && (
                     <span className="absolute inset-0 rounded-full ring-4 ring-inset ring-sky-500/70"/>
@@ -176,15 +175,12 @@ export function ChessBoard(
             className="chess-move pointer-events-none absolute z-10 flex items-center justify-center"
             style={moveStyle}
           >
-            <span
-              className={`text-[8.5cqw] leading-none ${
-                animation.piece.color === 'White'
-                  ? 'text-amber-50 drop-shadow-[0_1px_1px_rgba(80,50,10,0.9)]'
-                  : 'text-amber-950'
-              }`}
-            >
-              {GLYPHS[animation.piece.type][animation.piece.color]}
-            </span>
+            <img
+              src={PIECE_IMAGE[animation.piece.type][animation.piece.color]}
+              alt=""
+              draggable={false}
+              className="size-[8.5cqw] select-none"
+            />
           </span>
         )}
       </div>

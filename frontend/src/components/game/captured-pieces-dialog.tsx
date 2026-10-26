@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { GLYPHS, PIECE_NAMES } from '@/constants/chess'
+import { PIECE_IMAGE, PIECE_NAMES } from '@/constants/chess'
 import type { PieceColor, PieceType } from '@/lib/api'
 
 const ORDER: PieceType[] = ['Queen', 'Rook', 'Bishop', 'Knight', 'Pawn']
@@ -49,12 +49,11 @@ export function CapturedPiecesDialog({
                 key={type}
                 className="flex items-center gap-2 rounded-xl border border-border px-3 py-2"
               >
-                <span
-                  aria-hidden
-                  className="font-heading text-2xl leading-none text-foreground"
-                >
-                  {GLYPHS[type][capturedColor]}
-                </span>
+                <img
+                  src={PIECE_IMAGE[type][capturedColor]}
+                  alt=""
+                  className="size-7 select-none"
+                />
                 <span className="text-sm font-medium text-foreground">{PIECE_NAMES[type]}</span>
                 <span className="text-sm text-muted-foreground">×{count}</span>
               </span>

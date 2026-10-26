@@ -32,13 +32,13 @@ export const PIECE_NAMES: Record<PieceType, string> = {
   Pawn: 'Pion',
 }
 
-export const GLYPHS: Record<PieceType, Record<PieceColor, string>> = {
-  King: { White: '♔', Black: '♚' },
-  Queen: { White: '♕', Black: '♛' },
-  Rook: { White: '♖', Black: '♜' },
-  Bishop: { White: '♗', Black: '♝' },
-  Knight: { White: '♘', Black: '♞' },
-  Pawn: { White: '♙', Black: '♟' },
+export const PIECE_IMAGE: Record<PieceType, Record<PieceColor, string>> = {
+  King: { White: '/chess-pieces/white-king.svg', Black: '/chess-pieces/black-king.svg' },
+  Queen: { White: '/chess-pieces/white-queen.svg', Black: '/chess-pieces/black-queen.svg' },
+  Rook: { White: '/chess-pieces/white-rook.svg', Black: '/chess-pieces/black-rook.svg' },
+  Bishop: { White: '/chess-pieces/white-bishop.svg', Black: '/chess-pieces/black-bishop.svg' },
+  Knight: { White: '/chess-pieces/white-knight.svg', Black: '/chess-pieces/black-knight.svg' },
+  Pawn: { White: '/chess-pieces/white-pawn.svg', Black: '/chess-pieces/black-pawn.svg' },
 }
 
 export const REASONS: Record<GameEndReason, string> = {

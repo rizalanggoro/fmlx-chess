@@ -6,7 +6,7 @@ import {
   CardContent,
   CardHeader,
 } from '@/components/ui/card'
-import { colorName, GLYPHS, playerLabel, playerName, REASONS } from '@/constants/chess'
+import { colorName, PIECE_IMAGE, playerLabel, playerName, REASONS } from '@/constants/chess'
 import { useTimerTick } from '@/hooks'
 import type { GameStateDto, PieceColor } from '@/lib/api'
 
@@ -56,11 +56,11 @@ export function PlayerTurnCard({
                 active ? 'border-primary/30 bg-primary/10' : 'border-transparent'
               }`}
             >
-              <span
-                className="font-heading text-2xl leading-none text-foreground"
-              >
-                {GLYPHS.King[color]}
-              </span>
+              <img
+                src={PIECE_IMAGE.King[color]}
+                alt=""
+                className="size-6 shrink-0 select-none"
+              />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-foreground">
                   {playerName(color, whiteName, blackName) ?? colorName(color)}
