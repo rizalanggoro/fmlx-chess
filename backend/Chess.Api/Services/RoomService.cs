@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Api.Services;
 
+// todo: ganti asset yang bagus
+
 public class RoomService(
     IHubContext<GameHub> hub,
     IRoomRegistry registry,
@@ -21,7 +23,7 @@ public class RoomService(
 {
     #region Rooms
 
-    public Room CreateRoom(RoomMode mode)
+    public async Task<ServiceResult<RoomSessionDto>> CreateRoom(RoomMode mode, PieceColor? color, string? name)
     {
         string roomId;
         do
@@ -37,25 +39,84 @@ public class RoomService(
         );
         var room = new Room(roomId, mode, engine);
 
-        engine.SnapshotChangedEventHandler += (_, e) => NotifySnapshot(room, e);
-        engine.PieceCapturedEventHandler += (_, e) => NotifyPieceCaptured(room.Id, e);
-        engine.CheckDeclaredEventHandler += (_, e) => NotifyCheck(room.Id, e);
-        engine.GameEndedEventHandler += (_, e) => NotifyGameEnded(room.Id, e);
-        engine.DrawOfferedEventHandler += (_, e) => NotifyDrawOffered(room.Id, e);
-        engine.DrawDeclinedEventHandler += (_, e) => NotifyDrawDeclined(room.Id, e);
-        engine.TimerTickedEventHandler += (_, e) => NotifyTimerTick(room.Id, e);
+        engine.SnapshotChangedEventHandler += async (_, e) => await NotifySnapshot(room, e);
+        engine.PieceCapturedEventHandler += async (_, e) => await NotifyPieceCaptured(room.Id, e);
+        engine.CheckDeclaredEventHandler += async (_, e) => await NotifyCheck(room.Id, e);
+        engine.GameEndedEventHandler += async (_, e) => await NotifyGameEnded(room.Id, e);
+        engine.DrawOfferedEventHandler += async (_, e) => await NotifyDrawOffered(room.Id, e);
+        engine.DrawDeclinedEventHandler += async (_, e) => await NotifyDrawDeclined(room.Id, e);
+        engine.TimerTickedEventHandler += async (_, e) => await NotifyTimerTick(room.Id, e);
 
         registry.Create(room);
 
-        return room;
+        if (mode == RoomMode.HotSeat)
+        {
+            engine.StartGame();
+            return ServiceResult<RoomSessionDto>.Success(new RoomSessionDto(room.Id, room.Mode, null));
+        }
+
+        var pieceColor = color ?? PieceColor.White;
+
+        ClaimRoom(room, pieceColor, NormalizeName(name));
+        await NotifyLobby();
+
+        return ServiceResult<RoomSessionDto>.Success(new RoomSessionDto(room.Id, room.Mode, pieceColor));
     }
 
-    public Room? GetRoom(string roomId)
+    public async Task<ServiceResult<RoomSessionDto>> JoinRoom(string roomId, PieceColor? color, string? name)
     {
-        return registry.Get(roomId);
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<RoomSessionDto>();
+
+        if (room.Mode != RoomMode.Online)
+            return ServiceResult<RoomSessionDto>.Error(
+                StatusCodes.Status400BadRequest,
+                "Only online rooms can be joined"
+            );
+
+        if (color is null)
+            return ServiceResult<RoomSessionDto>.Error(
+                StatusCodes.Status400BadRequest,
+                "Color is required"
+            );
+
+        if (!ClaimRoom(room, color.Value, NormalizeName(name)))
+            return ServiceResult<RoomSessionDto>.Error(
+                StatusCodes.Status409Conflict,
+                room is { WhiteJoined: true, BlackJoined: true } ? "Room is full" : "Seat is already taken"
+            );
+
+        if (room.Engine.State == GameState.NotStarted)
+            room.Engine.StartGame();
+
+        await NotifyLobby();
+
+        return ServiceResult<RoomSessionDto>.Success(new RoomSessionDto(room.Id, room.Mode, color));
     }
 
-    public bool ClaimRoom(Room room, PieceColor color, string? name = null)
+    public ServiceResult<RoomStatusDto> GetStatus(string roomId)
+    {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<RoomStatusDto>();
+
+        return ServiceResult<RoomStatusDto>.Success(RoomStatusDtoFactory.FromRoom(room));
+    }
+
+    public IReadOnlyList<RoomStatusDto> AvailableRooms()
+    {
+        return registry.All
+            .Where(room => room.Mode == RoomMode.Online && room.WhiteJoined != room.BlackJoined)
+            .OrderBy(room => room.Id)
+            .Select(RoomStatusDtoFactory.FromRoom)
+            .ToList();
+    }
+
+    private async Task NotifyLobby()
+    {
+        await SendSafeAsync("lobby", "LobbyChanged", new LobbyChangedDto(AvailableRooms()));
+    }
+
+    private static bool ClaimRoom(Room room, PieceColor color, string? name)
     {
         if (color == PieceColor.White)
         {
@@ -81,126 +142,199 @@ public class RoomService(
 
     #region Game actions
 
-    public void StartGame(Room room)
+    public ServiceResult<GameStateDto> StartGame(string roomId)
     {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
         room.Engine.StartGame();
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public void StartGameIfNotStarted(Room room)
+    public ServiceResult<GameStateDto> ResetGame(string roomId)
     {
-        if (room.Engine.State == GameState.NotStarted)
-            room.Engine.StartGame();
-    }
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
 
-    public void ResetGame(Room room)
-    {
         room.Engine.ResetGame();
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public GameActionResult MakeMove(Room room, Move move, PieceColor? color)
+    public ServiceResult<GameStateDto> MakeMove(string roomId, Move move, PieceColor? color)
     {
-        if (room.Mode != RoomMode.Online)
-            return room.Engine.TryMakeMove(move) ? GameActionResult.Ok : GameActionResult.Invalid;
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
 
-        if (color is null || !room.IsJoined(color.Value))
-            return GameActionResult.NotAPlayer;
+        if (room.Mode == RoomMode.Online)
+        {
+            if (color is null || !room.IsJoined(color.Value))
+                return NotAPlayer();
 
-        if (color.Value != room.Engine.CurrentPlayer.Color)
-            return GameActionResult.NotYourTurn;
+            if (color.Value != room.Engine.CurrentPlayer.Color)
+                return ServiceResult<GameStateDto>.Error(
+                    StatusCodes.Status403Forbidden,
+                    "Not your turn"
+                );
+        }
 
-        return room.Engine.TryMakeMove(move) ? GameActionResult.Ok : GameActionResult.Invalid;
+        if (!room.Engine.TryMakeMove(move))
+            return ServiceResult<GameStateDto>.Error(
+                StatusCodes.Status400BadRequest,
+                "Illegal move"
+            );
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public GameActionResult Resign(Room room, IPlayer player)
+    public ServiceResult<GameStateDto> Resign(string roomId, IPlayer player)
     {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
         if (!IsPlayer(room, player))
-            return GameActionResult.NotAPlayer;
+            return NotAPlayer();
 
         room.Engine.Resign(player);
-        return GameActionResult.Ok;
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public GameActionResult OfferDraw(Room room, IPlayer player)
+    public ServiceResult<GameStateDto> OfferDraw(string roomId, IPlayer player)
     {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
         if (!IsPlayer(room, player))
-            return GameActionResult.NotAPlayer;
+            return NotAPlayer();
 
         room.Engine.OfferDraw(player);
-        return GameActionResult.Ok;
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public GameActionResult RespondToDrawOffer(Room room, IPlayer player, bool accepted)
+    public ServiceResult<GameStateDto> RespondToDrawOffer(string roomId, IPlayer player, bool accepted)
     {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
         if (!IsPlayer(room, player))
-            return GameActionResult.NotAPlayer;
+            return NotAPlayer();
 
         room.Engine.RespondToDrawOffer(player, accepted);
-        
-        return GameActionResult.Ok;
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public GameActionResult ClaimThreefoldRepetition(Room room, IPlayer player)
+    public ServiceResult<GameStateDto> ClaimThreefoldRepetition(string roomId, IPlayer player)
     {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
         if (!IsPlayer(room, player))
-            return GameActionResult.NotAPlayer;
+            return NotAPlayer();
 
-        return room.Engine.ClaimDrawByThreefoldRepetition(player)
-            ? GameActionResult.Ok
-            : GameActionResult.Invalid;
+        if (!room.Engine.ClaimDrawByThreefoldRepetition(player))
+            return ServiceResult<GameStateDto>.Error(
+                StatusCodes.Status400BadRequest,
+                "Threefold repetition claim not available"
+            );
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public GameActionResult ClaimFiftyMoveRule(Room room, IPlayer player)
+    public ServiceResult<GameStateDto> ClaimFiftyMoveRule(string roomId, IPlayer player)
     {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
         if (!IsPlayer(room, player))
-            return GameActionResult.NotAPlayer;
+            return NotAPlayer();
 
-        return room.Engine.ClaimDrawByFiftyMoveRule(player)
-            ? GameActionResult.Ok
-            : GameActionResult.Invalid;
-    }
+        if (!room.Engine.ClaimDrawByFiftyMoveRule(player))
+            return ServiceResult<GameStateDto>.Error(
+                StatusCodes.Status400BadRequest,
+                "Fifty-move claim not available"
+            );
 
-    private static bool IsPlayer(Room room, IPlayer player)
-    {
-        return room.Mode != RoomMode.Online || room.IsJoined(player.Color);
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
     #endregion
 
     #region Game state
 
-    public IReadOnlyList<TileDto> GetBoard(Room room)
+    public ServiceResult<GameStateDto> GetState(string roomId)
     {
-        return room.Engine.GetBoard();
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<GameStateDto>();
+
+        return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
-    public IReadOnlyList<MoveHistoryEntry> GetHistory(Room room, PieceColor? color)
+    public ServiceResult<IReadOnlyList<TileDto>> GetBoard(string roomId)
     {
-        return color.HasValue ? room.Engine.GetMoveHistory(color.Value) : room.Engine.MoveHistory;
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<IReadOnlyList<TileDto>>();
+
+        return ServiceResult<IReadOnlyList<TileDto>>.Success(room.Engine.GetBoard());
+    }
+
+    public ServiceResult<LegalMovesDto> GetLegalMoves(string roomId)
+    {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<LegalMovesDto>();
+
+        return ServiceResult<LegalMovesDto>.Success(LegalMovesDtoFactory.FromRoom(room));
+    }
+
+    public ServiceResult<IReadOnlyList<MoveHistoryEntry>> GetHistory(string roomId, PieceColor? color)
+    {
+        if (registry.Get(roomId) is not { } room)
+            return RoomNotFound<IReadOnlyList<MoveHistoryEntry>>();
+
+        return ServiceResult<IReadOnlyList<MoveHistoryEntry>>.Success(
+            color.HasValue ? room.Engine.GetMoveHistory(color.Value) : room.Engine.MoveHistory
+        );
     }
 
     #endregion
 
-    #region Lobby
+    #region Helpers
 
-    public IReadOnlyList<RoomStatusDto> AvailableRooms()
+    private static bool IsPlayer(Room room, IPlayer player)
     {
-        return registry.All
-            .Where(room => room.Mode == RoomMode.Online && room.WhiteJoined != room.BlackJoined)
-            .OrderBy(room => room.Id)
-            .Select(RoomStatusDtoFactory.FromRoom)
-            .ToList();
+        return room.Mode != RoomMode.Online || room.IsJoined(player.Color);
     }
 
-    public void NotifyLobby()
+    private static string? NormalizeName(string? name)
     {
-        _ = SendSafeAsync("lobby", "LobbyChanged", new LobbyChangedDto(AvailableRooms()));
+        var trimmed = name?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed[..Math.Min(trimmed.Length, 24)];
+    }
+
+    private static ServiceResult<T> RoomNotFound<T>()
+    {
+        return ServiceResult<T>.Error(
+            StatusCodes.Status404NotFound,
+            "Room not found"
+        );
+    }
+
+    private static ServiceResult<GameStateDto> NotAPlayer()
+    {
+        return ServiceResult<GameStateDto>.Error(
+            StatusCodes.Status403Forbidden,
+            "You are not a player in this room"
+        );
     }
 
     #endregion
 
     #region Broadcast
 
-    private void NotifySnapshot(Room room, SnapshotChangedEventArgs e)
+    private async Task NotifySnapshot(Room room, SnapshotChangedEventArgs e)
     {
         var board = new List<TileDto>(64);
         for (var r = 0; r < 8; r++)
@@ -210,7 +344,7 @@ public class RoomService(
             board.Add(new TileDto(r, c, p?.Color, p?.Type));
         }
 
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{room.Id}",
             "SnapshotChanged",
             new SnapshotChangedDto(
@@ -224,54 +358,54 @@ public class RoomService(
         );
     }
 
-    private void NotifyCheck(string roomId, CheckEventArgs e)
+    private async Task NotifyCheck(string roomId, CheckEventArgs e)
     {
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{roomId}",
             "CheckDeclared",
             new CheckDeclaredDto(roomId, e.CheckedColor)
         );
     }
 
-    private void NotifyPieceCaptured(string roomId, PieceCapturedEventArgs e)
+    private async Task NotifyPieceCaptured(string roomId, PieceCapturedEventArgs e)
     {
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{roomId}",
             "PieceCaptured",
             new PieceCapturedDto(roomId, e.CapturedPiece.Color, e.CapturedPiece.Type)
         );
     }
 
-    private void NotifyTimerTick(string roomId, TimerTickEventArgs e)
+    private async Task NotifyTimerTick(string roomId, TimerTickEventArgs e)
     {
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{roomId}",
             "TimerTick",
             new TimerTickDto(roomId, e.Color, (int)e.TimeRemaining.TotalSeconds)
         );
     }
 
-    private void NotifyGameEnded(string roomId, GameEndedEventArgs e)
+    private async Task NotifyGameEnded(string roomId, GameEndedEventArgs e)
     {
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{roomId}",
             "GameEnded",
             new GameEndedDto(roomId, e.Result)
         );
     }
 
-    private void NotifyDrawOffered(string roomId, DrawOfferedEventArgs e)
+    private async Task NotifyDrawOffered(string roomId, DrawOfferedEventArgs e)
     {
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{roomId}",
             "DrawOffered",
             new DrawOfferedDto(roomId, e.Offerer.Color, e.Offerer.Name)
         );
     }
 
-    private void NotifyDrawDeclined(string roomId, DrawDeclinedEventArgs e)
+    private async Task NotifyDrawDeclined(string roomId, DrawDeclinedEventArgs e)
     {
-        _ = SendSafeAsync(
+        await SendSafeAsync(
             $"room:{roomId}",
             "DrawDeclined",
             new DrawDeclinedDto(roomId, e.Offerer.Color)

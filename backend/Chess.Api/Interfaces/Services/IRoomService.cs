@@ -1,30 +1,30 @@
 using Api.DTOs;
 using Api.Enums;
 using Api.Interfaces.Models;
-using Api.Models;
 using Api.ValueObjects;
 
 namespace Api.Interfaces.Services;
 
 public interface IRoomService
 {
-    Room CreateRoom(RoomMode mode);
-    Room? GetRoom(string roomId);
-    bool ClaimRoom(Room room, PieceColor color, string? name = null);
+    Task<ServiceResult<RoomSessionDto>> CreateRoom(RoomMode mode, PieceColor? color, string? name);
+    Task<ServiceResult<RoomSessionDto>> JoinRoom(string roomId, PieceColor? color, string? name);
+    ServiceResult<RoomStatusDto> GetStatus(string roomId);
     IReadOnlyList<RoomStatusDto> AvailableRooms();
-    void NotifyLobby();
 
-    void StartGame(Room room);
-    void StartGameIfNotStarted(Room room);
-    void ResetGame(Room room);
+    ServiceResult<GameStateDto> GetState(string roomId);
 
-    IReadOnlyList<TileDto> GetBoard(Room room);
-    IReadOnlyList<MoveHistoryEntry> GetHistory(Room room, PieceColor? color);
+    ServiceResult<GameStateDto> StartGame(string roomId);
+    ServiceResult<GameStateDto> ResetGame(string roomId);
 
-    GameActionResult MakeMove(Room room, Move move, PieceColor? color);
-    GameActionResult Resign(Room room, IPlayer player);
-    GameActionResult OfferDraw(Room room, IPlayer player);
-    GameActionResult RespondToDrawOffer(Room room, IPlayer player, bool accepted);
-    GameActionResult ClaimThreefoldRepetition(Room room, IPlayer player);
-    GameActionResult ClaimFiftyMoveRule(Room room, IPlayer player);
+    ServiceResult<IReadOnlyList<TileDto>> GetBoard(string roomId);
+    ServiceResult<LegalMovesDto> GetLegalMoves(string roomId);
+    ServiceResult<IReadOnlyList<MoveHistoryEntry>> GetHistory(string roomId, PieceColor? color);
+
+    ServiceResult<GameStateDto> MakeMove(string roomId, Move move, PieceColor? color);
+    ServiceResult<GameStateDto> Resign(string roomId, IPlayer player);
+    ServiceResult<GameStateDto> OfferDraw(string roomId, IPlayer player);
+    ServiceResult<GameStateDto> RespondToDrawOffer(string roomId, IPlayer player, bool accepted);
+    ServiceResult<GameStateDto> ClaimThreefoldRepetition(string roomId, IPlayer player);
+    ServiceResult<GameStateDto> ClaimFiftyMoveRule(string roomId, IPlayer player);
 }

@@ -1,5 +1,4 @@
 using Api.DTOs;
-using Api.DTOs.Factories;
 using Api.DTOs.Requests;
 using Api.Enums;
 using Api.Interfaces.Models;
@@ -21,39 +20,15 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     online rooms claim the creator's seat and wait for an opponent.
     /// </summary>
     [HttpPost]
-    public ActionResult<RoomSessionDto> Create([FromBody] CreateRoomRequest request)
+    public async Task<ActionResult<RoomSessionDto>> Create([FromBody] CreateRoomRequest request)
     {
         try
         {
-            var room = service.CreateRoom(request.Mode);
-            if (room.Mode == RoomMode.HotSeat)
-            {
-                service.StartGame(room);
-                return Ok(new RoomSessionDto(room.Id, room.Mode, null));
-            }
-
-            var pieceColor = request.Color ?? PieceColor.White;
-
-            service.ClaimRoom(room, pieceColor, NormalizeName(request.PlayerName));
-            service.NotifyLobby();
-
-            return Ok(
-                new RoomSessionDto(
-                    room.Id,
-                    room.Mode,
-                    pieceColor
-                )
-            );
+            return Respond(await service.CreateRoom(request.Mode, request.Color, request.PlayerName));
         }
         catch (Exception ex)
         {
-            return StatusCode(
-                500,
-                new ApiErrorDto(
-                    "An error occurred while creating the room",
-                    ex.Message
-                )
-            );
+            return Error(ex, "An error occurred while creating the room");
         }
     }
 
@@ -71,37 +46,15 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     are filled. Returns 409 when the requested seat is already taken.
     /// </summary>
     [HttpPost("{roomId}/join")]
-    public ActionResult<RoomSessionDto> Join(string roomId, [FromQuery] string? name, [FromQuery] PieceColor? color)
+    public async Task<ActionResult<RoomSessionDto>> Join(string roomId, [FromQuery] string? name, [FromQuery] PieceColor? color)
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return NotFound(new ApiErrorDto("Room not found"));
-
-            if (room.Mode != RoomMode.Online)
-                return BadRequest(new ApiErrorDto("Only online rooms can be joined"));
-
-            if (color is null)
-                return BadRequest(new ApiErrorDto("Color is required"));
-
-            if (!service.ClaimRoom(room, color.Value, NormalizeName(name)))
-                return Conflict(new ApiErrorDto(
-                    room is { WhiteJoined: true, BlackJoined: true } ? "Room is full" : "Seat is already taken"));
-
-            service.StartGameIfNotStarted(room);
-            service.NotifyLobby();
-
-            return Ok(new RoomSessionDto(room.Id, room.Mode, color));
+            return Respond(await service.JoinRoom(roomId, color, name));
         }
         catch (Exception ex)
         {
-            return StatusCode(
-                500,
-                new ApiErrorDto(
-                    "An error occurred while joining the room",
-                    ex.Message
-                )
-            );
+            return Error(ex, "An error occurred while joining the room");
         }
     }
 
@@ -111,12 +64,7 @@ public class ChessController(IRoomService service) : ControllerBase
     [HttpGet("{roomId}")]
     public ActionResult<RoomStatusDto> Status(string roomId)
     {
-        if (service.GetRoom(roomId) is not { } room)
-            return NotFound(
-                new ApiErrorDto("Room not found")
-            );
-
-        return Ok(RoomStatusDtoFactory.FromRoom(room));
+        return Respond(service.GetStatus(roomId));
     }
 
     #endregion
@@ -130,24 +78,18 @@ public class ChessController(IRoomService service) : ControllerBase
     [HttpGet("{roomId}/game")]
     public ActionResult<GameStateDto> GetState(string roomId)
     {
-        if (service.GetRoom(roomId) is not { } room)
-            return RoomNotFound();
-
-        return Ok(GameStateDtoFactory.FromRoom(room));
+        return Respond(service.GetState(roomId));
     }
 
     /// <summary>
     ///     Returns all 64 tiles with the piece occupying each one.
     /// </summary>
     [HttpGet("{roomId}/game/board")]
-    public ActionResult<IEnumerable<TileDto>> GetBoard(string roomId)
+    public ActionResult<IReadOnlyList<TileDto>> GetBoard(string roomId)
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            return Ok(service.GetBoard(room));
+            return Respond(service.GetBoard(roomId));
         }
         catch (Exception ex)
         {
@@ -164,10 +106,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            return Ok(LegalMovesDtoFactory.FromRoom(room));
+            return Respond(service.GetLegalMoves(roomId));
         }
         catch (Exception ex)
         {
@@ -180,14 +119,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     <paramref name="color" />.
     /// </summary>
     [HttpGet("{roomId}/game/history")]
-    public ActionResult<IEnumerable<MoveHistoryEntry>> GetHistory(string roomId, [FromQuery] PieceColor? color)
+    public ActionResult<IReadOnlyList<MoveHistoryEntry>> GetHistory(string roomId, [FromQuery] PieceColor? color)
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            return Ok(service.GetHistory(room, color));
+            return Respond(service.GetHistory(roomId, color));
         }
         catch (Exception ex)
         {
@@ -208,12 +144,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            service.StartGame(room);
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.StartGame(roomId));
         }
         catch (Exception ex)
         {
@@ -230,12 +161,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            service.ResetGame(room);
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.ResetGame(roomId));
         }
         catch (Exception ex)
         {
@@ -252,13 +178,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            if (Failure(service.MakeMove(room, move, color), "Illegal move") is { } failure)
-                return failure;
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.MakeMove(roomId, move, color));
         }
         catch (Exception ex)
         {
@@ -275,13 +195,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            if (Failure(service.Resign(room, ResolvePlayer(request)), "Illegal action") is { } failure)
-                return failure;
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.Resign(roomId, ResolvePlayer(request)));
         }
         catch (Exception ex)
         {
@@ -298,13 +212,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            if (Failure(service.OfferDraw(room, ResolvePlayer(request)), "Illegal action") is { } failure)
-                return failure;
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.OfferDraw(roomId, ResolvePlayer(request)));
         }
         catch (Exception ex)
         {
@@ -320,14 +228,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            if (Failure(service.RespondToDrawOffer(room, ResolvePlayer(request), request.Accepted ?? false),
-                    "Illegal action") is { } failure)
-                return failure;
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.RespondToDrawOffer(roomId, ResolvePlayer(request), request.Accepted ?? false));
         }
         catch (Exception ex)
         {
@@ -344,14 +245,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            if (Failure(service.ClaimThreefoldRepetition(room, ResolvePlayer(request)),
-                    "Threefold repetition claim not available") is { } failure)
-                return failure;
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.ClaimThreefoldRepetition(roomId, ResolvePlayer(request)));
         }
         catch (Exception ex)
         {
@@ -368,14 +262,7 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            if (service.GetRoom(roomId) is not { } room)
-                return RoomNotFound();
-
-            if (Failure(service.ClaimFiftyMoveRule(room, ResolvePlayer(request)), "Fifty-move claim not available") is
-                { } failure)
-                return failure;
-
-            return Ok(GameStateDtoFactory.FromRoom(room));
+            return Respond(service.ClaimFiftyMoveRule(roomId, ResolvePlayer(request)));
         }
         catch (Exception ex)
         {
@@ -388,16 +275,6 @@ public class ChessController(IRoomService service) : ControllerBase
     #region Helpers
 
     /// <summary>
-    ///     Trims a player name and caps it at 24 characters; blank names become
-    ///     <c>null</c>.
-    /// </summary>
-    private static string? NormalizeName(string? name)
-    {
-        var trimmed = name?.Trim();
-        return string.IsNullOrEmpty(trimmed) ? null : trimmed[..Math.Min(trimmed.Length, 24)];
-    }
-
-    /// <summary>
     ///     Builds the acting player from the request, falling back to the color name.
     /// </summary>
     private static IPlayer ResolvePlayer(PlayerActionRequest request)
@@ -406,26 +283,14 @@ public class ChessController(IRoomService service) : ControllerBase
     }
 
     /// <summary>
-    ///     Maps a game action result to an HTTP error, or <c>null</c> when the action
-    ///     succeeded.
+    ///     Maps a service result to its HTTP response.
     /// </summary>
-    private ObjectResult? Failure(GameActionResult result, string invalidMessage)
+    private ActionResult<T> Respond<T>(ServiceResult<T> result)
     {
-        return result switch
-        {
-            GameActionResult.NotAPlayer => StatusCode(403, new ApiErrorDto("You are not a player in this room")),
-            GameActionResult.NotYourTurn => StatusCode(403, new ApiErrorDto("Not your turn")),
-            GameActionResult.Invalid => BadRequest(new ApiErrorDto(invalidMessage)),
-            _ => null
-        };
-    }
+        if (result.ErrorMessage is { } message)
+            return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
-    /// <summary>
-    ///     404 response for an unknown room id.
-    /// </summary>
-    private ObjectResult RoomNotFound()
-    {
-        return NotFound(new ApiErrorDto("Room not found"));
+        return Ok(result.Data);
     }
 
     /// <summary>
