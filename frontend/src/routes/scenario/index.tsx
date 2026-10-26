@@ -266,7 +266,7 @@ function ScenarioPage() {
             onSquareSelect={click}
           />
 
-          <Card size="sm">
+          <Card>
             <CardHeader>
               <Eyebrow>Posisi</Eyebrow>
               <CardTitle className="font-heading text-xl">
@@ -312,7 +312,7 @@ function ScenarioPage() {
             </CardContent>
           </Card>
 
-          <Card size="sm">
+          <Card>
             <CardHeader>
               <CardTitle className="font-heading text-xl">Riwayat</CardTitle>
               <CardAction>
@@ -343,7 +343,7 @@ function ScenarioPage() {
         </div>
 
         <aside className="flex flex-col gap-4">
-          <Card size="sm">
+          <Card>
             <CardHeader>
               <Eyebrow>Scenario</Eyebrow>
               <CardTitle className="font-heading text-xl">Daftar uji</CardTitle>
@@ -420,7 +420,7 @@ function ScenarioPage() {
             </CardContent>
           </Card>
 
-          <Card size="sm">
+          <Card>
             <CardHeader>
               <Eyebrow>Hasil</Eyebrow>
               <CardTitle className="font-heading text-xl">{active.name}</CardTitle>
