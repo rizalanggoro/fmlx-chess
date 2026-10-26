@@ -89,22 +89,24 @@ export function ChessBoard(
   return (
     <section
       className={cn(
-        'mx-auto w-[min(100%,calc(100svh_-_12rem))] rounded-2xl border border-amber-950/20 bg-amber-900 p-3 shadow-sm sm:p-4',
+        'mx-auto w-[min(100%,calc(100svh_-_12rem))] rounded-[1.75rem] bg-linear-to-b from-amber-700 via-amber-800 to-amber-900 p-3 shadow-[0_20px_45px_-20px_rgba(69,26,3,0.75)] ring-1 ring-amber-950/40 sm:p-4',
         className,
       )}
     >
       <div className="@container relative">
-        <div className="grid grid-cols-8 overflow-hidden rounded-[3px] border border-amber-950/40">
+        <div className="grid grid-cols-8 overflow-hidden rounded-xl border-2 border-amber-950/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
           {rows.map((row) =>
             cols.map((column) => {
               const sq = {column, row}
               const key = `${column},${row}`
               const piece = pieces.get(key)
               const dark = (column + row) % 2 === 1
-              const coord = dark ? 'text-amber-100/60' : 'text-amber-900/50'
+              const coord = dark ? 'text-amber-100/70' : 'text-amber-900/55'
               const target = legalTargets?.has(key) ?? false
               const pendingHere = sameSquare(pendingSquare, sq)
               const inCheck = checkedKing !== undefined && sameSquare(checkedKing, sq)
+              const justMoved = lastMove !== null &&
+                (sameSquare(lastMove.from, sq) || sameSquare(lastMove.to, sq))
               const animating = animation !== null &&
                 (sameSquare(animation.move.from, sq) || sameSquare(animation.move.to, sq))
 
@@ -115,12 +117,15 @@ export function ChessBoard(
                   onClick={() => {
                     if (!disabled) onSquareSelect?.(sq)
                   }}
-                  className={`relative flex aspect-square items-center justify-center ${
+                  className={`group/square relative flex aspect-square items-center justify-center transition-colors duration-150 ${
                     dark ? 'bg-amber-700' : 'bg-amber-100'
                   } ${sameSquare(selectedSquare, sq) ? 'ring-4 ring-inset ring-sky-500' : ''} ${
-                    disabled ? 'cursor-default' : ''
+                    disabled ? 'cursor-default' : 'cursor-pointer hover:brightness-105'
                   }`}
                 >
+                  {justMoved && (
+                    <span className="pointer-events-none absolute inset-0 bg-sky-400/30"/>
+                  )}
                   {inCheck && (
                     <span
                       className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(139,92,246,0.95)_0%,rgba(139,92,246,0.8)_40%,rgba(139,92,246,0.25)_70%,transparent_100%)]"
@@ -128,14 +133,14 @@ export function ChessBoard(
                   )}
                   {column === cols[0] && (
                     <span
-                      className={`absolute top-0.5 left-0.5 text-[10px] font-semibold ${coord}`}
+                      className={`absolute top-1 left-1 rounded-md px-1 text-[10px] font-bold tabular-nums ${coord}`}
                     >
                       {row + 1}
                     </span>
                   )}
                   {row === rows[7] && (
                     <span
-                      className={`absolute right-0.5 bottom-0.5 text-[10px] font-semibold ${coord}`}
+                      className={`absolute right-1 bottom-1 rounded-md px-1 text-[10px] font-bold uppercase ${coord}`}
                     >
                       {FILES[column]}
                     </span>
@@ -145,7 +150,7 @@ export function ChessBoard(
                       src={PIECE_IMAGE[piece.type][piece.color]}
                       alt=""
                       draggable={false}
-                      className={`relative z-10 size-[8.5cqw] select-none ${
+                      className={`relative z-10 size-[8.5cqw] select-none transition-transform duration-150 drop-shadow-[0_2px_2px_rgba(69,26,3,0.35)] group-hover/square:-translate-y-[3%] group-hover/square:scale-105 ${
                         pendingHere ? 'opacity-40' : ''
                       }`}
                     />
@@ -179,7 +184,7 @@ export function ChessBoard(
               src={PIECE_IMAGE[animation.piece.type][animation.piece.color]}
               alt=""
               draggable={false}
-              className="size-[8.5cqw] select-none"
+              className="size-[8.5cqw] select-none drop-shadow-[0_2px_2px_rgba(69,26,3,0.35)]"
             />
           </span>
         )}
