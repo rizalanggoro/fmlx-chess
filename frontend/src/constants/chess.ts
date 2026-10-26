@@ -1,9 +1,19 @@
-import type { GameEndReason, PieceColor, PieceType, Position } from '@/lib/api'
+import type { GameEndReason, Move, PieceColor, PieceType, Position } from '@/lib/api'
 
 export const FILES = 'abcdefgh'
 
-export const sameSquare = (a: Position | null | undefined, b: Position) =>
-  a != null && a.column === b.column && a.row === b.row
+export const sameSquare = (a: Position | null | undefined, b: Position | null | undefined) =>
+  a != null && b != null && a.column === b.column && a.row === b.row
+
+export const isSameMove = (a: Move | null | undefined, b: Move | null | undefined) => {
+  if (a === b) return true
+  if (!a || !b) return false
+  return (
+    sameSquare(a.from, b.from) &&
+    sameSquare(a.to, b.to) &&
+    a.promotionType === b.promotionType
+  )
+}
 
 export const colorName = (color: PieceColor) =>
   color === 'White' ? 'Putih' : 'Hitam'

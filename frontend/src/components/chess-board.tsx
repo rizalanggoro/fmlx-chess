@@ -1,8 +1,8 @@
 import {Spinner} from '@/components/ui/spinner'
-import {FILES, PIECE_IMAGE, sameSquare} from '@/constants/chess'
+import {FILES, PIECE_IMAGE, isSameMove, sameSquare} from '@/constants/chess'
 import type {Move, PieceColor, Position, TileDto} from '@/lib/api'
 import {cn} from 'cn'
-import {useEffect, useState, type CSSProperties} from 'react'
+import {useEffect, useMemo, useState, type CSSProperties} from 'react'
 
 type ChessBoardProps = {
   tiles: TileDto[]
@@ -36,10 +36,6 @@ export function ChessBoard(
     className,
     onSquareSelect,
   }: ChessBoardProps) {
-  const pieces = new Map(tiles.map((t) => [`${t.column},${t.row}`, t]))
-  const checkedKing = checkedColor
-    ? tiles.find((tile) => tile.color === checkedColor && tile.type === 'King')
-    : undefined
   const rows = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
   const cols = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
   const [animation, setAnimation] = useState<Animation | null>(null)
@@ -47,22 +43,23 @@ export function ChessBoard(
   const [seenMove, setSeenMove] = useState<Move | null>(lastMove)
   const [previousTiles, setPreviousTiles] = useState(tiles)
 
-  if (lastMove !== seenMove) {
+  if (!isSameMove(lastMove, seenMove)) {
     setSeenMove(lastMove)
     setPromoteSquare(lastMove?.promotionType ? lastMove.to : null)
     if (!lastMove) {
       setAnimation(null)
     } else {
-      const piece = previousTiles.find(
-        (tile) =>
-          tile.column === lastMove.from.column && tile.row === lastMove.from.row,
-      )
-      const captured = previousTiles.find(
-        (tile) =>
-          tile.column === lastMove.to.column &&
-          tile.row === lastMove.to.row &&
-          tile.color !== piece?.color,
-      )
+      const piece =
+        previousTiles.find((tile) => sameSquare(tile, lastMove.from)) ??
+        tiles.find((tile) => sameSquare(tile, lastMove.from)) ??
+        tiles.find((tile) => sameSquare(tile, lastMove.to))
+      const captured =
+        previousTiles.find(
+          (tile) => sameSquare(tile, lastMove.to) && tile.color !== piece?.color,
+        ) ??
+        tiles.find(
+          (tile) => sameSquare(tile, lastMove.to) && tile.color !== piece?.color,
+        )
       setAnimation(piece ? {move: lastMove, piece, captured} : null)
     }
   }
@@ -73,9 +70,36 @@ export function ChessBoard(
 
   useEffect(() => {
     if (!animation) return
-    const timer = window.setTimeout(() => setAnimation(null), 300)
+    const timer = window.setTimeout(() => setAnimation(null), 270)
     return () => window.clearTimeout(timer)
   }, [animation])
+
+  const lastMovedPiece = animation?.piece ?? (lastMove ? previousTiles.find((t) => sameSquare(t, lastMove.from)) : undefined)
+
+  const isTilesStale = Boolean(
+    lastMove &&
+    lastMovedPiece &&
+    tiles.some((t) => sameSquare(t, lastMove.from) && t.color === lastMovedPiece.color)
+  )
+
+  const effectivePieces = useMemo(() => {
+    const map = new Map(tiles.map((t) => [`${t.column},${t.row}`, t]))
+    if (isTilesStale && lastMove && lastMovedPiece) {
+      map.delete(`${lastMove.from.column},${lastMove.from.row}`)
+      const targetKey = `${lastMove.to.column},${lastMove.to.row}`
+      map.set(targetKey, {
+        column: lastMove.to.column,
+        row: lastMove.to.row,
+        color: lastMovedPiece.color,
+        type: lastMove.promotionType ?? lastMovedPiece.type,
+      })
+    }
+    return map
+  }, [tiles, isTilesStale, lastMove, lastMovedPiece])
+
+  const checkedKing = checkedColor
+    ? Array.from(effectivePieces.values()).find((tile) => tile.color === checkedColor && tile.type === 'King')
+    : undefined
 
   useEffect(() => {
     if (!promoteSquare) return
@@ -114,7 +138,7 @@ export function ChessBoard(
             cols.map((column) => {
               const sq = {column, row}
               const key = `${column},${row}`
-              const piece = pieces.get(key)
+              const piece = effectivePieces.get(key)
               const dark = (column + row) % 2 === 1
               const coord = dark ? 'text-amber-100/70' : 'text-amber-900/55'
               const target = legalTargets?.has(key) ?? false
