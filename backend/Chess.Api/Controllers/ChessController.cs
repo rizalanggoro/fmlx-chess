@@ -24,7 +24,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(await service.CreateRoom(request.Mode, request.Color, request.PlayerName));
+            var result = await service.CreateRoom(request.Mode, request.Color, request.PlayerName);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -51,7 +55,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(await service.JoinRoom(roomId, color, name));
+            var result = await service.JoinRoom(roomId, color, name);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -65,7 +73,11 @@ public class ChessController(IRoomService service) : ControllerBase
     [HttpGet("{roomId}")]
     public ActionResult<RoomStatusDto> Status(string roomId)
     {
-        return Respond(service.GetStatus(roomId));
+        var result = service.GetStatus(roomId);
+        if (result.ErrorMessage is { } message)
+            return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+        return Ok(result.Data);
     }
 
     #endregion
@@ -79,7 +91,11 @@ public class ChessController(IRoomService service) : ControllerBase
     [HttpGet("{roomId}/game")]
     public ActionResult<GameStateDto> GetState(string roomId)
     {
-        return Respond(service.GetState(roomId));
+        var result = service.GetState(roomId);
+        if (result.ErrorMessage is { } message)
+            return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+        return Ok(result.Data);
     }
 
     /// <summary>
@@ -90,7 +106,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.GetBoard(roomId));
+            var result = service.GetBoard(roomId);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -107,7 +127,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.GetLegalMoves(roomId));
+            var result = service.GetLegalMoves(roomId);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -124,7 +148,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.GetHistory(roomId, color));
+            var result = service.GetHistory(roomId, color);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -145,7 +173,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.StartGame(roomId));
+            var result = service.StartGame(roomId);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -162,7 +194,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.ResetGame(roomId));
+            var result = service.ResetGame(roomId);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -179,7 +215,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.MakeMove(roomId, move, color));
+            var result = service.MakeMove(roomId, move, color);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -196,7 +236,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.Resign(roomId, ResolvePlayer(request)));
+            var result = service.Resign(roomId, ResolvePlayer(request));
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -213,7 +257,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.OfferDraw(roomId, ResolvePlayer(request)));
+            var result = service.OfferDraw(roomId, ResolvePlayer(request));
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -229,7 +277,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.RespondToDrawOffer(roomId, ResolvePlayer(request), request.Accepted ?? false));
+            var result = service.RespondToDrawOffer(roomId, ResolvePlayer(request), request.Accepted ?? false);
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -246,7 +298,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.ClaimThreefoldRepetition(roomId, ResolvePlayer(request)));
+            var result = service.ClaimThreefoldRepetition(roomId, ResolvePlayer(request));
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -263,7 +319,11 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            return Respond(service.ClaimFiftyMoveRule(roomId, ResolvePlayer(request)));
+            var result = service.ClaimFiftyMoveRule(roomId, ResolvePlayer(request));
+            if (result.ErrorMessage is { } message)
+                return StatusCode(result.StatusCode, new ApiErrorDto(message));
+
+            return Ok(result.Data);
         }
         catch (Exception ex)
         {
@@ -281,17 +341,6 @@ public class ChessController(IRoomService service) : ControllerBase
     private static IPlayer ResolvePlayer(PlayerActionRequest request)
     {
         return new Player(request.Name ?? request.Color.ToString(), request.Color);
-    }
-
-    /// <summary>
-    ///     Maps a service result to its HTTP response.
-    /// </summary>
-    private ActionResult<T> Respond<T>(ServiceResult<T> result)
-    {
-        if (result.ErrorMessage is { } message)
-            return StatusCode(result.StatusCode, new ApiErrorDto(message));
-
-        return Ok(result.Data);
     }
 
     /// <summary>
