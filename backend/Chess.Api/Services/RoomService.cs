@@ -5,6 +5,7 @@ using Api.Enums;
 using Api.Events;
 using Api.GameEngine;
 using Api.Hubs;
+using Api.Interfaces.GameEngine;
 using Api.Interfaces.Models;
 using Api.Interfaces.Services;
 using Api.Models;
@@ -18,7 +19,8 @@ namespace Api.Services;
 public class RoomService(
     IHubContext<GameHub> hub,
     IRoomRegistry registry,
-    ILogger<RoomService> logger
+    ILogger<RoomService> logger,
+    IBoardInitializer boardInitializer
 ) : IRoomService
 {
     #region Rooms
@@ -35,7 +37,8 @@ public class RoomService(
             new Board(),
             new Player("White", PieceColor.White),
             new Player("Black", PieceColor.Black),
-            TimeSpan.FromMinutes(10)
+            TimeSpan.FromMinutes(10),
+            boardInitializer
         );
         var room = new Room(roomId, mode, engine);
 

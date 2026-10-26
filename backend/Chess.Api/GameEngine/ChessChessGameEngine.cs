@@ -3,6 +3,7 @@ using Api.Constants;
 using Api.DTOs;
 using Api.Enums;
 using Api.Events;
+using Api.Interfaces.GameEngine;
 using Api.Interfaces.Models;
 using Api.Interfaces.Services;
 using Api.Models;
@@ -15,6 +16,7 @@ public class ChessChessGameEngine : IChessGameEngine
     #region Fields
 
     private readonly IPlayer _blackPlayer, _whitePlayer;
+    private readonly IBoardInitializer _boardInitializer;
     private IPlayer? _drawOfferer;
 
     private readonly Dictionary<PieceColor, List<IChessPiece>> _captured = new()
@@ -42,12 +44,18 @@ public class ChessChessGameEngine : IChessGameEngine
     ///     <paramref name="initialTime" />. Nothing is broadcast until
     ///     <see cref="StartGame" /> is called.
     /// </summary>
-    public ChessChessGameEngine(IBoard board, IPlayer whitePlayer, IPlayer blackPlayer, TimeSpan initialTime)
+    public ChessChessGameEngine(
+        IBoard board,
+        IPlayer whitePlayer,
+        IPlayer blackPlayer,
+        TimeSpan initialTime,
+        IBoardInitializer boardInitializer)
     {
         Board = board;
         _whitePlayer = whitePlayer;
         _blackPlayer = blackPlayer;
         _initialTime = initialTime;
+        _boardInitializer = boardInitializer;
         CurrentPlayer = whitePlayer;
         State = GameState.NotStarted;
         // Dinonaktifkan: promosi selalu default Queen dari langkah legal. Lihat notes.md.
@@ -515,30 +523,7 @@ public class ChessChessGameEngine : IChessGameEngine
     /// </summary>
     private void SetupInitialBoardPosition()
     {
-        for (var r = 0; r < 8; r++)
-        for (var c = 0; c < 8; c++)
-            Board.Tiles[r, c].Piece = null;
-
-        var backRankPieces = new[]
-        {
-            PieceType.Rook,
-            PieceType.Knight,
-            PieceType.Bishop,
-            PieceType.Queen,
-            PieceType.King,
-            PieceType.Bishop,
-            PieceType.Knight,
-            PieceType.Rook
-        };
-
-        for (var c = 0; c < 8; c++)
-        {
-            // todo: inject piece dari luar bukan langsung di sini 
-            Board.Tiles[0, c].Piece = new ChessPiece(PieceColor.White, backRankPieces[c]);
-            Board.Tiles[1, c].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
-            Board.Tiles[6, c].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
-            Board.Tiles[7, c].Piece = new ChessPiece(PieceColor.Black, backRankPieces[c]);
-        }
+        _boardInitializer.Initialize(Board);
 
         CastlingRights = new CastlingRights(
             true,

@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using Api.GameEngine;
 using Api.Hubs;
+using Api.Interfaces.GameEngine;
 using Api.Interfaces.Services;
 using Api.Services;
 using Api.Swagger;
@@ -29,6 +31,7 @@ builder.Services
     );
 builder.Services.AddSingleton<IRoomRegistry, RoomRegistry>();
 builder.Services.AddSingleton<IRoomService, RoomService>();
+builder.Services.AddTransient<IBoardInitializer, StandardBoardInitializer>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
