@@ -20,6 +20,7 @@ type ChessBoardProps = {
 type Animation = {
   move: Move
   piece: TileDto
+  captured?: TileDto
 }
 
 export function ChessBoard(
@@ -42,11 +43,13 @@ export function ChessBoard(
   const rows = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0]
   const cols = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7]
   const [animation, setAnimation] = useState<Animation | null>(null)
+  const [promoteSquare, setPromoteSquare] = useState<Position | null>(null)
   const [seenMove, setSeenMove] = useState<Move | null>(lastMove)
   const [previousTiles, setPreviousTiles] = useState(tiles)
 
   if (lastMove !== seenMove) {
     setSeenMove(lastMove)
+    setPromoteSquare(lastMove?.promotionType ? lastMove.to : null)
     if (!lastMove) {
       setAnimation(null)
     } else {
@@ -54,7 +57,13 @@ export function ChessBoard(
         (tile) =>
           tile.column === lastMove.from.column && tile.row === lastMove.from.row,
       )
-      setAnimation(piece ? {move: lastMove, piece} : null)
+      const captured = previousTiles.find(
+        (tile) =>
+          tile.column === lastMove.to.column &&
+          tile.row === lastMove.to.row &&
+          tile.color !== piece?.color,
+      )
+      setAnimation(piece ? {move: lastMove, piece, captured} : null)
     }
   }
 
@@ -67,6 +76,12 @@ export function ChessBoard(
     const timer = window.setTimeout(() => setAnimation(null), 300)
     return () => window.clearTimeout(timer)
   }, [animation])
+
+  useEffect(() => {
+    if (!promoteSquare) return
+    const timer = window.setTimeout(() => setPromoteSquare(null), 700)
+    return () => window.clearTimeout(timer)
+  }, [promoteSquare])
 
   const from = animation?.move.from
   const to = animation?.move.to
@@ -109,6 +124,10 @@ export function ChessBoard(
                 (sameSquare(lastMove.from, sq) || sameSquare(lastMove.to, sq))
               const animating = animation !== null &&
                 (sameSquare(animation.move.from, sq) || sameSquare(animation.move.to, sq))
+              const capturedPop = animation?.captured && sameSquare(animation.move.to, sq)
+                ? animation.captured
+                : null
+              const promotingHere = sameSquare(promoteSquare, sq)
 
               return (
                 <button
@@ -152,7 +171,15 @@ export function ChessBoard(
                       draggable={false}
                       className={`relative z-10 size-[8.5cqw] select-none transition-transform duration-150 drop-shadow-[0_2px_2px_rgba(69,26,3,0.35)] group-hover/square:-translate-y-[3%] group-hover/square:scale-105 ${
                         pendingHere ? 'opacity-40' : ''
-                      }`}
+                      } ${promotingHere ? 'chess-promote-pop' : ''}`}
+                    />
+                  )}
+                  {capturedPop?.color && capturedPop.type && (
+                    <img
+                      src={PIECE_IMAGE[capturedPop.type][capturedPop.color]}
+                      alt=""
+                      draggable={false}
+                      className="chess-capture-pop pointer-events-none absolute z-10 size-[8.5cqw] select-none"
                     />
                   )}
                   {pendingHere && (

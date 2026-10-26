@@ -145,8 +145,43 @@
   animation: chess-move 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes chess-capture-pop {
+  from {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.5) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+.chess-capture-pop {
+  animation: chess-capture-pop 260ms ease-in both;
+}
+
+@keyframes chess-promote-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.chess-promote-pop {
+  animation: chess-promote-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .chess-move {
+  .chess-move,
+  .chess-capture-pop,
+  .chess-promote-pop {
     animation-duration: 1ms;
   }
 }
