@@ -30,6 +30,7 @@ import {
 } from '@/scenario/runner'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { RiArrowRightLine } from '@remixicon/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export const Route = createFileRoute('/scenario/')({ component: ScenarioPage })
@@ -325,7 +326,8 @@ function ScenarioPage() {
                     <li key={index} className="flex gap-2">
                       <span className="w-8 text-muted-foreground">{index + 1}.</span>
                       <span>
-                        {entry.playedBy} · {entry.move.from.column},{entry.move.from.row} →{' '}
+                        {entry.playedBy} · {entry.move.from.column},{entry.move.from.row}
+                        <RiArrowRightLine aria-hidden className="mx-0.5 inline size-3 shrink-0 text-muted-foreground" />
                         {entry.move.to.column},{entry.move.to.row}
                         {entry.move.promotionType ? `=${entry.move.promotionType}` : ''}
                       </span>

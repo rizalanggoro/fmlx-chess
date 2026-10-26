@@ -32,7 +32,7 @@ export function PlayerTurnCard({
   const over = state?.state === 'Completed'
 
   return (
-    <Card size="sm">
+    <Card>
       <CardHeader>
         <Eyebrow>{online ? 'Online' : 'Hotseat'}</Eyebrow>
         {online && (

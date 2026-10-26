@@ -16,11 +16,20 @@ import {
 } from '@/components/ui/table'
 import { FILES } from '@/constants/chess'
 import type { MoveHistoryEntry, Position } from '@/lib/api'
+import { RiArrowRightLine } from '@remixicon/react'
 
 const alg = (p: Position) => `${FILES[p.column]}${p.row + 1}`
 
-const fmtMove = (h: MoveHistoryEntry) =>
-  `${alg(h.move.from)}→${alg(h.move.to)}${h.move.promotionType ? `=${h.move.promotionType[0]}` : ''}`
+function MoveLabel({ h }: { h: MoveHistoryEntry }) {
+  return (
+    <span className="inline-flex items-center">
+      {alg(h.move.from)}
+      <RiArrowRightLine aria-hidden className="mx-0.5 size-3.5 shrink-0 text-muted-foreground" />
+      {alg(h.move.to)}
+      {h.move.promotionType ? `=${h.move.promotionType[0]}` : ''}
+    </span>
+  )
+}
 
 export function MoveHistoryCard({ history }: { history: MoveHistoryEntry[] }) {
   const rounds = history.reduce<MoveHistoryEntry[][]>((acc, move, i) => {
@@ -30,7 +39,7 @@ export function MoveHistoryCard({ history }: { history: MoveHistoryEntry[] }) {
   }, [])
 
   return (
-    <Card size="sm">
+    <Card>
       <CardHeader>
         <CardTitle className="font-heading text-xl">Riwayat</CardTitle>
         <CardAction>
@@ -56,7 +65,7 @@ export function MoveHistoryCard({ history }: { history: MoveHistoryEntry[] }) {
                     <TableCell className="p-1! text-muted-foreground">{i + 1}.</TableCell>
                     {round.map((h, j) => (
                       <TableCell key={j} className="p-1!">
-                        {fmtMove(h)}
+                        <MoveLabel h={h} />
                       </TableCell>
                     ))}
                   </TableRow>
