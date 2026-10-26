@@ -178,10 +178,34 @@
   animation: chess-promote-pop 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes chess-check-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-0.6cqw) rotate(-0.5deg);
+  }
+  40% {
+    transform: translateX(0.6cqw) rotate(0.5deg);
+  }
+  60% {
+    transform: translateX(-0.4cqw);
+  }
+  80% {
+    transform: translateX(0.4cqw);
+  }
+}
+
+.chess-check-shake {
+  animation: chess-check-shake 300ms ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .chess-move,
   .chess-capture-pop,
-  .chess-promote-pop {
+  .chess-promote-pop,
+  .chess-check-shake {
     animation-duration: 1ms;
   }
 }

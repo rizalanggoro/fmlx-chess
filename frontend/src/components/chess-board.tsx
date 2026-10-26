@@ -136,12 +136,17 @@ export function ChessBoard(
                   onClick={() => {
                     if (!disabled) onSquareSelect?.(sq)
                   }}
-                  className={`group/square relative flex aspect-square items-center justify-center transition-colors duration-150 ${
+                  className={`group/square relative flex aspect-square items-center justify-center transition duration-150 ${
                     dark ? 'bg-amber-700' : 'bg-amber-100'
                   } ${sameSquare(selectedSquare, sq) ? 'ring-4 ring-inset ring-sky-500' : ''} ${
-                    disabled ? 'cursor-default' : 'cursor-pointer hover:brightness-105'
+                    inCheck ? 'chess-check-shake' : ''
+                  } ${
+                    disabled ? 'cursor-default' : 'cursor-pointer hover:brightness-105 active:scale-95'
                   }`}
                 >
+                  {!disabled && (
+                    <span className="pointer-events-none absolute inset-0 bg-white/0 transition-colors duration-100 group-active/square:bg-white/25"/>
+                  )}
                   {justMoved && (
                     <span className="pointer-events-none absolute inset-0 bg-sky-400/30"/>
                   )}
