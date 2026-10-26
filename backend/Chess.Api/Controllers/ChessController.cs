@@ -1,9 +1,6 @@
 using Api.DTOs;
-using Api.DTOs.Requests;
 using Api.Enums;
-using Api.Interfaces.Models;
 using Api.Interfaces.Services;
-using Api.Models;
 using Api.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,11 +17,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     online rooms claim the creator's seat and wait for an opponent.
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<RoomSessionDto>> Create([FromBody] CreateRoomRequest request)
+    public async Task<ActionResult<RoomSessionDto>> Create([FromBody] CreateRoomDto request)
     {
         try
         {
-            var result = await service.CreateRoom(request.Mode, request.Color, request.PlayerName);
+            var result = await service.CreateRoom(request);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -55,7 +52,8 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            var result = await service.JoinRoom(roomId, color, name);
+            var dto = new JoinRoomDto(color, name);
+            var result = await service.JoinRoom(roomId, dto);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -215,7 +213,8 @@ public class ChessController(IRoomService service) : ControllerBase
     {
         try
         {
-            var result = service.MakeMove(roomId, move, color);
+            var dto = new MakeMoveDto(move.From, move.To, move.PromotionType, color);
+            var result = service.MakeMove(roomId, dto);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -232,11 +231,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     seated color.
     /// </summary>
     [HttpPost("{roomId}/game/resign")]
-    public ActionResult<GameStateDto> Resign(string roomId, [FromBody] PlayerActionRequest request)
+    public ActionResult<GameStateDto> Resign(string roomId, [FromBody] PlayerActionDto request)
     {
         try
         {
-            var result = service.Resign(roomId, ResolvePlayer(request));
+            var result = service.Resign(roomId, request);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -253,11 +252,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     the respond endpoint.
     /// </summary>
     [HttpPost("{roomId}/game/draw/offer")]
-    public ActionResult<GameStateDto> OfferDraw(string roomId, [FromBody] PlayerActionRequest request)
+    public ActionResult<GameStateDto> OfferDraw(string roomId, [FromBody] PlayerActionDto request)
     {
         try
         {
-            var result = service.OfferDraw(roomId, ResolvePlayer(request));
+            var result = service.OfferDraw(roomId, request);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -273,11 +272,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     Accepts or declines the pending draw offer from the given player.
     /// </summary>
     [HttpPost("{roomId}/game/draw/respond")]
-    public ActionResult<GameStateDto> RespondToDraw(string roomId, [FromBody] PlayerActionRequest request)
+    public ActionResult<GameStateDto> RespondToDraw(string roomId, [FromBody] PlayerActionDto request)
     {
         try
         {
-            var result = service.RespondToDrawOffer(roomId, ResolvePlayer(request), request.Accepted ?? false);
+            var result = service.RespondToDrawOffer(roomId, request);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -294,11 +293,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     available yet.
     /// </summary>
     [HttpPost("{roomId}/game/draw/claim-threefold")]
-    public ActionResult<GameStateDto> ClaimThreefold(string roomId, [FromBody] PlayerActionRequest request)
+    public ActionResult<GameStateDto> ClaimThreefold(string roomId, [FromBody] PlayerActionDto request)
     {
         try
         {
-            var result = service.ClaimThreefoldRepetition(roomId, ResolvePlayer(request));
+            var result = service.ClaimThreefoldRepetition(roomId, request);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -315,11 +314,11 @@ public class ChessController(IRoomService service) : ControllerBase
     ///     available yet.
     /// </summary>
     [HttpPost("{roomId}/game/draw/claim-fifty")]
-    public ActionResult<GameStateDto> ClaimFifty(string roomId, [FromBody] PlayerActionRequest request)
+    public ActionResult<GameStateDto> ClaimFifty(string roomId, [FromBody] PlayerActionDto request)
     {
         try
         {
-            var result = service.ClaimFiftyMoveRule(roomId, ResolvePlayer(request));
+            var result = service.ClaimFiftyMoveRule(roomId, request);
             if (result.ErrorMessage is { } message)
                 return StatusCode(result.StatusCode, new ApiErrorDto(message));
 
@@ -334,14 +333,6 @@ public class ChessController(IRoomService service) : ControllerBase
     #endregion
 
     #region Helpers
-
-    /// <summary>
-    ///     Builds the acting player from the request, falling back to the color name.
-    /// </summary>
-    private static IPlayer ResolvePlayer(PlayerActionRequest request)
-    {
-        return new Player(request.Name ?? request.Color.ToString(), request.Color);
-    }
 
     /// <summary>
     ///     500 response carrying the exception message.

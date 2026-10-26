@@ -1,14 +1,13 @@
 using Api.DTOs;
 using Api.Enums;
-using Api.Interfaces.Models;
 using Api.ValueObjects;
 
 namespace Api.Interfaces.Services;
 
 public interface IRoomService
 {
-    Task<ServiceResult<RoomSessionDto>> CreateRoom(RoomMode mode, PieceColor? color, string? name);
-    Task<ServiceResult<RoomSessionDto>> JoinRoom(string roomId, PieceColor? color, string? name);
+    Task<ServiceResult<RoomSessionDto>> CreateRoom(CreateRoomDto request);
+    Task<ServiceResult<RoomSessionDto>> JoinRoom(string roomId, JoinRoomDto dto);
     ServiceResult<RoomStatusDto> GetStatus(string roomId);
     IReadOnlyList<RoomStatusDto> AvailableRooms();
 
@@ -21,10 +20,10 @@ public interface IRoomService
     ServiceResult<LegalMovesDto> GetLegalMoves(string roomId);
     ServiceResult<IReadOnlyList<MoveHistoryEntry>> GetHistory(string roomId, PieceColor? color);
 
-    ServiceResult<GameStateDto> MakeMove(string roomId, Move move, PieceColor? color);
-    ServiceResult<GameStateDto> Resign(string roomId, IPlayer player);
-    ServiceResult<GameStateDto> OfferDraw(string roomId, IPlayer player);
-    ServiceResult<GameStateDto> RespondToDrawOffer(string roomId, IPlayer player, bool accepted);
-    ServiceResult<GameStateDto> ClaimThreefoldRepetition(string roomId, IPlayer player);
-    ServiceResult<GameStateDto> ClaimFiftyMoveRule(string roomId, IPlayer player);
+    ServiceResult<GameStateDto> MakeMove(string roomId, MakeMoveDto dto);
+    ServiceResult<GameStateDto> Resign(string roomId, PlayerActionDto request);
+    ServiceResult<GameStateDto> OfferDraw(string roomId, PlayerActionDto request);
+    ServiceResult<GameStateDto> RespondToDrawOffer(string roomId, PlayerActionDto request);
+    ServiceResult<GameStateDto> ClaimThreefoldRepetition(string roomId, PlayerActionDto request);
+    ServiceResult<GameStateDto> ClaimFiftyMoveRule(string roomId, PlayerActionDto request);
 }
