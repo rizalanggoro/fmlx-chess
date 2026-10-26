@@ -11,7 +11,7 @@ using Api.ValueObjects;
 
 namespace Api.GameEngine;
 
-public class ChessChessGameEngine : IChessGameEngine
+public class ChessGameEngine : IChessGameEngine
 {
     #region Fields
 
@@ -44,12 +44,13 @@ public class ChessChessGameEngine : IChessGameEngine
     ///     <paramref name="initialTime" />. Nothing is broadcast until
     ///     <see cref="StartGame" /> is called.
     /// </summary>
-    public ChessChessGameEngine(
+    public ChessGameEngine(
         IBoard board,
         IPlayer whitePlayer,
         IPlayer blackPlayer,
         TimeSpan initialTime,
-        IBoardInitializer boardInitializer)
+        IBoardInitializer boardInitializer
+    )
     {
         Board = board;
         _whitePlayer = whitePlayer;

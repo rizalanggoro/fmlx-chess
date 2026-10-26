@@ -14,8 +14,6 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Api.Services;
 
-// todo: ganti asset yang bagus
-
 public class RoomService(
     IHubContext<GameHub> hub,
     IRoomRegistry registry,
@@ -33,7 +31,7 @@ public class RoomService(
             roomId = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
         } while (registry.Get(roomId) is not null);
 
-        var engine = new ChessChessGameEngine(
+        var engine = new ChessGameEngine(
             new Board(),
             new Player("White", PieceColor.White),
             new Player("Black", PieceColor.Black),
