@@ -63,7 +63,6 @@ function Page() {
 
   const navigate = useNavigate()
   const [selectedSquare, setSelectedSquare] = useState<Position | null>(null)
-  const [movingSquare, setMovingSquare] = useState<Position | null>(null)
   const [roomSession] = useState<RoomSession | null>(() => loadRoomSession(roomId))
   const [drawOffer, setDrawOffer] = useState<DrawOfferedDto | null>(null)
   const [pendingPromotion, setPendingPromotion] = useState<{
@@ -129,7 +128,6 @@ function Page() {
     isPending: isMoving
   } = useMutation({
     ...postRoomsByRoomIdGameMovesMutation(),
-    onSettled: () => setMovingSquare(null),
   })
   const {
     mutate: start,
@@ -190,9 +188,9 @@ function Page() {
   const legalTargetKeys = new Set(
     legalMovesFromSelectedSquare.map((m) => `${m.to.column},${m.to.row}`),
   )
-  const loadingSquare = movingSquare ?? (legalPending && activeSquare && pieces.get(`${activeSquare.column},${activeSquare.row}`)?.type
+  const loadingSquare = legalPending && activeSquare && pieces.get(`${activeSquare.column},${activeSquare.row}`)?.type
     ? activeSquare
-    : null)
+    : null
 
   const capturedOf = (color: PieceColor) =>
     (color === 'White' ? state?.capturedByWhite : state?.capturedByBlack) ?? []
@@ -219,7 +217,6 @@ function Page() {
         return
       }
 
-      setMovingSquare(activeSquare)
       makeMove({
         path: {roomId},
         body: {
@@ -246,7 +243,6 @@ function Page() {
     if (!pendingPromotion)
       return
 
-    setMovingSquare(pendingPromotion.from)
     makeMove({
       path: {roomId},
       body: {

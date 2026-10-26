@@ -49,7 +49,6 @@ function ScenarioPage() {
   const [roomId, setRoomId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState(SCENARIOS[0].id)
   const [selected, setSelected] = useState<Position | null>(null)
-  const [pendingSquare, setPendingSquare] = useState<Position | null>(null)
   const [lastMove, setLastMove] = useState<Move | null>(null)
   const [busy, setBusy] = useState(false)
   const [bootError, setBootError] = useState<string | null>(null)
@@ -205,7 +204,6 @@ function ScenarioPage() {
     setBusy(true)
     setBootError(null)
     setSelected(null)
-    setPendingSquare(from)
     try {
       const id = await ensureRoom()
       await postRoomsByRoomIdGameMoves({
@@ -217,7 +215,6 @@ function ScenarioPage() {
     } catch (error) {
       setBootError(errorText(error))
     } finally {
-      setPendingSquare(null)
       setBusy(false)
     }
   }
@@ -262,7 +259,6 @@ function ScenarioPage() {
           <ChessBoard
             tiles={board ?? []}
             selectedSquare={selected}
-            pendingSquare={pendingSquare}
             legalTargets={targets}
             lastMove={lastMove}
             flipped={false}
