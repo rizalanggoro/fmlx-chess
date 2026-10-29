@@ -898,4 +898,232 @@ public class RoomServiceTests
     }
 
     #endregion
+
+    #region Additional Coverage & Edge Cases
+
+    [Test]
+    public void ClaimThreefoldRepetition_RoomDoesNotExist_Returns404NotFound()
+    {
+        var action = new PlayerActionDto(PieceColor.White, "White");
+        var result = _service.ClaimThreefoldRepetition("UNKNOWN", action);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+        });
+    }
+
+    [Test]
+    public void ClaimFiftyMoveRule_RoomDoesNotExist_Returns404NotFound()
+    {
+        var action = new PlayerActionDto(PieceColor.White, "White");
+        var result = _service.ClaimFiftyMoveRule("UNKNOWN", action);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+        });
+    }
+
+    [Test]
+    public async Task JoinRoom_BlackSeatAlreadyTaken_Returns409Conflict()
+    {
+        // Online room where creator took Black seat
+        var createResult = await _service.CreateRoom(new CreateRoomDto(RoomMode.Online, PieceColor.Black, "Bob"));
+        var roomId = createResult.Data!.Id;
+
+        // Another player tries to join as Black
+        var joinResult = await _service.JoinRoom(roomId, new JoinRoomDto(PieceColor.Black, "Charlie"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(joinResult.IsSuccess, Is.False);
+            Assert.That(joinResult.StatusCode, Is.EqualTo(StatusCodes.Status409Conflict));
+            Assert.That(joinResult.ErrorMessage, Is.EqualTo("Seat is already taken"));
+        });
+    }
+
+    [Test]
+    public void OfferDraw_OnlineModeAndNotAPlayer_Returns403Forbidden()
+    {
+        CreateTestRoom("ONL001", RoomMode.Online, r =>
+        {
+            r.WhiteJoined = true;
+            r.BlackJoined = false;
+        });
+
+        // Spectator/unjoined player attempts to offer draw
+        var action = new PlayerActionDto(PieceColor.Black, "Spectator");
+        var result = _service.OfferDraw("ONL001", action);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+            Assert.That(result.ErrorMessage, Is.EqualTo("You are not a player in this room"));
+        });
+    }
+
+    [Test]
+    public void RespondToDrawOffer_OnlineModeAndNotAPlayer_Returns403Forbidden()
+    {
+        CreateTestRoom("ONL001", RoomMode.Online, r =>
+        {
+            r.WhiteJoined = true;
+            r.BlackJoined = false;
+        });
+
+        var action = new PlayerActionDto(PieceColor.Black, "Spectator", Accepted: true);
+        var result = _service.RespondToDrawOffer("ONL001", action);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+            Assert.That(result.ErrorMessage, Is.EqualTo("You are not a player in this room"));
+        });
+    }
+
+    [Test]
+    public void ClaimThreefoldRepetition_OnlineModeAndNotAPlayer_Returns403Forbidden()
+    {
+        CreateTestRoom("ONL001", RoomMode.Online, r =>
+        {
+            r.WhiteJoined = true;
+            r.BlackJoined = false;
+        });
+
+        var action = new PlayerActionDto(PieceColor.Black, "Spectator");
+        var result = _service.ClaimThreefoldRepetition("ONL001", action);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+            Assert.That(result.ErrorMessage, Is.EqualTo("You are not a player in this room"));
+        });
+    }
+
+    [Test]
+    public void ClaimFiftyMoveRule_OnlineModeAndNotAPlayer_Returns403Forbidden()
+    {
+        CreateTestRoom("ONL001", RoomMode.Online, r =>
+        {
+            r.WhiteJoined = true;
+            r.BlackJoined = false;
+        });
+
+        var action = new PlayerActionDto(PieceColor.Black, "Spectator");
+        var result = _service.ClaimFiftyMoveRule("ONL001", action);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(result.IsSuccess, Is.False);
+            Assert.That(result.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+            Assert.That(result.ErrorMessage, Is.EqualTo("You are not a player in this room"));
+        });
+    }
+
+    [Test]
+    public async Task MakeMove_WhenDeliveringCheckAndPieceCaptured_BroadcastsPieceCapturedAndCheckDeclaredEvents()
+    {
+        // Custom board setup: White Rook captures Black Pawn at (0, 4) and checks Black King at (0, 7)
+        var customInitializer = new CustomTestBoardInitializer(board =>
+        {
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[7, 0].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
+            board.Tiles[0, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+        });
+
+        var customService = new RoomService(_hubContextMock.Object, _registry, _logger, customInitializer);
+        var createResult = await customService.CreateRoom(new CreateRoomDto(RoomMode.HotSeat, PieceColor.White, "Alice"));
+        var roomId = createResult.Data!.Id;
+
+        // Move Rook (0,0) -> (0,4) capturing Pawn and declaring Check on King at (0,7)
+        var moveResult = customService.MakeMove(roomId, new MakeMoveDto(new Position(0, 0), new Position(0, 4)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult.IsSuccess, Is.True);
+
+            _clientProxyMock.Verify(
+                c => c.SendCoreAsync("PieceCaptured", It.IsAny<object[]>(), default),
+                Times.Once
+            );
+
+            _clientProxyMock.Verify(
+                c => c.SendCoreAsync("CheckDeclared", It.IsAny<object[]>(), default),
+                Times.Once
+            );
+        });
+    }
+
+    [Test]
+    public async Task Resign_ThroughServiceRoom_BroadcastsGameEndedSignalREvent()
+    {
+        var createResult = await _service.CreateRoom(new CreateRoomDto(RoomMode.HotSeat, PieceColor.White, "Alice"));
+        var roomId = createResult.Data!.Id;
+
+        var resignResult = _service.Resign(roomId, new PlayerActionDto(PieceColor.White, "Alice"));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(resignResult.IsSuccess, Is.True);
+
+            _clientProxyMock.Verify(
+                c => c.SendCoreAsync("GameEnded", It.IsAny<object[]>(), default),
+                Times.Once
+            );
+        });
+    }
+
+    [Test]
+    public async Task OfferDraw_AndDecline_ThroughServiceRoom_BroadcastsDrawSignalREvents()
+    {
+        var createResult = await _service.CreateRoom(new CreateRoomDto(RoomMode.HotSeat, PieceColor.White, "Alice"));
+        var roomId = createResult.Data!.Id;
+
+        // 1. Offer Draw
+        var offerResult = _service.OfferDraw(roomId, new PlayerActionDto(PieceColor.White, "Alice"));
+        Assert.That(offerResult.IsSuccess, Is.True);
+
+        _clientProxyMock.Verify(
+            c => c.SendCoreAsync("DrawOffered", It.IsAny<object[]>(), default),
+            Times.Once
+        );
+
+        // 2. Decline Draw
+        var declineResult = _service.RespondToDrawOffer(roomId, new PlayerActionDto(PieceColor.Black, "Bob", Accepted: false));
+        Assert.That(declineResult.IsSuccess, Is.True);
+
+        _clientProxyMock.Verify(
+            c => c.SendCoreAsync("DrawDeclined", It.IsAny<object[]>(), default),
+            Times.Once
+        );
+    }
+
+    [Test]
+    public async Task SendSafeAsync_WhenHubThrowsException_CatchesAndDoesNotFailOperation()
+    {
+        _clientProxyMock
+            .Setup(c => c.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
+            .ThrowsAsync(new InvalidOperationException("Simulated SignalR failure"));
+
+        var createResult = await _service.CreateRoom(new CreateRoomDto(RoomMode.HotSeat, PieceColor.White, "Alice"));
+        var roomId = createResult.Data!.Id;
+
+        // Making a move triggers NotifySnapshot -> SendSafeAsync
+        var moveResult = _service.MakeMove(
+            roomId,
+            new MakeMoveDto(new Position(1, 4), new Position(3, 4))
+        );
+
+        // Operation should still succeed gracefully despite SignalR broadcast error
+        Assert.That(moveResult.IsSuccess, Is.True);
+    }
+
+    #endregion
 }
