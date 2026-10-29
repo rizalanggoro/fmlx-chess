@@ -162,6 +162,7 @@ public class RoomService(
             return RoomNotFound<GameStateDto>();
 
         room.Engine.StartGame();
+        logger.LogInformation("Game started manually in room {RoomId}", roomId);
 
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
@@ -172,6 +173,7 @@ public class RoomService(
             return RoomNotFound<GameStateDto>();
 
         room.Engine.ResetGame();
+        logger.LogInformation("Game reset in room {RoomId}", roomId);
 
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
