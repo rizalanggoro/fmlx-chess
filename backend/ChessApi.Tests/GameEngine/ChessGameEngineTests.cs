@@ -69,7 +69,12 @@ public class ChessGameEngineTests
     {
         var engine = CreateEngine();
         engine.StartGame();
-        engine.TryMakeMove(new Move(new Position(1, 4), new Position(3, 4)));
+        engine.TryMakeMove(
+            new Move(
+                new Position(1, 4),
+                new Position(3, 4)
+            )
+        );
 
         engine.ResetGame();
 
@@ -144,7 +149,17 @@ public class ChessGameEngineTests
         Assert.Multiple(() =>
         {
             Assert.That(tiles, Has.Count.EqualTo(64));
-            Assert.That(tiles.Any(t => t.Row == 0 && t.Column == 4 && t.Type == PieceType.King), Is.True);
+            Assert.That(
+                tiles.Any(
+                    t => t is
+                    {
+                        Row: 0,
+                        Column: 4,
+                        Type: PieceType.King
+                    }
+                ),
+                Is.True
+            );
         });
     }
 
@@ -170,7 +185,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine();
         // Not calling engine.StartGame()
 
-        var result = engine.TryMakeMove(new Move(new Position(1, 4), new Position(3, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(1, 4),
+                new Position(3, 4)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -181,7 +201,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine();
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(4, 4), new Position(5, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(4, 4),
+                new Position(5, 4)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -193,7 +218,12 @@ public class ChessGameEngineTests
         engine.StartGame(); // White's turn
 
         // Black pawn at (6, 4)
-        var result = engine.TryMakeMove(new Move(new Position(6, 4), new Position(4, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(6, 4),
+                new Position(4, 4)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -204,7 +234,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine();
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(1, 4),
+                new Position(2, 4)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -222,7 +257,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine();
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(1, 4), new Position(3, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(1, 4),
+                new Position(3, 4)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -244,7 +284,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(1, 4),
+                new Position(2, 4)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -256,7 +301,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White Knight from (0, 6) jumping over pawns to (2, 5)
-        var result = engine.TryMakeMove(new Move(new Position(0, 6), new Position(2, 5)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 6),
+                new Position(2, 5)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -273,7 +323,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White Bishop at (0, 2) blocked by pawn at (1, 3)
-        var result = engine.TryMakeMove(new Move(new Position(0, 2), new Position(2, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 2),
+                new Position(2, 4)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -285,7 +340,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White Rook at (0, 0) blocked by pawn at (1, 0)
-        var result = engine.TryMakeMove(new Move(new Position(0, 0), new Position(3, 0)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 0),
+                new Position(3, 0)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -310,7 +370,12 @@ public class ChessGameEngineTests
         PieceCapturedEventArgs? capturedEvent = null;
         engine.PieceCapturedEventHandler += (_, e) => capturedEvent = e;
 
-        var result = engine.TryMakeMove(new Move(new Position(3, 3), new Position(4, 4)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(3, 3),
+                new Position(4, 4)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -340,7 +405,12 @@ public class ChessGameEngineTests
         Assert.That(engine.EnPassantTarget, Is.EqualTo(new Position(5, 3)));
 
         // 3. White captures en passant: (4,4) -> (5,3)
-        var capturedResult = engine.TryMakeMove(new Move(new Position(4, 4), new Position(5, 3)));
+        var capturedResult = engine.TryMakeMove(
+            new Move(
+                new Position(4, 4),
+                new Position(5, 3)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -387,7 +457,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(0, 4), new Position(0, 6)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(0, 6)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -413,7 +488,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(0, 4), new Position(0, 2)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(0, 2)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -449,7 +529,12 @@ public class ChessGameEngineTests
         engine.TryMakeMove(new Move(new Position(7, 5), new Position(7, 4)));
 
         // 3. Attempt to castle should now fail
-        var castlingAttempt = engine.TryMakeMove(new Move(new Position(0, 4), new Position(0, 6)));
+        var castlingAttempt = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(0, 6)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -473,7 +558,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // Kingside rook moves
-        var moveResult = engine.TryMakeMove(new Move(new Position(0, 7), new Position(0, 6)));
+        var moveResult = engine.TryMakeMove(
+            new Move(
+                new Position(0, 7),
+                new Position(0, 6)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -496,7 +586,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(0, 4), new Position(0, 6)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(0, 6)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -514,7 +609,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(0, 4), new Position(0, 6)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(0, 6)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -532,7 +632,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(0, 4), new Position(0, 6)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(0, 6)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -553,7 +658,13 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(6, 0), new Position(7, 0), PieceType.Knight));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(6, 0),
+                new Position(7, 0),
+                PieceType.Knight
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -575,7 +686,12 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(6, 0), new Position(7, 0)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(6, 0),
+                new Position(7, 0)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -596,7 +712,13 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(6, 0), new Position(7, 0), PieceType.Rook));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(6, 0),
+                new Position(7, 0),
+                PieceType.Rook
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -617,7 +739,13 @@ public class ChessGameEngineTests
         var engine = CreateEngine(initializer);
         engine.StartGame();
 
-        var result = engine.TryMakeMove(new Move(new Position(6, 0), new Position(7, 0), PieceType.Bishop));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(6, 0),
+                new Position(7, 0),
+                PieceType.Bishop
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -639,7 +767,13 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // King is not a valid promotion piece
-        var result = engine.TryMakeMove(new Move(new Position(6, 0), new Position(7, 0), PieceType.King));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(6, 0),
+                new Position(7, 0),
+                PieceType.King
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -662,7 +796,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // Bishop is pinned to king along file 4; moving it to (2, 5) breaks the pin
-        var result = engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 5)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(1, 4),
+                new Position(2, 5)
+            )
+        );
 
         Assert.That(result, Is.False);
     }
@@ -683,7 +822,12 @@ public class ChessGameEngineTests
         engine.CheckDeclaredEventHandler += (_, e) => checkEvent = e;
 
         // White Rook moves from (3,0) to (7,0) attacking Black King on row 7
-        var result = engine.TryMakeMove(new Move(new Position(3, 0), new Position(7, 0)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(3, 0),
+                new Position(7, 0)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -708,10 +852,20 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White Pawn on (1, 0) tries to step forward to (2, 0) without resolving check on King
-        var illegalMove = engine.TryMakeMove(new Move(new Position(1, 0), new Position(2, 0)));
+        var illegalMove = engine.TryMakeMove(
+            new Move(
+                new Position(1, 0),
+                new Position(2, 0)
+            )
+        );
 
         // White King escapes check to (1, 4)
-        var legalEvasion = engine.TryMakeMove(new Move(new Position(0, 4), new Position(1, 4)));
+        var legalEvasion = engine.TryMakeMove(
+            new Move(
+                new Position(0, 4),
+                new Position(1, 4)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -739,8 +893,18 @@ public class ChessGameEngineTests
         engine.TryMakeMove(new Move(new Position(6, 4), new Position(4, 4)));
 
         // 2. g2-g4 (1,6)->(3,6) | Qd8-h4# (7,3)->(3,7)
-        engine.TryMakeMove(new Move(new Position(1, 6), new Position(3, 6)));
-        var mateResult = engine.TryMakeMove(new Move(new Position(7, 3), new Position(3, 7)));
+        engine.TryMakeMove(
+            new Move(
+                new Position(1, 6),
+                new Position(3, 6)
+            )
+        );
+        var mateResult = engine.TryMakeMove(
+            new Move(
+                new Position(7, 3),
+                new Position(3, 7)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -766,7 +930,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White Queen moves from (1,3) to (1,2), trapping Black King at (0,0) without check
-        var result = engine.TryMakeMove(new Move(new Position(1, 3), new Position(1, 2)));
+        var result = engine.TryMakeMove(
+            new Move(
+                new Position(1, 3),
+                new Position(1, 2)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -828,7 +997,7 @@ public class ChessGameEngineTests
         engine.StartGame();
         engine.OfferDraw(_whitePlayer);
 
-        engine.RespondToDrawOffer(_blackPlayer, accepted: true);
+        engine.RespondToDrawOffer(_blackPlayer, true);
 
         Assert.Multiple(() =>
         {
@@ -849,7 +1018,7 @@ public class ChessGameEngineTests
         DrawDeclinedEventArgs? declinedEvent = null;
         engine.DrawDeclinedEventHandler += (_, e) => declinedEvent = e;
 
-        engine.RespondToDrawOffer(_blackPlayer, accepted: false);
+        engine.RespondToDrawOffer(_blackPlayer, false);
 
         Assert.Multiple(() =>
         {
@@ -922,7 +1091,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White King captures Black's last piece (Rook) at (1, 1), leaving bare Kings
-        var moveResult = engine.TryMakeMove(new Move(new Position(0, 0), new Position(1, 1)));
+        var moveResult = engine.TryMakeMove(
+            new Move(
+                new Position(0, 0),
+                new Position(1, 1)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -947,7 +1121,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White King captures Black's Pawn at (1, 1), leaving K+B vs K
-        var moveResult = engine.TryMakeMove(new Move(new Position(0, 0), new Position(1, 1)));
+        var moveResult = engine.TryMakeMove(
+            new Move(
+                new Position(0, 0),
+                new Position(1, 1)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -971,7 +1150,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White King captures Black's Pawn at (1, 1), leaving K+N vs K
-        var moveResult = engine.TryMakeMove(new Move(new Position(0, 0), new Position(1, 1)));
+        var moveResult = engine.TryMakeMove(
+            new Move(
+                new Position(0, 0),
+                new Position(1, 1)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -998,7 +1182,12 @@ public class ChessGameEngineTests
         engine.StartGame();
 
         // White King captures Black's Pawn at (1, 1), leaving K+B vs K+B on same colored squares
-        var moveResult = engine.TryMakeMove(new Move(new Position(0, 0), new Position(1, 1)));
+        var moveResult = engine.TryMakeMove(
+            new Move(
+                new Position(0, 0),
+                new Position(1, 1)
+            )
+        );
 
         Assert.Multiple(() =>
         {
@@ -1017,7 +1206,7 @@ public class ChessGameEngineTests
             new Move(new Position(4, 3), new Position(6, 2)),
             new Move(new Position(6, 2), new Position(4, 1)),
             new Move(new Position(4, 1), new Position(2, 0)),
-            new Move(new Position(2, 0), new Position(0, 1)),
+            new Move(new Position(2, 0), new Position(0, 1))
         };
 
         var blackKingMoves = new[]
@@ -1026,7 +1215,7 @@ public class ChessGameEngineTests
             new Move(new Position(7, 6), new Position(6, 5)),
             new Move(new Position(6, 5), new Position(5, 6)),
             new Move(new Position(5, 6), new Position(6, 7)),
-            new Move(new Position(6, 7), new Position(7, 7)),
+            new Move(new Position(6, 7), new Position(7, 7))
         };
 
         var wIdx = 0;
@@ -1119,7 +1308,12 @@ public class ChessGameEngineTests
         engine.TryMakeMove(new Move(new Position(0, 6), new Position(2, 5)));
         engine.TryMakeMove(new Move(new Position(7, 6), new Position(5, 5)));
         engine.TryMakeMove(new Move(new Position(2, 5), new Position(0, 6)));
-        var fifthOccurrenceMove = engine.TryMakeMove(new Move(new Position(5, 5), new Position(7, 6)));
+        var fifthOccurrenceMove = engine.TryMakeMove(
+            new Move(
+                new Position(5, 5),
+                new Position(7, 6)
+            )
+        );
 
         Assert.Multiple(() =>
         {

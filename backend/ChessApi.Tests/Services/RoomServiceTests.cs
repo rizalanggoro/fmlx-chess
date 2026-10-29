@@ -55,7 +55,8 @@ public class RoomServiceTests
         }
     }
 
-    private Room CreateTestRoom(string roomId, RoomMode mode, Action<Room>? configure = null, IBoardInitializer? initializer = null)
+    private Room CreateTestRoom(string roomId, RoomMode mode, Action<Room>? configure = null,
+        IBoardInitializer? initializer = null)
     {
         var engine = new ChessGameEngine(
             new Board(),
@@ -65,8 +66,10 @@ public class RoomServiceTests
             initializer ?? _boardInitializer
         );
         var room = new Room(roomId, mode, engine);
+
         configure?.Invoke(room);
         _registry.Create(room);
+
         return room;
     }
 
@@ -75,8 +78,7 @@ public class RoomServiceTests
     [Test]
     public async Task CreateRoom_HotSeatMode_StartsGameAndReturnsSessionWithNullColor()
     {
-        var request = new CreateRoomDto(RoomMode.HotSeat, null, null);
-
+        var request = new CreateRoomDto(RoomMode.HotSeat);
         var result = await _service.CreateRoom(request);
 
         Assert.Multiple(() =>
@@ -96,7 +98,6 @@ public class RoomServiceTests
     public async Task CreateRoom_OnlineMode_SetsCreatorSeatAndNotifiesLobby()
     {
         var request = new CreateRoomDto(RoomMode.Online, PieceColor.Black, "Alice");
-
         var result = await _service.CreateRoom(request);
 
         Assert.Multiple(() =>
@@ -113,7 +114,14 @@ public class RoomServiceTests
             Assert.That(createdRoom.WhiteJoined, Is.False);
         });
 
-        _clientProxyMock.Verify(c => c.SendCoreAsync("LobbyChanged", It.IsAny<object[]>(), default), Times.Once);
+        _clientProxyMock.Verify(
+            c => c.SendCoreAsync(
+                "LobbyChanged",
+                It.IsAny<object[]>(),
+                default
+            ),
+            Times.Once
+        );
     }
 
     [Test]
@@ -121,7 +129,6 @@ public class RoomServiceTests
     {
         const string longName = "   ThisIsAVeryLongNameExceeding24Chars   ";
         var request = new CreateRoomDto(RoomMode.Online, PieceColor.White, longName);
-
         var result = await _service.CreateRoom(request);
 
         Assert.Multiple(() =>
@@ -130,7 +137,7 @@ public class RoomServiceTests
             var room = _registry.Get(result.Data!.Id);
             Assert.That(room, Is.Not.Null);
             Assert.That(room!.WhiteName, Is.EqualTo("ThisIsAVeryLongNameExcee"));
-            Assert.That(room.WhiteName!.Length, Is.EqualTo(24));
+            Assert.That(room.WhiteName!, Has.Length.EqualTo(24));
         });
     }
 
@@ -171,7 +178,6 @@ public class RoomServiceTests
     public async Task JoinRoom_RoomDoesNotExist_Returns404NotFound()
     {
         var dto = new JoinRoomDto(PieceColor.White, "Alice");
-
         var result = await _service.JoinRoom("UNKNOWN", dto);
 
         Assert.Multiple(() =>
@@ -186,8 +192,8 @@ public class RoomServiceTests
     public async Task JoinRoom_HotSeatRoom_Returns400BadRequest()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat);
-        var dto = new JoinRoomDto(PieceColor.White, "Alice");
 
+        var dto = new JoinRoomDto(PieceColor.White, "Alice");
         var result = await _service.JoinRoom("HOT001", dto);
 
         Assert.Multiple(() =>
@@ -202,8 +208,8 @@ public class RoomServiceTests
     public async Task JoinRoom_MissingColor_Returns400BadRequest()
     {
         CreateTestRoom("ON001", RoomMode.Online);
-        var dto = new JoinRoomDto(null, "Alice");
 
+        var dto = new JoinRoomDto(null, "Alice");
         var result = await _service.JoinRoom("ON001", dto);
 
         Assert.Multiple(() =>
@@ -222,8 +228,8 @@ public class RoomServiceTests
             r.WhiteJoined = true;
             r.WhiteName = "Alice";
         });
-        var dto = new JoinRoomDto(PieceColor.White, "Bob");
 
+        var dto = new JoinRoomDto(PieceColor.White, "Bob");
         var result = await _service.JoinRoom("ON001", dto);
 
         Assert.Multiple(() =>
@@ -242,8 +248,8 @@ public class RoomServiceTests
             r.WhiteJoined = true;
             r.BlackJoined = true;
         });
-        var dto = new JoinRoomDto(PieceColor.White, "Bob");
 
+        var dto = new JoinRoomDto(PieceColor.White, "Bob");
         var result = await _service.JoinRoom("ON001", dto);
 
         Assert.Multiple(() =>
@@ -263,7 +269,6 @@ public class RoomServiceTests
             r.WhiteName = "Alice";
         });
         var dto = new JoinRoomDto(PieceColor.Black, "Bob");
-
         var result = await _service.JoinRoom("ON001", dto);
 
         Assert.Multiple(() =>
@@ -276,7 +281,14 @@ public class RoomServiceTests
             Assert.That(room.Engine.State, Is.EqualTo(GameState.InProgress));
         });
 
-        _clientProxyMock.Verify(c => c.SendCoreAsync("LobbyChanged", It.IsAny<object[]>(), default), Times.Once);
+        _clientProxyMock.Verify(
+            c => c.SendCoreAsync(
+                "LobbyChanged",
+                It.IsAny<object[]>(),
+                default
+            ),
+            Times.Once
+        );
     }
 
     #endregion
@@ -299,7 +311,6 @@ public class RoomServiceTests
     public void StartGame_RoomExists_StartsGameAndReturnsState()
     {
         var room = CreateTestRoom("ON001", RoomMode.Online);
-
         var result = _service.StartGame("ON001");
 
         Assert.Multiple(() =>
@@ -339,8 +350,10 @@ public class RoomServiceTests
     [Test]
     public void MakeMove_RoomDoesNotExist_Returns404NotFound()
     {
-        var dto = new MakeMoveDto(new Position(1, 4), new Position(3, 4));
-
+        var dto = new MakeMoveDto(
+            new Position(1, 4),
+            new Position(3, 4)
+        );
         var result = _service.MakeMove("UNKNOWN", dto);
 
         Assert.Multiple(() =>
@@ -358,9 +371,13 @@ public class RoomServiceTests
             r.WhiteJoined = true;
             r.Engine.StartGame();
         });
-        // Black has not joined
-        var dto = new MakeMoveDto(new Position(1, 4), new Position(3, 4), Color: PieceColor.Black);
 
+        // Black has not joined
+        var dto = new MakeMoveDto(
+            new Position(1, 4),
+            new Position(3, 4),
+            Color: PieceColor.Black
+        );
         var result = _service.MakeMove("ON001", dto);
 
         Assert.Multiple(() =>
@@ -380,9 +397,13 @@ public class RoomServiceTests
             r.BlackJoined = true;
             r.Engine.StartGame(); // White's turn initially
         });
-        // Black tries to move on White's turn
-        var dto = new MakeMoveDto(new Position(6, 4), new Position(4, 4), Color: PieceColor.Black);
 
+        // Black tries to move on White's turn
+        var dto = new MakeMoveDto(
+            new Position(6, 4),
+            new Position(4, 4),
+            Color: PieceColor.Black
+        );
         var result = _service.MakeMove("ON001", dto);
 
         Assert.Multiple(() =>
@@ -397,9 +418,12 @@ public class RoomServiceTests
     public void MakeMove_IllegalMove_Returns400BadRequest()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
-        // Illegal move: moving White pawn backwards
-        var dto = new MakeMoveDto(new Position(1, 4), new Position(0, 4));
 
+        // Illegal move: moving White pawn backwards
+        var dto = new MakeMoveDto(
+            new Position(1, 4),
+            new Position(0, 4)
+        );
         var result = _service.MakeMove("HOT001", dto);
 
         Assert.Multiple(() =>
@@ -414,8 +438,11 @@ public class RoomServiceTests
     public void MakeMove_ValidMove_UpdatesBoardAndReturnsSuccess()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
-        var dto = new MakeMoveDto(new Position(1, 4), new Position(3, 4));
 
+        var dto = new MakeMoveDto(
+            new Position(1, 4),
+            new Position(3, 4)
+        );
         var result = _service.MakeMove("HOT001", dto);
 
         Assert.Multiple(() =>
@@ -430,7 +457,6 @@ public class RoomServiceTests
     public void Resign_RoomDoesNotExist_Returns404NotFound()
     {
         var action = new PlayerActionDto(PieceColor.White, "Alice");
-
         var result = _service.Resign("UNKNOWN", action);
 
         Assert.Multiple(() =>
@@ -448,9 +474,9 @@ public class RoomServiceTests
             r.WhiteJoined = true;
             r.Engine.StartGame();
         });
+
         // Black has not joined
         var action = new PlayerActionDto(PieceColor.Black, "Intruder");
-
         var result = _service.Resign("ON001", action);
 
         Assert.Multiple(() =>
@@ -465,7 +491,6 @@ public class RoomServiceTests
     {
         var room = CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
         var action = new PlayerActionDto(PieceColor.White, "Alice");
-
         var result = _service.Resign("HOT001", action);
 
         Assert.Multiple(() =>
@@ -506,7 +531,6 @@ public class RoomServiceTests
     public void OfferDraw_RoomDoesNotExist_Returns404NotFound()
     {
         var action = new PlayerActionDto(PieceColor.White, "Alice");
-
         var result = _service.OfferDraw("UNKNOWN", action);
 
         Assert.Multiple(() =>
@@ -520,8 +544,8 @@ public class RoomServiceTests
     public void OfferDraw_ValidPlayer_OffersDrawAndReturnsSuccess()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
-        var action = new PlayerActionDto(PieceColor.White, "Alice");
 
+        var action = new PlayerActionDto(PieceColor.White, "Alice");
         var result = _service.OfferDraw("HOT001", action);
 
         Assert.That(result.IsSuccess, Is.True);
@@ -530,8 +554,7 @@ public class RoomServiceTests
     [Test]
     public void RespondToDrawOffer_RoomDoesNotExist_Returns404NotFound()
     {
-        var action = new PlayerActionDto(PieceColor.Black, "Bob", Accepted: true);
-
+        var action = new PlayerActionDto(PieceColor.Black, "Bob", true);
         var result = _service.RespondToDrawOffer("UNKNOWN", action);
 
         Assert.Multiple(() =>
@@ -550,7 +573,7 @@ public class RoomServiceTests
             r.Engine.OfferDraw(new Player("White", PieceColor.White));
         });
 
-        var action = new PlayerActionDto(PieceColor.Black, "Bob", Accepted: true);
+        var action = new PlayerActionDto(PieceColor.Black, "Bob", true);
         var result = _service.RespondToDrawOffer("HOT001", action);
 
         Assert.Multiple(() =>
@@ -571,7 +594,7 @@ public class RoomServiceTests
             r.Engine.OfferDraw(new Player("White", PieceColor.White));
         });
 
-        var action = new PlayerActionDto(PieceColor.Black, "Bob", Accepted: false);
+        var action = new PlayerActionDto(PieceColor.Black, "Bob", false);
         var result = _service.RespondToDrawOffer("HOT001", action);
 
         Assert.Multiple(() =>
@@ -586,8 +609,8 @@ public class RoomServiceTests
     public void ClaimThreefoldRepetition_ConditionNotMet_Returns400BadRequest()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
-        var action = new PlayerActionDto(PieceColor.White, "White");
 
+        var action = new PlayerActionDto(PieceColor.White, "White");
         var result = _service.ClaimThreefoldRepetition("HOT001", action);
 
         Assert.Multiple(() =>
@@ -631,8 +654,8 @@ public class RoomServiceTests
     public void ClaimFiftyMoveRule_ConditionNotMet_Returns400BadRequest()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
-        var action = new PlayerActionDto(PieceColor.White, "White");
 
+        var action = new PlayerActionDto(PieceColor.White, "White");
         var result = _service.ClaimFiftyMoveRule("HOT001", action);
 
         Assert.Multiple(() =>
@@ -655,7 +678,7 @@ public class RoomServiceTests
             board.Tiles[6, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
         });
 
-        var room = CreateTestRoom("HOT001", RoomMode.HotSeat, r =>
+        CreateTestRoom("HOT001", RoomMode.HotSeat, r =>
         {
             r.Engine.StartGame();
 
@@ -666,7 +689,7 @@ public class RoomServiceTests
                 new Move(new Position(4, 3), new Position(6, 2)),
                 new Move(new Position(6, 2), new Position(4, 1)),
                 new Move(new Position(4, 1), new Position(2, 0)),
-                new Move(new Position(2, 0), new Position(0, 1)),
+                new Move(new Position(2, 0), new Position(0, 1))
             };
 
             var blackKingMoves = new[]
@@ -675,15 +698,13 @@ public class RoomServiceTests
                 new Move(new Position(7, 6), new Position(6, 5)),
                 new Move(new Position(6, 5), new Position(5, 6)),
                 new Move(new Position(5, 6), new Position(6, 7)),
-                new Move(new Position(6, 7), new Position(7, 7)),
+                new Move(new Position(6, 7), new Position(7, 7))
             };
 
-            var w = 0;
-            var b = 0;
-            for (var i = 0; i < 100; i++)
+            for (var turn = 0; turn < 50; turn++)
             {
-                var move = i % 2 == 0 ? whiteKnightMoves[w++ % 6] : blackKingMoves[b++ % 5];
-                r.Engine.TryMakeMove(move);
+                r.Engine.TryMakeMove(whiteKnightMoves[turn % whiteKnightMoves.Length]);
+                r.Engine.TryMakeMove(blackKingMoves[turn % blackKingMoves.Length]);
             }
         }, initializer);
 
@@ -707,11 +728,15 @@ public class RoomServiceTests
         var roomId = createResult.Data!.Id;
 
         // 2. Play 1. e4 (from 1,4 to 3,4)
-        var moveResult = _service.MakeMove(roomId, new MakeMoveDto(new Position(1, 4), new Position(3, 4)));
+        var moveResult = _service.MakeMove(
+            roomId,
+            new MakeMoveDto(new Position(1, 4), new Position(3, 4))
+        );
 
         Assert.Multiple(() =>
         {
             Assert.That(moveResult.IsSuccess, Is.True);
+
             // SnapshotChanged is broadcasted on move
             _clientProxyMock.Verify(
                 c => c.SendCoreAsync("SnapshotChanged", It.IsAny<object[]>(), default),
@@ -853,7 +878,11 @@ public class RoomServiceTests
     public void GetHistory_AfterMoveMade_ReturnsMoveHistory()
     {
         CreateTestRoom("HOT001", RoomMode.HotSeat, r => r.Engine.StartGame());
-        _service.MakeMove("HOT001", new MakeMoveDto(new Position(1, 4), new Position(3, 4)));
+
+        _service.MakeMove(
+            "HOT001",
+            new MakeMoveDto(new Position(1, 4), new Position(3, 4))
+        );
 
         var resultAll = _service.GetHistory("HOT001", null);
         var resultWhite = _service.GetHistory("HOT001", PieceColor.White);
@@ -870,4 +899,3 @@ public class RoomServiceTests
 
     #endregion
 }
-
