@@ -13,6 +13,9 @@ jobs:
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -26,29 +29,60 @@ jobs:
         run: dotnet restore backend/Chess.sln
 
       - name: Run NUnit tests
-        run: dotnet test backend/Chess.sln --configuration Release --no-restore --verbosity normal
+        run: dotnet test backend/Chess.sln --configuration Release --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
 
-  image:
-    name: Build & Push Docker Image
+      - name: Publish Visual Test Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Unit Test Results
+          path: '**/TestResults/*.trx'
+          reporter: dotnet-trx
+
+  build:
+    name: Build Docker Image
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: false
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/fmlx-chess:backend
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+  push:
+    name: Push Docker Image
+    needs: [test, build]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - uses: docker/setup-buildx-action@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
-      - uses: docker/login-action@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v7
+      - name: Push Docker Image to Registry
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: backend/Dockerfile
-          # <user>/fmlx-chess:backend
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/fmlx-chess:backend
           push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/fmlx-chess:backend
           cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
