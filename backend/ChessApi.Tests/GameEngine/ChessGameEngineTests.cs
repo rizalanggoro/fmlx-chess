@@ -196,6 +196,21 @@ public class ChessGameEngineTests
     }
 
     [Test]
+    public void TryMakeMove_WhenCoordinatesOutOfBounds_ReturnsFalse()
+    {
+        var engine = CreateEngine();
+        engine.StartGame();
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(engine.TryMakeMove(new Move(new Position(-1, 0), new Position(2, 0))), Is.False);
+            Assert.That(engine.TryMakeMove(new Move(new Position(8, 0), new Position(2, 0))), Is.False);
+            Assert.That(engine.TryMakeMove(new Move(new Position(1, 0), new Position(-1, 0))), Is.False);
+            Assert.That(engine.TryMakeMove(new Move(new Position(1, 0), new Position(8, 0))), Is.False);
+        });
+    }
+
+    [Test]
     public void TryMakeMove_FromSquareEmpty_ReturnsFalse()
     {
         var engine = CreateEngine();
@@ -574,6 +589,179 @@ public class ChessGameEngineTests
     }
 
     [Test]
+    public void TryMakeMove_WhiteQueensideRookMoves_LosesQueensideCastlingRightWhileRetainingKingside()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[0, 7].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        var moveResult = engine.TryMakeMove(new Move(new Position(0, 0), new Position(0, 1)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.WhiteQueenSide, Is.False);
+            Assert.That(engine.CastlingRights.WhiteKingSide, Is.True);
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_BlackQueensideRookMoves_LosesQueensideCastlingRightWhileRetainingKingside()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[1, 4].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            board.Tiles[7, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+            board.Tiles[7, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 4)));
+        var moveResult = engine.TryMakeMove(new Move(new Position(7, 0), new Position(6, 0)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.BlackQueenSide, Is.False);
+            Assert.That(engine.CastlingRights.BlackKingSide, Is.True);
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_BlackKingsideRookMoves_LosesKingsideCastlingRightWhileRetainingQueenside()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[1, 4].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            board.Tiles[7, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+            board.Tiles[7, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 4)));
+        var moveResult = engine.TryMakeMove(new Move(new Position(7, 7), new Position(6, 7)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.BlackKingSide, Is.False);
+            Assert.That(engine.CastlingRights.BlackQueenSide, Is.True);
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_WhiteQueensideRookCaptured_LosesWhiteQueensideCastlingRight()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[0, 7].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[1, 4].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            board.Tiles[7, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 4)));
+        var moveResult = engine.TryMakeMove(new Move(new Position(7, 0), new Position(0, 0)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.WhiteQueenSide, Is.False);
+            Assert.That(engine.CastlingRights.WhiteKingSide, Is.True);
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_WhiteKingsideRookCaptured_LosesWhiteKingsideCastlingRight()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[0, 7].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[1, 4].Piece = new ChessPiece(PieceColor.White, PieceType.Pawn);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            board.Tiles[7, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        engine.TryMakeMove(new Move(new Position(1, 4), new Position(2, 4)));
+        var moveResult = engine.TryMakeMove(new Move(new Position(7, 7), new Position(0, 7)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.WhiteKingSide, Is.False);
+            Assert.That(engine.CastlingRights.WhiteQueenSide, Is.True);
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_BlackQueensideRookCaptured_LosesBlackQueensideCastlingRight()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            board.Tiles[7, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+            board.Tiles[7, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        var moveResult = engine.TryMakeMove(new Move(new Position(0, 0), new Position(7, 0)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.BlackQueenSide, Is.False);
+            Assert.That(engine.CastlingRights.BlackKingSide, Is.True);
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_BlackKingsideRookCaptured_LosesBlackKingsideCastlingRight()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 7].Piece = new ChessPiece(PieceColor.White, PieceType.Rook);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            board.Tiles[7, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+            board.Tiles[7, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        var moveResult = engine.TryMakeMove(new Move(new Position(0, 7), new Position(7, 7)));
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.CastlingRights.BlackKingSide, Is.False);
+            Assert.That(engine.CastlingRights.BlackQueenSide, Is.True);
+        });
+    }
+
+    [Test]
     public void TryMakeMove_CastlingWhenPathBlocked_ReturnsFalse()
     {
         var initializer = new CustomBoardInitializer(board =>
@@ -839,6 +1027,21 @@ public class ChessGameEngineTests
     }
 
     [Test]
+    public void CheckedColor_WhenWhiteKingInCheck_ReturnsWhite()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 4].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.Black, PieceType.Rook);
+            board.Tiles[7, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        Assert.That(engine.CheckedColor, Is.EqualTo(PieceColor.White));
+    }
+
+    [Test]
     public void TryMakeMove_WhenKingInCheck_NonEvasionMoveReturnsFalse()
     {
         var initializer = new CustomBoardInitializer(board =>
@@ -970,6 +1173,69 @@ public class ChessGameEngineTests
             Assert.That(engine.Result.Winner, Is.EqualTo(PieceColor.Black));
             Assert.That(endEvent, Is.Not.Null);
         });
+    }
+
+    [Test]
+    public void Resign_WhenGameNotInProgressOrAlreadyCompleted_IsIgnored()
+    {
+        var engine = CreateEngine();
+
+        // Resign when NotStarted
+        engine.Resign(_whitePlayer);
+        Assert.That(engine.State, Is.EqualTo(GameState.NotStarted));
+
+        // Start and resign
+        engine.StartGame();
+        engine.Resign(_whitePlayer);
+        Assert.That(engine.State, Is.EqualTo(GameState.Completed));
+
+        // Resign again when already Completed (tests EndGame early return)
+        engine.Resign(_blackPlayer);
+        Assert.That(engine.Result?.Winner, Is.EqualTo(PieceColor.Black));
+    }
+
+    [Test]
+    public void OfferDraw_WhenGameNotInProgress_IsIgnored()
+    {
+        var engine = CreateEngine();
+        var eventFired = false;
+        engine.DrawOfferedEventHandler += (_, _) => eventFired = true;
+
+        engine.OfferDraw(_whitePlayer);
+
+        Assert.That(eventFired, Is.False);
+    }
+
+    [Test]
+    public void RespondToDrawOffer_WhenNoOfferPendingOrResponderIsOfferer_IsIgnored()
+    {
+        var engine = CreateEngine();
+        engine.StartGame();
+
+        // 1. Respond when no offer pending
+        engine.RespondToDrawOffer(_blackPlayer, true);
+        Assert.That(engine.State, Is.EqualTo(GameState.InProgress));
+
+        // 2. Offerer attempts to accept their own offer
+        engine.OfferDraw(_whitePlayer);
+        engine.RespondToDrawOffer(_whitePlayer, true);
+        Assert.That(engine.State, Is.EqualTo(GameState.InProgress));
+    }
+
+    [Test]
+    public void ClaimDrawByThreefoldRepetition_WhenGameNotInProgress_ReturnsFalse()
+    {
+        var engine = CreateEngine();
+        var result = engine.ClaimDrawByThreefoldRepetition(_whitePlayer);
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void ClaimDrawByFiftyMoveRule_WhenGameNotInProgress_ReturnsFalse()
+    {
+        var engine = CreateEngine();
+        var result = engine.ClaimDrawByFiftyMoveRule(_whitePlayer);
+        Assert.That(result, Is.False);
     }
 
     [Test]
@@ -1194,6 +1460,38 @@ public class ChessGameEngineTests
             Assert.That(moveResult, Is.True);
             Assert.That(engine.State, Is.EqualTo(GameState.Completed));
             Assert.That(engine.Result?.Reason, Is.EqualTo(GameEndReason.DrawByDeadPosition));
+        });
+    }
+
+    [Test]
+    public void TryMakeMove_BishopsOnOppositeSquareColors_IsNotDeadPositionAndGameContinues()
+    {
+        var initializer = new CustomBoardInitializer(board =>
+        {
+            board.Tiles[0, 0].Piece = new ChessPiece(PieceColor.White, PieceType.King);
+            // (0, 1) -> (0+1)%2 = 1 (light square)
+            board.Tiles[0, 1].Piece = new ChessPiece(PieceColor.White, PieceType.Bishop);
+            board.Tiles[7, 7].Piece = new ChessPiece(PieceColor.Black, PieceType.King);
+            // (2, 4) -> (2+4)%2 = 0 (dark square, not protecting (1, 1))
+            board.Tiles[2, 4].Piece = new ChessPiece(PieceColor.Black, PieceType.Bishop);
+            board.Tiles[1, 1].Piece = new ChessPiece(PieceColor.Black, PieceType.Pawn);
+        });
+        var engine = CreateEngine(initializer);
+        engine.StartGame();
+
+        // White King captures Black's Pawn at (1, 1), leaving K+B vs K+B on opposite square colors
+        var moveResult = engine.TryMakeMove(
+            new Move(
+                new Position(0, 0),
+                new Position(1, 1)
+            )
+        );
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(moveResult, Is.True);
+            Assert.That(engine.State, Is.EqualTo(GameState.InProgress));
+            Assert.That(engine.Result, Is.Null);
         });
     }
 
