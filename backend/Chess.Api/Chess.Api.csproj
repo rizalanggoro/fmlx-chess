@@ -10,11 +10,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+        <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="ChessApi.Tests"/>
+        <InternalsVisibleTo Include="ChessApi.Tests" />
     </ItemGroup>
 
 </Project>

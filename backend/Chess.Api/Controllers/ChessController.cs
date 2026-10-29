@@ -8,7 +8,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("rooms")]
-public class ChessController(IRoomService service) : ControllerBase
+public class ChessController(IRoomService service, ILogger<ChessController> logger) : ControllerBase
 {
     #region Rooms
 
@@ -339,6 +339,8 @@ public class ChessController(IRoomService service) : ControllerBase
     /// </summary>
     private ObjectResult Error(Exception ex, string message)
     {
+        logger.LogError(ex, "Unhandled exception: {ErrorMessage}", message);
+        
         return StatusCode(
             StatusCodes.Status500InternalServerError,
             new ApiErrorDto(message, ex.Message)

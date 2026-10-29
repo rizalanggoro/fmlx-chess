@@ -53,12 +53,14 @@ public class RoomService(
         if (request.Mode == RoomMode.HotSeat)
         {
             engine.StartGame();
+            logger.LogInformation("HotSeat room {RoomId} created and game started", room.Id);
             return ServiceResult<RoomSessionDto>.Success(new RoomSessionDto(room.Id, room.Mode, null));
         }
 
         var pieceColor = request.Color ?? PieceColor.White;
 
         ClaimRoom(room, pieceColor, NormalizeName(request.PlayerName));
+        logger.LogInformation("Online room {RoomId} created. Seat {Color} claimed by {PlayerName}", room.Id, pieceColor, NormalizeName(request.PlayerName) ?? "Anonymous");
         await NotifyLobby();
 
         return ServiceResult<RoomSessionDto>.Success(new RoomSessionDto(room.Id, room.Mode, pieceColor));
@@ -70,10 +72,13 @@ public class RoomService(
             return RoomNotFound<RoomSessionDto>();
 
         if (room.Mode != RoomMode.Online)
+        {
+            logger.LogWarning("Reject join: Room {RoomId} is not in online mode", roomId);
             return ServiceResult<RoomSessionDto>.Error(
                 StatusCodes.Status400BadRequest,
                 "Only online rooms can be joined"
             );
+        }
 
         if (dto.Color is null)
             return ServiceResult<RoomSessionDto>.Error(
@@ -82,13 +87,21 @@ public class RoomService(
             );
 
         if (!ClaimRoom(room, dto.Color.Value, NormalizeName(dto.Name)))
+        {
+            logger.LogWarning("Reject join: Seat {Color} in room {RoomId} is already taken or room is full", dto.Color.Value, roomId);
             return ServiceResult<RoomSessionDto>.Error(
                 StatusCodes.Status409Conflict,
                 room is { WhiteJoined: true, BlackJoined: true } ? "Room is full" : "Seat is already taken"
             );
+        }
+
+        logger.LogInformation("Player {PlayerName} joined room {RoomId} as {Color}", NormalizeName(dto.Name) ?? "Anonymous", roomId, dto.Color.Value);
 
         if (room.Engine.State == GameState.NotStarted)
+        {
             room.Engine.StartGame();
+            logger.LogInformation("Both seats filled in room {RoomId}. Online game started", roomId);
+        }
 
         await NotifyLobby();
 
@@ -171,21 +184,33 @@ public class RoomService(
         if (room.Mode == RoomMode.Online)
         {
             if (dto.Color is null || !room.IsJoined(dto.Color.Value))
+            {
+                logger.LogWarning("Unauthorized move attempt in room {RoomId} by color {Color}", roomId, dto.Color);
                 return NotAPlayer();
+            }
 
             if (dto.Color.Value != room.Engine.CurrentPlayer.Color)
+            {
+                logger.LogWarning("Move attempted out of turn in room {RoomId} by {Color}. Current turn: {CurrentTurn}", roomId, dto.Color.Value, room.Engine.CurrentPlayer.Color);
                 return ServiceResult<GameStateDto>.Error(
                     StatusCodes.Status403Forbidden,
                     "Not your turn"
                 );
+            }
         }
 
         var move = new Move(dto.From, dto.To, dto.PromotionType);
+        var turnBeforeMove = room.Engine.CurrentPlayer.Color;
         if (!room.Engine.TryMakeMove(move))
+        {
+            logger.LogWarning("Illegal move attempted in room {RoomId} from [{FromRow},{FromCol}] to [{ToRow},{ToCol}] by {Color}", roomId, dto.From.Row, dto.From.Column, dto.To.Row, dto.To.Column, turnBeforeMove);
             return ServiceResult<GameStateDto>.Error(
                 StatusCodes.Status400BadRequest,
                 "Illegal move"
             );
+        }
+
+        logger.LogInformation("Move executed in room {RoomId} by {Color}: [{FromRow},{FromCol}] -> [{ToRow},{ToCol}] (Promotion: {PromotionType}). Next turn: {NextTurn}", roomId, turnBeforeMove, dto.From.Row, dto.From.Column, dto.To.Row, dto.To.Column, dto.PromotionType, room.Engine.CurrentPlayer.Color);
 
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
@@ -200,6 +225,7 @@ public class RoomService(
             return NotAPlayer();
 
         room.Engine.Resign(player);
+        logger.LogInformation("Player {Color} ({PlayerName}) resigned in room {RoomId}. Result: {Result}", player.Color, player.Name, roomId, room.Engine.Result);
 
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
@@ -214,6 +240,7 @@ public class RoomService(
             return NotAPlayer();
 
         room.Engine.OfferDraw(player);
+        logger.LogInformation("Player {Color} offered a draw in room {RoomId}", player.Color, roomId);
 
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
@@ -227,7 +254,9 @@ public class RoomService(
         if (!IsPlayer(room, player))
             return NotAPlayer();
 
-        room.Engine.RespondToDrawOffer(player, request.Accepted ?? false);
+        var accepted = request.Accepted ?? false;
+        room.Engine.RespondToDrawOffer(player, accepted);
+        logger.LogInformation("Player {Color} responded to draw offer in room {RoomId}. Accepted: {Accepted}", player.Color, roomId, accepted);
 
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
@@ -242,11 +271,15 @@ public class RoomService(
             return NotAPlayer();
 
         if (!room.Engine.ClaimDrawByThreefoldRepetition(player))
+        {
+            logger.LogWarning("Player {Color} failed to claim threefold repetition in room {RoomId}", player.Color, roomId);
             return ServiceResult<GameStateDto>.Error(
                 StatusCodes.Status400BadRequest,
                 "Threefold repetition claim not available"
             );
+        }
 
+        logger.LogInformation("Player {Color} claimed draw by threefold repetition in room {RoomId}", player.Color, roomId);
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
@@ -260,11 +293,15 @@ public class RoomService(
             return NotAPlayer();
 
         if (!room.Engine.ClaimDrawByFiftyMoveRule(player))
+        {
+            logger.LogWarning("Player {Color} failed to claim fifty-move rule in room {RoomId}", player.Color, roomId);
             return ServiceResult<GameStateDto>.Error(
                 StatusCodes.Status400BadRequest,
                 "Fifty-move claim not available"
             );
+        }
 
+        logger.LogInformation("Player {Color} claimed draw by fifty-move rule in room {RoomId}", player.Color, roomId);
         return ServiceResult<GameStateDto>.Success(GameStateDtoFactory.FromRoom(room));
     }
 
@@ -348,6 +385,8 @@ public class RoomService(
 
     private async Task NotifySnapshot(Room room, SnapshotChangedEventArgs e)
     {
+        logger.LogInformation("Broadcasting snapshot for room {RoomId}. Current turn: {Turn}", room.Id, room.Engine.CurrentPlayer.Color);
+
         var board = new List<TileDto>(64);
         for (var r = 0; r < 8; r++)
         for (var c = 0; c < 8; c++)
@@ -372,6 +411,7 @@ public class RoomService(
 
     private async Task NotifyCheck(string roomId, CheckEventArgs e)
     {
+        logger.LogInformation("Check declared in room {RoomId} against {CheckedColor}", roomId, e.CheckedColor);
         await SendSafeAsync(
             $"room:{roomId}",
             "CheckDeclared",
@@ -381,6 +421,7 @@ public class RoomService(
 
     private async Task NotifyPieceCaptured(string roomId, PieceCapturedEventArgs e)
     {
+        logger.LogInformation("Piece captured in room {RoomId}: {PieceColor} {PieceType}", roomId, e.CapturedPiece.Color, e.CapturedPiece.Type);
         await SendSafeAsync(
             $"room:{roomId}",
             "PieceCaptured",
@@ -399,6 +440,7 @@ public class RoomService(
 
     private async Task NotifyGameEnded(string roomId, GameEndedEventArgs e)
     {
+        logger.LogInformation("Game ended in room {RoomId} with result: {Result}", roomId, e.Result);
         await SendSafeAsync(
             $"room:{roomId}",
             "GameEnded",
@@ -408,6 +450,7 @@ public class RoomService(
 
     private async Task NotifyDrawOffered(string roomId, DrawOfferedEventArgs e)
     {
+        logger.LogInformation("Draw offered in room {RoomId} by {Color} ({Name})", roomId, e.Offerer.Color, e.Offerer.Name);
         await SendSafeAsync(
             $"room:{roomId}",
             "DrawOffered",
@@ -417,6 +460,7 @@ public class RoomService(
 
     private async Task NotifyDrawDeclined(string roomId, DrawDeclinedEventArgs e)
     {
+        logger.LogInformation("Draw declined in room {RoomId} by opponent of {Color}", roomId, e.Offerer.Color);
         await SendSafeAsync(
             $"room:{roomId}",
             "DrawDeclined",
