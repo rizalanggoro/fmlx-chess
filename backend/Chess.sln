@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Chess.Api", "Chess.Api\Chess.Api.csproj", "{D91B986B-EF9F-43C7-80D2-90A461BF6F88}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessApi.Tests", "ChessApi.Tests\ChessApi.Tests.csproj", "{6ED227A5-D9FF-44F6-AFF1-0655473552A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{D91B986B-EF9F-43C7-80D2-90A461BF6F88}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D91B986B-EF9F-43C7-80D2-90A461BF6F88}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D91B986B-EF9F-43C7-80D2-90A461BF6F88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6ED227A5-D9FF-44F6-AFF1-0655473552A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ED227A5-D9FF-44F6-AFF1-0655473552A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ED227A5-D9FF-44F6-AFF1-0655473552A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ED227A5-D9FF-44F6-AFF1-0655473552A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
