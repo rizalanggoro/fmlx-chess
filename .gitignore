@@ -36,5 +36,9 @@ todo.md
 .playwright-mcp/
 .opencode/
 
+# Logs
+logs/
+*.log
+
 screenshots/
 unit-test-naming-convention.md
